@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.0)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # psnes version
-set(PSNES_VERSION_MAJOR 1)
-set(PSNES_VERSION_MINOR 8)
+set(PPLAY_VERSION_MAJOR 1)
+set(PPLAY_VERSION_MINOR 8)
 
 # delete cmake cache folder before changing this option
 set(BUILD_SFML OFF CACHE BOOL "Build with SFML support")
@@ -80,9 +80,9 @@ set(SNES9X_CFLAGS
         -DHAVE_LIBPNG -DHAVE_MKSTEMP -DHAVE_STRINGS_H
         -DHAVE_SYS_IOCTL_H -DHAVE_STDINT_H -DRIGHTSHIFT_IS_SAR
         -DGFX_MULTI_FORMAT
-        -D__PSNES__
-        -D__PSNES_VERSION_MAJOR__=${PSNES_VERSION_MAJOR}
-        -D__PSNES_VERSION_MINOR__=${PSNES_VERSION_MINOR}
+        -D__PPLAY__
+        -D__PPLAY_VERSION_MAJOR__=${PPLAY_VERSION_MAJOR}
+        -D__PPLAY_VERSION_MINOR__=${PPLAY_VERSION_MINOR}
         )
 
 if (BUILD_DEBUG)
@@ -126,8 +126,8 @@ endif (BUILD_DEBUGGER)
 ##############
 # psnes
 ##############
-set(PSNES_INC psnes)
-file(GLOB PSNES_SRC psnes/*.c*)
+set(PPLAY_INC psnes)
+file(GLOB PPLAY_SRC psnes/*.c*)
 
 #####################
 # PLATORM SPECIFIC
@@ -151,8 +151,8 @@ endif (BUILD_PSP2)
 #####################
 # snes9x executable
 #####################
-add_executable(${CMAKE_PROJECT_NAME}.elf ${PSNES_SRC} ${SNES9X_SRC} ${UNZIP_SRC} ${JMA_SRC})
-target_include_directories(${CMAKE_PROJECT_NAME}.elf PRIVATE ${PSNES_INC} ${SNES9X_INC} ${UNZIP_INC} ${JMA_INC})
+add_executable(${CMAKE_PROJECT_NAME}.elf ${PPLAY_SRC} ${SNES9X_SRC} ${UNZIP_SRC} ${JMA_SRC})
+target_include_directories(${CMAKE_PROJECT_NAME}.elf PRIVATE ${PPLAY_INC} ${SNES9X_INC} ${UNZIP_INC} ${JMA_INC})
 target_compile_options(${CMAKE_PROJECT_NAME}.elf PRIVATE ${SNES9X_CFLAGS})
 target_compile_options(${CMAKE_PROJECT_NAME}.elf PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>)
 target_link_libraries(${CMAKE_PROJECT_NAME}.elf cross2dui ${SNES9X_LDFLAGS})
@@ -171,7 +171,7 @@ if (BUILD_PSP2)
             COMMAND cp -r ${CMAKE_SOURCE_DIR}/psnes/data/skin ${CMAKE_BINARY_DIR}/release/psnes/
             COMMAND cp -r ${CMAKE_SOURCE_DIR}/psnes/data/psp2/skin ${CMAKE_BINARY_DIR}/release/psnes/
             #COMMAND cp -f ${CMAKE_SOURCE_DIR}/psnes/data/databases/Super_Nintendo_Entertainment_System_Parent-Clone_20180601-221617_dat-o-matic.xml ${CMAKE_BINARY_DIR}/release/psnes/db.xml
-            COMMAND cd ${CMAKE_BINARY_DIR}/release/psnes && zip -r ../../${PROJECT_NAME}-${PSNES_VERSION_MAJOR}.${PSNES_VERSION_MINOR}_vita.vpk . && cd ${CMAKE_BINARY_DIR}
+            COMMAND cd ${CMAKE_BINARY_DIR}/release/psnes && zip -r ../../${PROJECT_NAME}-${PPLAY_VERSION_MAJOR}.${PPLAY_VERSION_MINOR}_vita.vpk . && cd ${CMAKE_BINARY_DIR}
             )
 endif (BUILD_PSP2)
 
@@ -182,7 +182,7 @@ if (BUILD_NX)
     set_target_properties(${PROJECT_NAME}.elf PROPERTIES LINK_FLAGS "-specs=${DEVKITPRO}/libnx/switch.specs")
     add_custom_target(${PROJECT_NAME}.nro
             DEPENDS ${PROJECT_NAME}.elf
-            COMMAND nacptool --create "pSNES" "Cpasjuste" "${PSNES_VERSION_MAJOR}.${PSNES_VERSION_MINOR}" psnes.nacp
+            COMMAND nacptool --create "pSNES" "Cpasjuste" "${PPLAY_VERSION_MAJOR}.${PPLAY_VERSION_MINOR}" psnes.nacp
             COMMAND elf2nro ${PROJECT_NAME}.elf ${PROJECT_NAME}.nro --icon=${CMAKE_SOURCE_DIR}/psnes/data/nx/icon.jpg --nacp=psnes.nacp)
     add_custom_target(${PROJECT_NAME}_switch_release.zip
             DEPENDS ${PROJECT_NAME}.nro
@@ -196,6 +196,6 @@ if (BUILD_NX)
             COMMAND cp -r ${CMAKE_SOURCE_DIR}/psnes/data/skin ${CMAKE_BINARY_DIR}/release/psnes/
             COMMAND cp -r ${CMAKE_SOURCE_DIR}/psnes/data/nx/skin ${CMAKE_BINARY_DIR}/release/psnes/
             COMMAND cp -f ${CMAKE_SOURCE_DIR}/psnes/data/databases/Super_Nintendo_Entertainment_System_Parent-Clone_20180601-221617_dat-o-matic.xml ${CMAKE_BINARY_DIR}/release/psnes/db.xml
-            COMMAND cd ${CMAKE_BINARY_DIR}/release && zip -r ../${PROJECT_NAME}-${PSNES_VERSION_MAJOR}.${PSNES_VERSION_MINOR}_switch.zip psnes && cd ${CMAKE_BINARY_DIR}
+            COMMAND cd ${CMAKE_BINARY_DIR}/release && zip -r ../${PROJECT_NAME}-${PPLAY_VERSION_MAJOR}.${PPLAY_VERSION_MINOR}_switch.zip psnes && cd ${CMAKE_BINARY_DIR}
             )
 endif (BUILD_NX)
