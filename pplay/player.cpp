@@ -16,13 +16,12 @@ using namespace c2dui;
 
 static UIMain *uiMain = nullptr;
 
-SDL_Window *window = NULL;
-//SDL_Renderer *renderer = NULL;
-Kit_Source *src = NULL;
-Kit_Player *player = NULL;
+static SDL_Renderer *renderer = nullptr;
+static Kit_Source *src = nullptr;
+static Kit_Player *player = nullptr;
 //SDL_AudioSpec wanted_spec, audio_spec;
 //SDL_AudioDeviceID audio_dev;
-SDL_Texture *video_tex;
+static SDL_Texture *video_tex;
 
 Player::Player(UIMain *ui) : UIEmu(ui) {
 
@@ -40,10 +39,10 @@ int Player::run(RomList::Rom *rom) {
 
     // Open up the sourcefile.
     // This can be a local file, network url, ...
-    std::string file = uiMain->getConfig()->getHomePath()->c_str();
+    std::string file = *uiMain->getConfig()->getRomPath(0);
     file += rom->path;
     src = Kit_CreateSourceFromUrl(file.c_str());
-    if (src == NULL) {
+    if (src == nullptr) {
         fprintf(stderr, "Unable to load file '%s': %s\n", file.c_str(), Kit_GetError());
         return 1;
     }
@@ -54,9 +53,10 @@ int Player::run(RomList::Rom *rom) {
             src,
             Kit_GetBestSourceStream(src, KIT_STREAMTYPE_VIDEO),
             Kit_GetBestSourceStream(src, KIT_STREAMTYPE_AUDIO),
-            Kit_GetBestSourceStream(src, KIT_STREAMTYPE_SUBTITLE),
+            -1,
+            //Kit_GetBestSourceStream(src, KIT_STREAMTYPE_SUBTITLE),
             (int) uiMain->getRenderer()->getSize().x, (int) uiMain->getRenderer()->getSize().y);
-    if (player == NULL) {
+    if (player == nullptr) {
         fprintf(stderr, "Unable to create player: %s\n", Kit_GetError());
         return 1;
     }
@@ -70,8 +70,21 @@ int Player::run(RomList::Rom *rom) {
         return 1;
     }
 
-    addAudio(pinfo.audio.output.samplerate, pinfo.video.output.samplerate);
+    printf("video(%s): %i x %i , audio(%s): %i\n",
+           pinfo.video.codec.name,
+           pinfo.video.output.width, pinfo.video.output.height,
+           pinfo.audio.codec.name,
+           pinfo.audio.output.samplerate);
+
+    addAudio(pinfo.audio.output.samplerate, 30);
     //addVideo(uiMain, nullptr, nullptr, Vector2f(pinfo.video.output.width, pinfo.video.output.height));
+
+    auto *r = (SDL2Renderer *) uiMain->getRenderer();
+    renderer = SDL_CreateRenderer(r->getWindow(), -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if (renderer == nullptr) {
+        fprintf(stderr, "Unable to create a renderer!\n");
+        return 1;
+    }
 
     video_tex = SDL_CreateTexture(
             renderer,
@@ -79,7 +92,7 @@ int Player::run(RomList::Rom *rom) {
             SDL_TEXTUREACCESS_STATIC,
             pinfo.video.output.width,
             pinfo.video.output.height);
-    if (video_tex == NULL) {
+    if (video_tex == nullptr) {
         fprintf(stderr, "Error while attempting to create a video texture\n");
         return 1;
     }
@@ -87,7 +100,7 @@ int Player::run(RomList::Rom *rom) {
     // Start playback
     Kit_PlayerPlay(player);
 
-    return 0;
+    return UIEmu::run(rom);
 }
 
 void Player::stop() {
@@ -128,13 +141,34 @@ int Player::update() {
     if (!isPaused()) {
 
         // audio
-        Kit_GetPlayerAudioData(
-                player, (unsigned char *) getAudio()->getBuffer(), AUDIOBUFFER_SIZE);
-        getAudio()->play();
+        auto *aud = (SDL2Audio *) getAudio();
+        int buffer_size = getAudio()->getBufferSize();
+        int queued = SDL_GetQueuedAudioSize(aud->getDeviceID());
+
+        if (queued < buffer_size) {
+            int need = buffer_size - queued;
+            while (need > 0) {
+                int ret = Kit_GetPlayerAudioData(
+                        player,
+                        (unsigned char *) getAudio()->getBuffer(),
+                        buffer_size);
+                need -= ret;
+                if (ret > 0) {
+                    SDL_QueueAudio(aud->getDeviceID(), getAudio()->getBuffer(), ret);
+                } else {
+                    break;
+                }
+            }
+            // If we now have data, start playback (again)
+            if (SDL_GetQueuedAudioSize(aud->getDeviceID()) > 0) {
+                SDL_PauseAudioDevice(aud->getDeviceID(), 0);
+            }
+        }
 
         // video
         Kit_GetPlayerVideoData(player, video_tex);
-        SDL_RenderCopy(renderer, video_tex, NULL, NULL);
+        SDL_RenderCopy(renderer, video_tex, nullptr, nullptr);
+        SDL_RenderPresent(renderer);
     }
 
     getUi()->getRenderer()->flip(false);

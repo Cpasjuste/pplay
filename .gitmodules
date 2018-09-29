@@ -1,0 +1,3 @@
+[submodule "SDL_kitchensink"]
+	path = SDL_kitchensink
+	url = git@gitlab.com:cpasjuste/SDL_kitchensink.git

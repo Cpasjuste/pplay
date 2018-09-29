@@ -6,6 +6,7 @@
 #include "c2dui.h"
 #include "main.h"
 #include "filer.h"
+#include "player.h"
 
 #define C2DUI_HOME_PATH "./"
 
@@ -19,7 +20,7 @@ Io *io;
 UIMain *ui;
 UIRomList *uiRomList;
 UIMenu *uiMenu;
-UIEmu *uiEmu;
+Player *player;
 UIStateMenu *uiState;
 
 Config *config;
@@ -91,9 +92,9 @@ int main(int argc, char **argv) {
     romList->build();
     uiRomList = new UIRomList(ui, romList, renderer->getSize());
     uiMenu = new UIMenu(ui);
-    uiEmu = new UIEmu(ui);
+    player = new Player(ui);
     uiState = new UIStateMenu(ui);
-    ui->init(uiRomList, uiMenu, uiEmu, uiState);
+    ui->init(uiRomList, uiMenu, player, uiState);
     ui->run();
 
     // quit
