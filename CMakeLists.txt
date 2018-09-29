@@ -59,6 +59,8 @@ set(PPLAY_INC
         )
 file(GLOB_RECURSE PPLAY_SRC
         pplay/main.cpp
+        pplay/filer.cpp
+        pplay/player.cpp
         SDL_kitchensink/src/*.c*
         #SDL_kitchensink/examples/example_simple.c
         )
