@@ -79,10 +79,14 @@ int Player::run(RomList::Rom *rom) {
            player_info.audio.codec.name,
            player_info.audio.output.samplerate);
 
+    // TODO
     //addAudio(player_info.audio.output.samplerate, 30);
     //addVideo(uiMain, nullptr, nullptr, Vector2f(pinfo.video.output.width, pinfo.video.output.height));
 
     // Init audio
+    if (!SDL_WasInit(SDL_INIT_AUDIO)) {
+        SDL_InitSubSystem(SDL_INIT_AUDIO);
+    }
     SDL_memset(&wanted_spec, 0, sizeof(wanted_spec));
     wanted_spec.freq = player_info.audio.output.samplerate;
     wanted_spec.format = player_info.audio.output.format;
@@ -98,6 +102,7 @@ int Player::run(RomList::Rom *rom) {
         return 1;
     }
 
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
     video_tex = SDL_CreateTexture(
             renderer,
             player_info.video.output.format,
@@ -112,6 +117,8 @@ int Player::run(RomList::Rom *rom) {
 
     // Start playback
     Kit_PlayerPlay(player);
+
+    getUi()->getRenderer()->clear();
 
     return UIEmu::run(rom);
 }
@@ -128,6 +135,7 @@ void Player::stop() {
         Kit_CloseSource(src);
         src = nullptr;
     }
+
     Kit_Quit();
 
     if (video_tex) {
@@ -138,6 +146,10 @@ void Player::stop() {
     if (renderer) {
         SDL_DestroyRenderer(renderer);
         renderer = nullptr;
+    }
+
+    if (audio_dev) {
+        SDL_CloseAudioDevice(audio_dev);
     }
 }
 
@@ -171,6 +183,31 @@ int Player::update() {
         getVideo()->updateScaling();
     }
 
+#if 0
+    auto *aud = (SDL2Audio *) getAudio();
+    int buffer_size = getAudio()->getBufferSize();
+    int queued = SDL_GetQueuedAudioSize(aud->getDeviceID());
+
+    if (queued < buffer_size) {
+        int need = buffer_size - queued;
+        while (need > 0) {
+            int ret = Kit_GetPlayerAudioData(
+                    player,
+                    (unsigned char *) getAudio()->getBuffer(),
+                    buffer_size);
+            need -= ret;
+            if (ret > 0) {
+                SDL_QueueAudio(aud->getDeviceID(), getAudio()->getBuffer(), ret);
+            } else {
+                break;
+            }
+        }
+        // If we now have data, start playback (again)
+        if (SDL_GetQueuedAudioSize(aud->getDeviceID()) > 0) {
+            SDL_PauseAudioDevice(aud->getDeviceID(), 0);
+        }
+    }
+#endif
 
     if (!isPaused()) {
 
@@ -196,31 +233,6 @@ int Player::update() {
                 SDL_PauseAudioDevice(audio_dev, 0);
             }
         }
-#if 0
-        auto *aud = (SDL2Audio *) getAudio();
-        int buffer_size = getAudio()->getBufferSize();
-        int queued = SDL_GetQueuedAudioSize(aud->getDeviceID());
-
-        if (queued < buffer_size) {
-            int need = buffer_size - queued;
-            while (need > 0) {
-                int ret = Kit_GetPlayerAudioData(
-                        player,
-                        (unsigned char *) getAudio()->getBuffer(),
-                        buffer_size);
-                need -= ret;
-                if (ret > 0) {
-                    SDL_QueueAudio(aud->getDeviceID(), getAudio()->getBuffer(), ret);
-                } else {
-                    break;
-                }
-            }
-            // If we now have data, start playback (again)
-            if (SDL_GetQueuedAudioSize(aud->getDeviceID()) > 0) {
-                SDL_PauseAudioDevice(aud->getDeviceID(), 0);
-            }
-        }
-#endif
 
         // video
         Kit_GetPlayerVideoData(player, video_tex);
@@ -238,7 +250,7 @@ int Player::update() {
         sy *= (float) player_info.video.output.height;
 
         // render
-        SDL_Rect r = {0, (screen.y - sy) / 2, (int) sx, (int) sy};
+        SDL_Rect r = {(screen.x - sx) / 2, (screen.y - sy) / 2, (int) sx, (int) sy};
         SDL_RenderCopy(renderer, video_tex, nullptr, &r);
     }
 
