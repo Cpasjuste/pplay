@@ -118,8 +118,6 @@ int Player::run(RomList::Rom *rom) {
     // Start playback
     Kit_PlayerPlay(player);
 
-    getUi()->getRenderer()->clear();
-
     return UIEmu::run(rom);
 }
 
@@ -237,7 +235,7 @@ int Player::update() {
         // video
         Kit_GetPlayerVideoData(player, video_tex);
 
-        float sx = 1, sy = 1;
+        float sx, sy;
         Vector2f screen = uiMain->getRenderer()->getSize();
         float max_x = screen.x / (float) player_info.video.output.width;
         float max_y = screen.y / (float) player_info.video.output.height;
@@ -249,12 +247,14 @@ int Player::update() {
         sx *= (float) player_info.video.output.width;
         sy *= (float) player_info.video.output.height;
 
-        // render
-        SDL_Rect r = {(screen.x - sx) / 2, (screen.y - sy) / 2, (int) sx, (int) sy};
-        SDL_RenderCopy(renderer, video_tex, nullptr, &r);
-    }
+        getUi()->getRenderer()->clear();
 
-    getUi()->getRenderer()->flip(false);
+        // render
+        SDL_Rect r = {(int) ((screen.x - sx) / 2.0f), (int) ((screen.y - sy) / 2.0f), (int) sx, (int) sy};
+        SDL_RenderCopy(renderer, video_tex, nullptr, &r);
+
+        getUi()->getRenderer()->flip(false);
+    }
 
     return 0;
 }
