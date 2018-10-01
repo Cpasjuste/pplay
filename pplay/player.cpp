@@ -97,6 +97,7 @@ int Player::run(RomList::Rom *rom) {
             getUi(), nullptr, nullptr,
             {player_info.video.output.width, player_info.video.output.height},
             C2D_TEXTURE_FMT_ABGR8);
+    video->setFiltering(C2D_TEXTURE_FILTER_LINEAR);
     addVideo(video);
 
     // Start playback
