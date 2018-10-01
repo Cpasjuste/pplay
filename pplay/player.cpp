@@ -123,6 +123,7 @@ void Player::stop() {
 
     if (audio_dev) {
         SDL_CloseAudioDevice(audio_dev);
+        audio_dev = 0;
     }
 
     UIEmu::stop();
@@ -130,12 +131,14 @@ void Player::stop() {
 
 void Player::pause() {
 
+    Kit_PlayerPause(player);
     UIEmu::pause();
 }
 
 void Player::resume() {
 
     UIEmu::resume();
+    Kit_PlayerPlay(player);
 }
 
 int Player::update() {
@@ -173,32 +176,37 @@ int Player::update() {
         return EV_QUIT;
     }
 
-    if (!isPaused()) {
-#if 0
-        auto *aud = (SDL2Audio *) getAudio();
-        int buffer_size = getAudio()->getBufferSize();
-        int queued = SDL_GetQueuedAudioSize(aud->getDeviceID());
-
-        if (queued < buffer_size) {
-            int need = buffer_size - queued;
-            while (need > 0) {
-                int ret = Kit_GetPlayerAudioData(
-                        player,
-                        (unsigned char *) getAudio()->getBuffer(),
-                        buffer_size);
-                need -= ret;
-                if (ret > 0) {
-                    SDL_QueueAudio(aud->getDeviceID(), getAudio()->getBuffer(), ret);
-                } else {
-                    break;
-                }
-            }
-            // If we now have data, start playback (again)
-            if (SDL_GetQueuedAudioSize(aud->getDeviceID()) > 0) {
-                SDL_PauseAudioDevice(aud->getDeviceID(), 0);
-            }
+    // player controls
+    if (players[0].state & c2d::Input::Key::KEY_LEFT) {
+        double position = Kit_GetPlayerPosition(player);
+        double duration = Kit_GetPlayerDuration(player);
+        printf("Kit_PlayerSeek(pos=%f, dur=%f\n", position, duration);
+        Kit_PlayerSeek(player, position - 10.0);
+        getUi()->getInput()->clear(0);
+    } else if (players[0].state & c2d::Input::Key::KEY_RIGHT) {
+        double position = Kit_GetPlayerPosition(player);
+        double duration = Kit_GetPlayerDuration(player);
+        printf("Kit_PlayerSeek(pos=%f, dur=%f\n", position, duration);
+        if (position + 10.0 < duration) {
+            Kit_PlayerSeek(player, position + 10.0);
+            getUi()->getInput()->clear(0);
         }
-#endif
+    }
+
+    if (!isPaused()) {
+
+        if (Kit_GetPlayerState(player) == KIT_STOPPED) {
+            printf("STOPPED\n");
+            stop();
+            return UI_KEY_SHOW_ROMLIST;
+        }
+        if (Kit_GetPlayerState(player) == KIT_PAUSED) {
+            printf("PAUSED\n");
+        }
+        if (Kit_GetPlayerState(player) == KIT_CLOSED) {
+            printf("CLOSED\n");
+        }
+
         // audio
         int queued = SDL_GetQueuedAudioSize(audio_dev);
         if (queued < AUDIOBUFFER_SIZE) {
