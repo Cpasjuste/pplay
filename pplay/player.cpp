@@ -73,8 +73,9 @@ int Player::run(RomList::Rom *rom) {
         return 1;
     }
 
-    printf("video(%s): %i x %i , audio(%s): %i\n",
+    printf("video(%s, %s): %i x %i , audio(%s): %i\n",
            player_info.video.codec.name,
+           SDL_GetPixelFormatName(player_info.video.output.format),
            player_info.video.output.width, player_info.video.output.height,
            player_info.audio.codec.name,
            player_info.audio.output.samplerate);
@@ -149,6 +150,21 @@ void Player::stop() {
     if (audio_dev) {
         SDL_CloseAudioDevice(audio_dev);
     }
+
+    restore_context();
+
+    UIEmu::stop();
+}
+
+void Player::pause() {
+
+    restore_context();
+    UIEmu::pause();
+}
+
+void Player::resume() {
+
+    UIEmu::resume();
 }
 
 int Player::update() {
@@ -181,34 +197,37 @@ int Player::update() {
         getVideo()->updateScaling();
     }
 
-#if 0
-    auto *aud = (SDL2Audio *) getAudio();
-    int buffer_size = getAudio()->getBufferSize();
-    int queued = SDL_GetQueuedAudioSize(aud->getDeviceID());
-
-    if (queued < buffer_size) {
-        int need = buffer_size - queued;
-        while (need > 0) {
-            int ret = Kit_GetPlayerAudioData(
-                    player,
-                    (unsigned char *) getAudio()->getBuffer(),
-                    buffer_size);
-            need -= ret;
-            if (ret > 0) {
-                SDL_QueueAudio(aud->getDeviceID(), getAudio()->getBuffer(), ret);
-            } else {
-                break;
-            }
-        }
-        // If we now have data, start playback (again)
-        if (SDL_GetQueuedAudioSize(aud->getDeviceID()) > 0) {
-            SDL_PauseAudioDevice(aud->getDeviceID(), 0);
-        }
+    if (players[0].state & EV_QUIT) {
+        stop();
+        return EV_QUIT;
     }
-#endif
 
     if (!isPaused()) {
+#if 0
+        auto *aud = (SDL2Audio *) getAudio();
+        int buffer_size = getAudio()->getBufferSize();
+        int queued = SDL_GetQueuedAudioSize(aud->getDeviceID());
 
+        if (queued < buffer_size) {
+            int need = buffer_size - queued;
+            while (need > 0) {
+                int ret = Kit_GetPlayerAudioData(
+                        player,
+                        (unsigned char *) getAudio()->getBuffer(),
+                        buffer_size);
+                need -= ret;
+                if (ret > 0) {
+                    SDL_QueueAudio(aud->getDeviceID(), getAudio()->getBuffer(), ret);
+                } else {
+                    break;
+                }
+            }
+            // If we now have data, start playback (again)
+            if (SDL_GetQueuedAudioSize(aud->getDeviceID()) > 0) {
+                SDL_PauseAudioDevice(aud->getDeviceID(), 0);
+            }
+        }
+#endif
         // audio
         int queued = SDL_GetQueuedAudioSize(audio_dev);
         if (queued < AUDIOBUFFER_SIZE) {
@@ -257,4 +276,13 @@ int Player::update() {
     }
 
     return 0;
+}
+
+void Player::restore_context() {
+
+    SDL_GLContext ctx = ((SDL2Renderer *) getUi()->getRenderer())->getContext();
+    if (SDL_GL_GetCurrentContext() != ctx) {
+        SDL_Window *window = ((SDL2Renderer *) getUi()->getRenderer())->getWindow();
+        SDL_GL_MakeCurrent(window, ctx);
+    }
 }

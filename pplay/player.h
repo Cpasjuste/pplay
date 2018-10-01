@@ -14,11 +14,16 @@ public:
 
     void stop();
 
+    void pause();
+
+    void resume();
+
     int update();
 
 private:
 
-};
+    void restore_context();
 
+};
 
 #endif //PPLAY_PLAYER_H
