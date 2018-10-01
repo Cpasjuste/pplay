@@ -2,6 +2,8 @@
 // Created by cpasjuste on 29/09/18.
 //
 
+#include <sstream>
+#include <iomanip>
 #include "c2dui.h"
 #include "player.h"
 #include "kitchensink/kitchensink.h"
@@ -22,6 +24,8 @@ static Kit_PlayerInfo player_info;
 static SDL_AudioSpec wanted_spec, audio_spec;
 static SDL_AudioDeviceID audio_dev;
 static char audiobuf[AUDIOBUFFER_SIZE];
+
+static std::string formatTime(double seconds);
 
 Player::Player(UIMain *ui) : UIEmu(ui) {
 
@@ -143,13 +147,12 @@ void Player::resume() {
 
 int Player::update() {
 
-    // fps
-    int showFps = getUi()->getConfig()->getValue(Option::Index::ROM_SHOW_FPS, true);
-    getFpsText()->setVisibility(showFps ? Visible : Hidden);
-    if (showFps) {
-        sprintf(getFpsString(), "FPS: %.2g/%2d", getUi()->getRenderer()->getFps(), 60);
-        getFpsText()->setString(getFpsString());
-    }
+    double position = Kit_GetPlayerPosition(player);
+    double duration = Kit_GetPlayerDuration(player);
+    std::string s_pos = formatTime(position);
+    std::string s_dur = formatTime(duration);
+    getFpsText()->setString(s_pos + " : " + s_dur);
+    getFpsText()->setVisibility(Visible);
 
     c2d::Input::Player *players = getUi()->getInput()->update();
 
@@ -178,16 +181,12 @@ int Player::update() {
 
     // player controls
     if (players[0].state & c2d::Input::Key::KEY_LEFT) {
-        double position = Kit_GetPlayerPosition(player);
-        double duration = Kit_GetPlayerDuration(player);
         printf("Kit_PlayerSeek(pos=%f, dur=%f\n", position, duration);
         Kit_PlayerSeek(player, position - 10.0);
         getUi()->getInput()->clear(0);
     } else if (players[0].state & c2d::Input::Key::KEY_RIGHT) {
-        double position = Kit_GetPlayerPosition(player);
-        double duration = Kit_GetPlayerDuration(player);
         printf("Kit_PlayerSeek(pos=%f, dur=%f\n", position, duration);
-        if (position + 10.0 < duration) {
+        if (position + 15.0 < duration) {
             Kit_PlayerSeek(player, position + 10.0);
             getUi()->getInput()->clear(0);
         }
@@ -234,9 +233,23 @@ int Player::update() {
         getVideo()->lock(nullptr, &video_data, nullptr);
         Kit_GetPlayerVideoDataRaw(player, video_data);
         getVideo()->unlock();
-
-        getUi()->getRenderer()->flip();
     }
 
+    getUi()->getRenderer()->flip();
+
     return 0;
+}
+
+static std::string formatTime(double seconds) {
+
+    int h((int) seconds / 3600);
+    int min((int) seconds / 60 - h * 60);
+    int sec((int) seconds - (h * 60 + min) * 60);
+
+    std::ostringstream oss;
+    oss << std::setfill('0') << std::setw(2) << h << ":";
+    oss << std::setfill('0') << std::setw(2) << min << ":";
+    oss << std::setfill('0') << std::setw(2) << sec;
+
+    return oss.str();
 }
