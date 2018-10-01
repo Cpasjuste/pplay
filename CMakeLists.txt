@@ -61,6 +61,7 @@ file(GLOB_RECURSE PPLAY_SRC
         pplay/main.cpp
         pplay/filer.cpp
         pplay/player.cpp
+        pplay/video.cpp
         SDL_kitchensink/src/*.c*
         #SDL_kitchensink/examples/example_simple.c
         )

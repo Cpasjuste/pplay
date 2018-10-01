@@ -19,11 +19,6 @@ public:
     void resume();
 
     int update();
-
-private:
-
-    void restore_context();
-
 };
 
 #endif //PPLAY_PLAYER_H

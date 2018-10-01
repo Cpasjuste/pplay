@@ -16,10 +16,8 @@ using namespace c2dui;
 
 static UIMain *uiMain = nullptr;
 
-static SDL_Renderer *renderer = nullptr;
 static Kit_Source *src = nullptr;
 static Kit_Player *player = nullptr;
-static SDL_Texture *video_tex;
 static Kit_PlayerInfo player_info;
 static SDL_AudioSpec wanted_spec, audio_spec;
 static SDL_AudioDeviceID audio_dev;
@@ -95,26 +93,11 @@ int Player::run(RomList::Rom *rom) {
     audio_dev = SDL_OpenAudioDevice(nullptr, 0, &wanted_spec, &audio_spec, 0);
     SDL_PauseAudioDevice(audio_dev, 0);
 
-    auto *r = (SDL2Renderer *) uiMain->getRenderer();
-    renderer = SDL_CreateRenderer(r->getWindow(), -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (renderer == nullptr) {
-        fprintf(stderr, "Unable to create a renderer!\n");
-        stop();
-        return 1;
-    }
-
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-    video_tex = SDL_CreateTexture(
-            renderer,
-            player_info.video.output.format,
-            SDL_TEXTUREACCESS_STATIC,
-            player_info.video.output.width,
-            player_info.video.output.height);
-    if (video_tex == nullptr) {
-        fprintf(stderr, "Error while attempting to create a video texture\n");
-        stop();
-        return 1;
-    }
+    C2DUIVideo *video = new C2DUIVideo(
+            getUi(), nullptr, nullptr,
+            {player_info.video.output.width, player_info.video.output.height},
+            C2D_TEXTURE_FMT_ABGR8);
+    addVideo(video);
 
     // Start playback
     Kit_PlayerPlay(player);
@@ -137,28 +120,15 @@ void Player::stop() {
 
     Kit_Quit();
 
-    if (video_tex) {
-        SDL_DestroyTexture(video_tex);
-        video_tex = nullptr;
-    }
-
-    if (renderer) {
-        SDL_DestroyRenderer(renderer);
-        renderer = nullptr;
-    }
-
     if (audio_dev) {
         SDL_CloseAudioDevice(audio_dev);
     }
-
-    restore_context();
 
     UIEmu::stop();
 }
 
 void Player::pause() {
 
-    restore_context();
     UIEmu::pause();
 }
 
@@ -251,38 +221,13 @@ int Player::update() {
             }
         }
 
-        // video
-        Kit_GetPlayerVideoData(player, video_tex);
+        void *video_data;
+        getVideo()->lock(nullptr, &video_data, nullptr);
+        Kit_GetPlayerVideoDataRaw(player, video_data);
+        getVideo()->unlock();
 
-        float sx, sy;
-        Vector2f screen = uiMain->getRenderer()->getSize();
-        float max_x = screen.x / (float) player_info.video.output.width;
-        float max_y = screen.y / (float) player_info.video.output.height;
-        sx = sy = max_y;
-        if (sx > max_x) {
-            sx = sy = max_x;
-        }
-
-        sx *= (float) player_info.video.output.width;
-        sy *= (float) player_info.video.output.height;
-
-        getUi()->getRenderer()->clear();
-
-        // render
-        SDL_Rect r = {(int) ((screen.x - sx) / 2.0f), (int) ((screen.y - sy) / 2.0f), (int) sx, (int) sy};
-        SDL_RenderCopy(renderer, video_tex, nullptr, &r);
-
-        getUi()->getRenderer()->flip(false);
+        getUi()->getRenderer()->flip();
     }
 
     return 0;
-}
-
-void Player::restore_context() {
-
-    SDL_GLContext ctx = ((SDL2Renderer *) getUi()->getRenderer())->getContext();
-    if (SDL_GL_GetCurrentContext() != ctx) {
-        SDL_Window *window = ((SDL2Renderer *) getUi()->getRenderer())->getWindow();
-        SDL_GL_MakeCurrent(window, ctx);
-    }
 }
