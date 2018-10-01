@@ -1,22 +1,15 @@
-./configure --prefix=/opt/devkitpro/portlib/switch \
-	--disable-shared --enable-static \
-	--enable-cross-compile --cross-prefix=aarch64-none-elf- --arch=aarch64 \
-	--pkg-config=/opt/devkitpro/portlibs/switch/bin/aarch64-none-elf-pkg-config \
-	--target-os=none --disable-asm --disable-runtime-cpudetect \
-	--disable-network --disable-doc \
-	--disable-encoders --disable-muxers --disable-avdevice \
-	--disable-avfilter --disable-filters \
-	--disable-protocols --enable-protocol=file \
-	--extra-cflags='-march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIC -ftls-model=local-exec' \
-	--extra-cxxflags='-march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIC -ftls-model=local-exec' \
-	--extra-ldflags='-fPIE -L${PORTLIBS_PREFIX}/lib -L${DEVKITPRO}/libnx/lib'
+source /opt/devkitpro/switchvars.sh
+./configure --prefix="${PORTLIBS_PREFIX}" \
+    --enable-cross-compile --cross-prefix=aarch64-none-elf- --arch=aarch64 \
+    --disable-shared --enable-static \
+    --target-os=linux \
+    --disable-encoders --disable-muxers --disable-network
 
 ./configure --prefix=/opt/devkitpro/portlib/switch \
 	--disable-shared --enable-static \
 	--enable-cross-compile --cross-prefix=aarch64-none-elf- --arch=aarch64 \
 	--pkg-config=/opt/devkitpro/portlibs/switch/bin/aarch64-none-elf-pkg-config \
 	--target-os=none --disable-asm --disable-runtime-cpudetect \
-	--disable-optimizations --disable-fast-unaligned \
 	--disable-network --disable-doc \
 	--disable-encoders --disable-muxers --disable-avdevice \
 	--disable-demuxers --enable-demuxer=h264,matroska \
@@ -30,13 +23,16 @@
 	#--disable-filters --enable-filter=rotate,transpose
 	#--disable-parsers --enable-parser=h264,aac \
 
-./configure --prefix="${PORTLIBS_PREFIX}" --cross-prefix=aarch64-none-elf- --target-os=none --arch=aarch64 --disable-shared --enable-static --disable-encoders --disable-muxers --disable-network --disable-swresample --disable-swscale
+./configure --prefix=/opt/devkitpro/portlib/switch \
+    --enable-cross-compile --cross-prefix=aarch64-none-elf- --arch=aarch64 \
+    --pkg-config=/opt/devkitpro/portlibs/switch/bin/aarch64-none-elf-pkg-config \
+    --target-os=none \
+    --disable-shared --enable-static \
+    --disable-encoders --disable-muxers --disable-network \
+    --extra-cflags='-D__SWITCH__ -march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIC -ftls-model=local-exec' \
+    --extra-cxxflags='-D__SWITCH__ -march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIC -ftls-model=local-exec' \
+    --extra-ldflags='-fPIE -L${PORTLIBS_PREFIX}/lib -L${DEVKITPRO}/libnx/lib'
 
-
-#./configure --prefix="${PORTLIBS_PREFIX}" --enable-cross-compile --cross-prefix=aarch64-none-elf- --target-os=linux --arch=aarch64 --disable-shared --enable-static --enable-small --enable-gpl --disable-encoders --disable-muxers --disable-network --disable-asm --disable-neon --disable-runtime-cpudetect --extra-cflags="-march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIE -ffunction-sections" --disable-optimizations --optflags="-O0"
-
-#--disable-optimizations 
-#--optflags=
 
 ./configure --prefix="${PORTLIBS_PREFIX}" \
       --enable-cross-compile --cross-prefix=aarch64-none-elf- \
