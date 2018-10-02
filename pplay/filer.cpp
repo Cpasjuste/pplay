@@ -1,72 +1,138 @@
 //
-// Created by cpasjuste on 29/09/18.
+// Created by cpasjuste on 12/04/18.
 //
 
-#include "c2dui.h"
+#include "main.h"
 #include "filer.h"
 
 using namespace c2d;
-using namespace c2dui;
 
-static bool sortByName(const RomList::Rom *ra, const RomList::Rom *rb) {
-    return strcasecmp(ra->name, rb->name) <= 0;
+Filer::Filer(c2d::Io *io, const std::string &path, const c2d::Font &font,
+             int fontSize, const c2d::FloatRect &rect) : Rectangle(rect) {
+
+    this->io = io;
+    this->path = path;
+    this->setFillColor(Color::Transparent);
+
+    // create current path box
+    pathRect = new C2DRectangle(FloatRect(0, 0, rect.width, fontSize + 10));
+    pathRect->setFillColor(COLOR_BG_1);
+    pathRect->setOutlineColor(Color::Orange);
+    pathRect->setOutlineThickness(2);
+    pathText = new C2DText("CURRENT PATH: /", font, (unsigned int) fontSize);
+    pathText->setOutlineThickness(2);
+    pathText->setOrigin(0, pathText->getLocalBounds().height / 2);
+    pathText->setPosition(4, (pathRect->getSize().y / 2) - 2);
+    pathText->setSizeMax(rect.width - 8, 0);
+    pathRect->add(pathText);
+    add(pathRect);
+
+    float y = pathRect->getGlobalBounds().top + pathRect->getGlobalBounds().height;
+    FloatRect listBoxRect = {0, y, rect.width, rect.height - y};
+    listBox = new ListBox(font, fontSize, listBoxRect, std::vector<Io::File>());
+    add(listBox);
+
+    getDir(path);
 }
 
-Filer::Filer(UIMain *ui, const std::string &emuVersion) : RomList(ui, emuVersion) {
-    printf("Filer::Filer()\n");
-}
+bool Filer::getDir(const std::string &p) {
 
-void Filer::build() {
-
-    printf("Filer::build()\n");
-
-    bool use_icons = ui->getConfig()->getValue(Option::Index::GUI_SHOW_ICONS) == 1;
-
-    for (auto &fileList : files) {
-
-        if (fileList.empty()) {
-            continue;
-        }
-
-        for (auto &file : fileList) {
-            //if (!Utility::endsWith(file, ".zip")
-            //    && !Utility::endsWith(file, ".nes")) {
-            //    continue;
-            //}
-            auto *rom = new Rom();
-            rom->name = rom->drv_name = file.c_str();
-            rom->path = file.c_str();
-            rom->state = RomState::WORKING;
-            hardwareList->at(0).supported_count++;
-            hardwareList->at(0).available_count++;
-            rom->color = COL_GREEN;
-            // load icon if needed, only for parent roms
-            if (use_icons && !rom->parent) {
-                // try removing the extension (drv_name has extension (.zip, .smc) with psnes and no db.xml)
-                char *drv_name_no_ext = Utility::removeExt(rom->drv_name, '/');
-                if (drv_name_no_ext) {
-                    snprintf(icon_path, 1023, "%sicons/%s.png",
-                             ui->getConfig()->getHomePath()->c_str(), drv_name_no_ext);
-                    if (ui->getIo()->exist(icon_path)) {
-                        rom->icon = new C2DTexture(icon_path);
-                        rom->icon->setDeleteMode(C2DObject::DeleteMode::Manual);
-                        if (!rom->icon->available) {
-                            delete (rom->icon);
-                            rom->icon = nullptr;
-                        }
-                    }
-                    free(drv_name_no_ext);
-                }
-            }
-            list.push_back(rom);
-        }
+    if (io->getType(p) != Io::Type::Directory) {
+        printf("getDir(%s): not a directory\n", p.c_str());
+        return false;
     }
 
-    std::sort(list.begin(), list.end(), sortByName);
+    printf("getDir(%s)\n", p.c_str());
 
-    // cleanup
-    RomList::build();
+    path = p;
+    index = 0;
+    files = io->getDirList(path, true);
+    // change colors...
+    for (auto &file : files) {
+        file.color = file.type ==
+                     Io::Type::Directory ? Color::Red : Color::Blue;
+    }
+
+    listBox->setFiles(files);
+    listBox->setSelection(0);
+
+    pathText->setString(this->path);
+
+    return true;
+}
+
+std::string Filer::getPath() {
+    return path;
+}
+
+void Filer::down() {
+    index++;
+    if (index >= (int) listBox->getFiles().size()) {
+        index = 0;
+    }
+    listBox->setSelection(index);
+}
+
+void Filer::up() {
+    index--;
+    if (index < 0)
+        index = (int) (listBox->getFiles().size() - 1);
+    listBox->setSelection(index);
+}
+
+void Filer::left() {
+    index -= listBox->getMaxLines();
+    if (index < 0)
+        index = 0;
+    listBox->setSelection(index);
+}
+
+void Filer::right() {
+    index += listBox->getMaxLines();
+    if (index >= (int) listBox->getFiles().size())
+        index = (int) (listBox->getFiles().size() - 1);
+    listBox->setSelection(index);
+}
+
+void Filer::enter() {
+
+    if (listBox->getSelection().name == "..") {
+        exit();
+        return;
+    }
+
+    if (path == "/") {
+        getDir(path + listBox->getSelection().name);
+    } else {
+        getDir(path + "/" + listBox->getSelection().name);
+    }
+}
+
+void Filer::exit() {
+
+    if (path == "/" || path.find('/') == std::string::npos) {
+        return;
+    }
+
+    while (path.back() != '/') {
+        path.erase(path.size() - 1);
+    }
+
+    if (path.size() > 1 && endWith(path, "/")) {
+        path.erase(path.size() - 1);
+    }
+
+    getDir(path);
+}
+
+bool Filer::endWith(std::string const &fullString, std::string const &ending) {
+    if (fullString.length() >= ending.length()) {
+        return (0 == fullString.compare(fullString.length() - ending.length(), ending.length(), ending));
+    } else {
+        return false;
+    }
 }
 
 Filer::~Filer() {
+    files.clear();
 }

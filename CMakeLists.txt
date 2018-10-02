@@ -44,6 +44,7 @@ project(pplay)
 # pplay
 ##############
 set(PPLAY_INC
+        pplay
         SDL_kitchensink/include
         SDL_kitchensink/include/kitchensink
         SDL_kitchensink/include/kitchensink/internal
@@ -51,8 +52,8 @@ set(PPLAY_INC
         )
 file(GLOB_RECURSE PPLAY_SRC
         pplay/main.cpp
+        pplay/filer.cpp
         SDL_kitchensink/src/*.c*
-        #SDL_kitchensink/examples/example_simple.c
         )
 
 set(PPLAY_CFLAGS
@@ -66,10 +67,8 @@ if (BUILD_DEBUG)
 endif (BUILD_DEBUG)
 
 set(PPLAY_LDFLAGS
-        #swscale swresample avdevice avfilter avformat avcodec avutil
         swscale swresample avformat avcodec avutil ass fribidi
-        m png z
-        )
+        m png z)
 
 #####################
 # PLATORM SPECIFIC
@@ -92,7 +91,7 @@ add_executable(${CMAKE_PROJECT_NAME}.elf ${PPLAY_SRC})
 target_include_directories(${CMAKE_PROJECT_NAME}.elf PRIVATE ${PPLAY_INC})
 target_compile_options(${CMAKE_PROJECT_NAME}.elf PRIVATE ${PPLAY_CFLAGS})
 target_compile_options(${CMAKE_PROJECT_NAME}.elf PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>)
-target_link_libraries(${CMAKE_PROJECT_NAME}.elf cross2dui ${PPLAY_LDFLAGS})
+target_link_libraries(${CMAKE_PROJECT_NAME}.elf cross2d ${PPLAY_LDFLAGS})
 
 #####################
 # NX (SWITCH) target

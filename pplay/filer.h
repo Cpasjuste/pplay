@@ -1,22 +1,48 @@
 //
-// Created by cpasjuste on 29/09/18.
+// Created by cpasjuste on 12/04/18.
 //
 
-#ifndef PPLAY_FILER_H
-#define PPLAY_FILER_H
+#ifndef NXFILER_FILER_H
+#define NXFILER_FILER_H
 
-class Filer : public c2dui::RomList {
+#include "c2d.h"
+
+class Filer : public c2d::Rectangle {
 
 public:
-    Filer(c2dui::UIMain *ui, const std::string &emuVersion);
+
+    Filer(c2d::Io *io, const std::string &path, const c2d::Font &font,
+          int fontSize, const c2d::FloatRect &rect);
 
     ~Filer();
 
-    void build() override;
+    bool getDir(const std::string &path);
 
-    bool isHardware(int hardware, int type) override {
-        return true;
-    }
+    std::string getPath();
+
+    void down();
+
+    void up();
+
+    void left();
+
+    void right();
+
+    void enter();
+
+    void exit();
+
+private:
+
+    std::string path;
+    std::vector<c2d::Io::File> files;
+    c2d::Io *io;
+    c2d::ListBox *listBox;
+    c2d::Rectangle *pathRect;
+    c2d::Text *pathText;
+    int index = 0;
+
+    bool endWith(std::string const &fullString, std::string const &ending);
 };
 
-#endif //PPLAY_FILER_H
+#endif //NXFILER_FILER_H

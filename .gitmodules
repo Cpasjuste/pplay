@@ -1,3 +1,6 @@
 [submodule "SDL_kitchensink"]
 	path = SDL_kitchensink
 	url = git@gitlab.com:cpasjuste/SDL_kitchensink.git
+[submodule "libcross2d"]
+	path = libcross2d
+	url = git@gitlab.com:cpasjuste/libcross2d.git
