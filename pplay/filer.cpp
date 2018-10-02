@@ -65,6 +65,22 @@ std::string Filer::getPath() {
     return path;
 }
 
+void Filer::processInput(unsigned int keys) {
+    if (keys & Input::Key::KEY_UP) {
+        up();
+    } else if (keys & Input::Key::KEY_DOWN) {
+        down();
+    } else if (keys & Input::Key::KEY_RIGHT) {
+        right();
+    } else if (keys & Input::Key::KEY_LEFT) {
+        left();
+    } else if (keys & Input::Key::KEY_FIRE1) {
+        enter();
+    } else if (keys & Input::Key::KEY_FIRE2) {
+        exit();
+    }
+}
+
 void Filer::down() {
     index++;
     if (index >= (int) listBox->getFiles().size()) {
@@ -136,3 +152,4 @@ bool Filer::endWith(std::string const &fullString, std::string const &ending) {
 Filer::~Filer() {
     files.clear();
 }
+

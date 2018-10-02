@@ -20,6 +20,8 @@ public:
 
     std::string getPath();
 
+    void processInput(unsigned int keys);
+
     void down();
 
     void up();
