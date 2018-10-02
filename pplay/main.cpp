@@ -12,12 +12,14 @@ Main::Main() {
 
     // create main renderer
     renderer = new C2DRenderer(Vector2f(1280, 720));
-    renderer->setFillColor(COLOR_BG_0);
+    renderer->setFillColor(COLOR_GRAY);
 
     // create a font
     font = new Font();
-    font->loadFromMemory(font_default, font_default_length);
-    font->setYOffset(-5);
+    font->setFiltering(C2D_TEXTURE_FILTER_POINT);
+    font->loadFromFile("./skin/OpenSans-CondBold.ttf");
+    //font->loadFromFile("./skin/OpenSans-Regular.ttf");
+    font->setYOffset(-3);
 
     // create io
     io = new C2DIo();
@@ -31,22 +33,22 @@ Main::Main() {
     timer = new C2DClock();
 
     // create a rect
-    Rectangle *rect = new C2DRectangle({renderer->getSize().x - 4, renderer->getSize().y - 4});
-    rect->setPosition(2, 2);
+    Rectangle *rect = new C2DRectangle({renderer->getSize().x - 8, renderer->getSize().y - 8});
+    rect->setPosition(4, 4);
     rect->setFillColor(Color::Transparent);
-    rect->setOutlineColor(Color::Orange);
-    rect->setOutlineThickness(2);
+    rect->setOutlineColor(COLOR_BLUE);
+    rect->setOutlineThickness(4);
 
     filer = new Filer(io, "/", *font, FONT_SIZE,
                       {rect->getPosition().x + 16, rect->getPosition().y + 16,
-                       (rect->getSize().x / 2) - 16, rect->getSize().y - 32});
+                       (rect->getSize().x / 2) - 16, rect->getSize().y - 40});
     rect->add(filer);
 
     // add all this crap to the renderer
     renderer->add(rect);
 
     input->setRepeatEnable(true);
-    input->setRepeatDelay(100);
+    input->setRepeatDelay(INPUT_DELAY);
 }
 
 void Main::run() {
@@ -66,7 +68,11 @@ void Main::run() {
                 //break;
             }
 
-            filer->processInput(keys);
+            int fire_press = (keys & Input::Key::KEY_FIRE1);
+            Io::File file = filer->processInput(keys);
+            if (fire_press && file.type == Io::Type::File) {
+                printf("file: %s\n", file.path.c_str());
+            }
         }
 
         renderer->flip();

@@ -15,21 +15,63 @@ Filer::Filer(c2d::Io *io, const std::string &path, const c2d::Font &font,
     this->setFillColor(Color::Transparent);
 
     // create current path box
-    pathRect = new C2DRectangle(FloatRect(0, 0, rect.width, fontSize + 10));
-    pathRect->setFillColor(COLOR_BG_1);
-    pathRect->setOutlineColor(Color::Orange);
-    pathRect->setOutlineThickness(2);
+    FloatRect r = {0, 0, rect.width, fontSize + 10};
+    pathRect = new C2DRectangle(r);
+    pathRect->setFillColor(COLOR_BLUE);
+    pathRect->setOutlineColor(COLOR_PURPLE);
+    pathRect->setOutlineThickness(4);
     pathText = new C2DText("CURRENT PATH: /", font, (unsigned int) fontSize);
     pathText->setOutlineThickness(2);
     pathText->setOrigin(0, pathText->getLocalBounds().height / 2);
-    pathText->setPosition(4, (pathRect->getSize().y / 2) - 2);
+    pathText->setPosition(4, (pathRect->getSize().y / 2) - 4);
     pathText->setSizeMax(rect.width - 8, 0);
     pathRect->add(pathText);
+
+    Rectangle *border = new Rectangle(pathRect->getLocalBounds());
+    border->setFillColor(Color::Transparent);
+    border->setOutlineColor(Color::Black);
+    border->setOutlineThickness(1);
+    border->setSize(r.width + 8, r.height + 8);
+    pathRect->add(border);
+
+    border = new Rectangle(pathRect->getLocalBounds());
+    border->setFillColor(Color::Transparent);
+    border->setOutlineColor(Color::Black);
+    border->setOutlineThickness(1);
+    border->setSize(r.width - 2, r.height - 2);
+    border->move(5, 5);
+    pathRect->add(border);
+
     add(pathRect);
 
     float y = pathRect->getGlobalBounds().top + pathRect->getGlobalBounds().height;
-    FloatRect listBoxRect = {0, y, rect.width, rect.height - y};
-    listBox = new ListBox(font, fontSize, listBoxRect, std::vector<Io::File>());
+    r = {0, y + 8, rect.width, rect.height - y};
+    listBox = new ListBox(font, fontSize, r, std::vector<Io::File>());
+    listBox->setFillColor(COLOR_GRAY_LIGHT);
+    listBox->setOutlineColor(COLOR_BLUE);
+    listBox->setOutlineThickness(4);
+    listBox->setTextOutlineThickness(2);
+    listBox->setHighlightThickness(2);
+    listBox->setHighlightColor(COLOR_GRAY);
+    listBox->setHighlightUseFileColor(false);
+    auto *tween = new TweenAlpha(50, 100, 0.6f, TweenLoop::PingPong);
+    listBox->setHighlightTween(tween);
+
+    border = new Rectangle(listBox->getLocalBounds());
+    border->setFillColor(Color::Transparent);
+    border->setOutlineColor(Color::Black);
+    border->setOutlineThickness(1);
+    border->setSize(r.width + 8, r.height + 8);
+    listBox->add(border);
+
+    border = new Rectangle(listBox->getLocalBounds());
+    border->setFillColor(Color::Transparent);
+    border->setOutlineColor(Color::Black);
+    border->setOutlineThickness(1);
+    border->setSize(r.width - 2, r.height - 2);
+    border->move(5, 5);
+    listBox->add(border);
+
     add(listBox);
 
     getDir(path);
@@ -38,7 +80,6 @@ Filer::Filer(c2d::Io *io, const std::string &path, const c2d::Font &font,
 bool Filer::getDir(const std::string &p) {
 
     if (io->getType(p) != Io::Type::Directory) {
-        printf("getDir(%s): not a directory\n", p.c_str());
         return false;
     }
 
@@ -47,10 +88,15 @@ bool Filer::getDir(const std::string &p) {
     path = p;
     index = 0;
     files = io->getDirList(path, true);
-    // change colors...
+    if (files.empty()) {
+        Io::File file;
+        file.type = Io::Type::Directory;
+        file.name = "..";
+        files.push_back(file);
+    }
     for (auto &file : files) {
-        file.color = file.type ==
-                     Io::Type::Directory ? Color::Red : Color::Blue;
+        file.color = file.type == Io::Type::Directory ?
+                     COLOR_BLUE_LIGHT : Color::White;
     }
 
     listBox->setFiles(files);
@@ -65,7 +111,8 @@ std::string Filer::getPath() {
     return path;
 }
 
-void Filer::processInput(unsigned int keys) {
+Io::File Filer::processInput(unsigned int keys) {
+
     if (keys & Input::Key::KEY_UP) {
         up();
     } else if (keys & Input::Key::KEY_DOWN) {
@@ -79,6 +126,12 @@ void Filer::processInput(unsigned int keys) {
     } else if (keys & Input::Key::KEY_FIRE2) {
         exit();
     }
+
+    return listBox->getSelection();
+}
+
+c2d::Io::File Filer::getSelection() {
+    return listBox->getSelection();
 }
 
 void Filer::down() {
@@ -141,9 +194,9 @@ void Filer::exit() {
     getDir(path);
 }
 
-bool Filer::endWith(std::string const &fullString, std::string const &ending) {
-    if (fullString.length() >= ending.length()) {
-        return (0 == fullString.compare(fullString.length() - ending.length(), ending.length(), ending));
+bool Filer::endWith(std::string const &str, std::string const &ending) {
+    if (str.length() >= ending.length()) {
+        return (0 == str.compare(str.length() - ending.length(), ending.length(), ending));
     } else {
         return false;
     }
@@ -152,4 +205,3 @@ bool Filer::endWith(std::string const &fullString, std::string const &ending) {
 Filer::~Filer() {
     files.clear();
 }
-

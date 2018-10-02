@@ -9,10 +9,16 @@
 #include "filer.h"
 
 #define INPUT_DELAY 150
-#define FONT_SIZE 25
+#define FONT_SIZE 30
 
-#define COLOR_BG_0  Color(0xbdc3c7ff)
-#define COLOR_BG_1  Color(0xecf0f1ff)
+#define COLOR_GRAY          Color(0x636e72ff)
+#define COLOR_GRAY_LIGHT    Color(0xb2bec3ff)
+#define COLOR_BLUE          Color(0x0984e3ff)
+#define COLOR_BLUE_LIGHT    Color(0x74b9ffff)
+#define COLOR_PURPLE        Color(0x6c5ce7ff)
+#define COLOR_PURPLE_LIGHT  Color(0xa29bfeff)
+#define COLOR_GREEN         Color(0x00b894ff)
+#define COLOR_GREEN_LIGHT   Color(0x55efc4ff)
 
 class Main {
 

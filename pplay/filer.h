@@ -20,7 +20,9 @@ public:
 
     std::string getPath();
 
-    void processInput(unsigned int keys);
+    c2d::Io::File processInput(unsigned int keys);
+
+    c2d::Io::File getSelection();
 
     void down();
 
@@ -44,7 +46,7 @@ private:
     c2d::Text *pathText;
     int index = 0;
 
-    bool endWith(std::string const &fullString, std::string const &ending);
+    bool endWith(std::string const &str, std::string const &ending);
 };
 
 #endif //NXFILER_FILER_H
