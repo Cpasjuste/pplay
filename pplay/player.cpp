@@ -4,9 +4,28 @@
 
 #include <sstream>
 #include <iomanip>
+
 #include "c2dui.h"
 #include "player.h"
 #include "kitchensink/kitchensink.h"
+
+#define __SDL_KITCH__ 1
+
+#ifndef __SDL_KITCH__
+extern "C" {
+#include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
+#include <libavutil/imgutils.h>
+}
+static AVFormatContext *ctx_format;
+static AVCodecContext *ctx_codec;
+static AVCodec *codec;
+static AVFrame *frame;
+static SwsContext *ctx_sws;
+static AVStream *vid_stream;
+static AVPacket *pkt;
+int stream_idx;
+#endif
 
 #define AUDIOBUFFER_SIZE (1024 * 64)
 #define ATLAS_WIDTH 4096
@@ -35,6 +54,62 @@ Player::Player(UIMain *ui) : UIEmu(ui) {
 
 int Player::run(RomList::Rom *rom) {
 
+    std::string file = std::string(*getUi()->getConfig()->getRomPath(0) + rom->path);
+
+#ifndef __SDL_KITCH__
+    av_log_set_level(AV_LOG_VERBOSE);
+    int ret = avformat_open_input(&ctx_format, file.c_str(), NULL, NULL);
+    if (ret != 0) {
+        printf("Error opening file. Is it a valid video?\n");
+        return -1;
+    }
+
+    if (avformat_find_stream_info(ctx_format, NULL) < 0) {
+        printf("Error finding stream info.\n");
+        return -1;
+    }
+
+    av_dump_format(ctx_format, 0, file.c_str(), false);
+
+    for (unsigned int i = 0; i < ctx_format->nb_streams; i++) {
+        if (ctx_format->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+            stream_idx = i;
+            vid_stream = ctx_format->streams[i];
+            break;
+        }
+    }
+    if (!vid_stream) {
+        printf("Error getting video stream.\n");
+        return -1;
+    }
+
+    codec = avcodec_find_decoder(vid_stream->codecpar->codec_id);
+    if (!codec) {
+        printf("Error finding a decoder (strange)");
+        return -1;
+    }
+
+    ctx_codec = avcodec_alloc_context3(codec);
+    if (avcodec_parameters_to_context(ctx_codec, vid_stream->codecpar) < 0) {
+        printf("Error sending parameters to codec context.");
+        return -1;
+    }
+
+    if (avcodec_open2(ctx_codec, codec, NULL) < 0) {
+        printf("Error opening codec with context.");
+        return -1;
+    }
+
+    frame = av_frame_alloc();
+    pkt = av_packet_alloc();
+
+    C2DUIVideo *video = new C2DUIVideo(
+            getUi(), nullptr, nullptr,
+            {vid_stream->codecpar->width, vid_stream->codecpar->height},
+            C2D_TEXTURE_FMT_RGB565);
+    video->setFiltering(C2D_TEXTURE_FILTER_LINEAR);
+    addVideo(video);
+#else
     int err = Kit_Init(KIT_INIT_ASS);
     if (err != 0) {
         fprintf(stderr, "Unable to initialize Kitchensink: %s\n", Kit_GetError());
@@ -43,7 +118,6 @@ int Player::run(RomList::Rom *rom) {
     }
 
     // Open up the sourcefile.
-    std::string file = std::string(*getUi()->getConfig()->getRomPath(0) + rom->path);
     src = Kit_CreateSourceFromUrl(file.c_str());
     if (src == nullptr) {
         fprintf(stderr, "Unable to load file '%s': %s\n", file.c_str(), Kit_GetError());
@@ -106,12 +180,14 @@ int Player::run(RomList::Rom *rom) {
 
     // Start playback
     Kit_PlayerPlay(player);
+#endif
 
     return UIEmu::run(rom);
 }
 
 void Player::stop() {
 
+#ifdef __SDL_KITCH__
     if (player) {
         Kit_PlayerStop(player);
         Kit_ClosePlayer(player);
@@ -129,7 +205,13 @@ void Player::stop() {
         SDL_CloseAudioDevice(audio_dev);
         audio_dev = 0;
     }
-
+#else
+    avformat_close_input(&ctx_format);
+    av_packet_unref(pkt);
+    av_frame_unref(frame);
+    avcodec_free_context(&ctx_codec);
+    avformat_free_context(ctx_format);
+#endif
     UIEmu::stop();
 }
 
@@ -179,6 +261,39 @@ int Player::update() {
         return EV_QUIT;
     }
 
+#ifndef __SDL_KITCH__
+    if (av_read_frame(ctx_format, pkt) >= 0) {
+        if (pkt->stream_index == stream_idx) {
+
+            int ret = avcodec_send_packet(ctx_codec, pkt);
+            if (ret < 0 || ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+                getUi()->getRenderer()->flip();
+                return 0;
+            }
+
+            while (ret >= 0) {
+
+                ret = avcodec_receive_frame(ctx_codec, frame);
+                if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+                    break;
+                }
+
+                ctx_sws = sws_getContext(
+                        frame->width, frame->height,
+                        ctx_codec->pix_fmt, frame->width, frame->height,
+                        AV_PIX_FMT_RGB565, SWS_FAST_BILINEAR, nullptr, nullptr, nullptr);
+
+                int pitch;
+                uint8_t *data[4];
+                getVideo()->lock(nullptr, (void **) &data[0], &pitch);
+                int linesize[4] = {pitch, 0, 0, 0};
+                sws_scale(ctx_sws, frame->data, frame->linesize, 0,
+                          frame->height, data, linesize);
+                getVideo()->unlock();
+            }
+        }
+    }
+#else
     // player controls
     if (players[0].state & c2d::Input::Key::KEY_LEFT) {
         printf("Kit_PlayerSeek(pos=%f, dur=%f\n", position, duration);
@@ -234,6 +349,7 @@ int Player::update() {
         Kit_GetPlayerVideoDataRaw(player, video_data);
         getVideo()->unlock();
     }
+#endif
 
     getUi()->getRenderer()->flip();
 

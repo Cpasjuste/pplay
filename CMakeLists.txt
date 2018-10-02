@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
-# psnes version
+# pplay version
 set(PPLAY_VERSION_MAJOR 1)
 set(PPLAY_VERSION_MINOR 0)
 
@@ -9,16 +9,12 @@ set(PPLAY_VERSION_MINOR 0)
 set(BUILD_SFML OFF CACHE BOOL "Build with SFML support")
 set(BUILD_SDL1 OFF CACHE BOOL "Build with SDL1 support (software, osmesa) support")
 set(BUILD_SDL1_GL OFF CACHE BOOL "Build with SDL1 support (hardware rendering, fast, needs BUILD_SDL1=ON)")
-set(BUILD_SDL2 OFF CACHE BOOL "Build with SDL2 (software) support")
-set(BUILD_SDL2_GL OFF CACHE BOOL "Build with SDL2 support (hardware rendering, fast, needs BUILD_SDL2=ON)")
+set(BUILD_SDL2 ON CACHE BOOL "Build with SDL2 (software) support")
+set(BUILD_SDL2_GL ON CACHE BOOL "Build with SDL2 support (hardware rendering, fast, needs BUILD_SDL2=ON)")
 set(BUILD_PSP2 OFF CACHE BOOL "Build with PSP2 support")
 set(BUILD_PS3 OFF CACHE BOOL "Build with PS3 support")
 set(BUILD_3DS OFF CACHE BOOL "Build with 3DS support")
-set(BUILD_NX ON CACHE BOOL "Build with NX (SWITCH) support")
-
-set(BUILD_PFBA OFF CACHE BOOL "Build with PFBA support")
-set(BUILD_SNES9X OFF CACHE BOOL "Build with SNES9X support")
-set(BUILD_PPLAY ON CACHE BOOL "Build with PPLAY support")
+set(BUILD_NX OFF CACHE BOOL "Build with NX (SWITCH) support")
 
 set(UPDATE_CONFIG OFF CACHE BOOL "Force config file updating")
 
@@ -26,17 +22,15 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(BUILD_DEBUG true CACHE BOOL "Debug build")
 endif ()
 
-# add libcross2d/libcross2dui library. If you want to port pfba to another platform,
-# you should (may) only need to port libcross2d library.
-include(libcross2dui/libcross2d/Toolchain.cmake)
-add_subdirectory(libcross2dui)
+include(libcross2d/Toolchain.cmake)
+add_subdirectory(libcross2d)
 SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS)
 
 execute_process(COMMAND "date" "+%Y.%m.%d" OUTPUT_VARIABLE BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 set(KIT_VERSION_MAJOR "1")
 set(KIT_VERSION_MINOR "0")
-set(KIT_VERSION_PATCH "5")
+set(KIT_VERSION_PATCH "6")
 set(KIT_VERSION ${KIT_VERSION_MAJOR}.${KIT_VERSION_MINOR}.${KIT_VERSION_PATCH})
 add_definitions(
         -DKIT_VERSION_MAJOR=${KIT_VERSION_MAJOR}
@@ -49,8 +43,6 @@ project(pplay)
 ##############
 # pplay
 ##############
-#set(PPLAY_INC pplay)
-#file(GLOB PPLAY_SRC pplay/*.c*)
 set(PPLAY_INC
         SDL_kitchensink/include
         SDL_kitchensink/include/kitchensink
@@ -59,9 +51,6 @@ set(PPLAY_INC
         )
 file(GLOB_RECURSE PPLAY_SRC
         pplay/main.cpp
-        pplay/filer.cpp
-        pplay/player.cpp
-        pplay/video.cpp
         SDL_kitchensink/src/*.c*
         #SDL_kitchensink/examples/example_simple.c
         )
@@ -118,10 +107,7 @@ if (BUILD_NX)
             DEPENDS ${PROJECT_NAME}.nro
             COMMAND rm -rf ${CMAKE_BINARY_DIR}/release/pplay
             COMMAND mkdir -p ${CMAKE_BINARY_DIR}/release/pplay
-            COMMAND mkdir -p ${CMAKE_BINARY_DIR}/release/pplay/roms
-            COMMAND mkdir -p ${CMAKE_BINARY_DIR}/release/pplay/titles
-            COMMAND mkdir -p ${CMAKE_BINARY_DIR}/release/pplay/previews
-            COMMAND mkdir -p ${CMAKE_BINARY_DIR}/release/pplay/icons
+            COMMAND mkdir -p ${CMAKE_BINARY_DIR}/release/pplay/media
             COMMAND cp -f ${CMAKE_BINARY_DIR}/pplay.nro ${CMAKE_BINARY_DIR}/release/pplay/pplay.nro
             COMMAND cp -r ${CMAKE_SOURCE_DIR}/pplay/data/skin ${CMAKE_BINARY_DIR}/release/pplay/
             COMMAND cp -r ${CMAKE_SOURCE_DIR}/pplay/data/nx/skin ${CMAKE_BINARY_DIR}/release/pplay/
