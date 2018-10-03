@@ -10,6 +10,7 @@
 #define AUDIO_BUFFER_SIZE (1024 * 64)
 
 class Main;
+class PlayerOSD;
 
 class Player : public c2d::Rectangle {
 
@@ -29,9 +30,12 @@ public:
 
     void stop();
 
+    Main *getMain();
+
 private:
 
     Main *main = nullptr;
+    PlayerOSD *osd = nullptr;
     c2d::Texture *texture = nullptr;
 
     Kit_Source *source = nullptr;
@@ -40,6 +44,8 @@ private:
     // audio
     SDL_AudioDeviceID audioDeviceID;
     char audioBuffer[AUDIO_BUFFER_SIZE];
+
+    bool paused = false;
 };
 
 #endif //PPLAY_PLAYER_H

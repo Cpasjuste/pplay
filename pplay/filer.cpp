@@ -47,12 +47,12 @@ Filer::Filer(c2d::Io *io, const std::string &path, const c2d::Font &font,
     float y = pathRect->getGlobalBounds().top + pathRect->getGlobalBounds().height;
     r = {0, y + 8, rect.width, rect.height - y};
     listBox = new ListBox(font, fontSize, r, std::vector<Io::File>());
-    listBox->setFillColor(COLOR_GRAY_LIGHT);
+    listBox->setFillColor(COLOR_GRAY);
     listBox->setOutlineColor(COLOR_BLUE);
     listBox->setOutlineThickness(4);
     listBox->setTextOutlineThickness(2);
     listBox->setHighlightThickness(2);
-    listBox->setHighlightColor(COLOR_GRAY);
+    listBox->setHighlightColor(COLOR_GRAY_LIGHT);
     listBox->setHighlightUseFileColor(false);
     auto *tween = new TweenAlpha(50, 100, 0.6f, TweenLoop::PingPong);
     listBox->setHighlightTween(tween);

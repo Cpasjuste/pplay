@@ -8,12 +8,15 @@
 #include "c2d.h"
 #include "filer.h"
 #include "player.h"
+#include "player_osd.h"
 
-#define INPUT_DELAY 150
+#define INPUT_DELAY 200
 #define FONT_SIZE 30
 
+#define COLOR_CLOUD         Color(0xecf0f1ff)
 #define COLOR_GRAY          Color(0x636e72ff)
 #define COLOR_GRAY_LIGHT    Color(0xb2bec3ff)
+#define COLOR_GRAY_DARK     Color(0x2d3436ff)
 #define COLOR_BLUE          Color(0x0984e3ff)
 #define COLOR_BLUE_LIGHT    Color(0x74b9ffff)
 #define COLOR_PURPLE        Color(0x6c5ce7ff)

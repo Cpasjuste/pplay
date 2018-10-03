@@ -6,6 +6,8 @@
 #include <iomanip>
 
 #include "main.h"
+#include "player.h"
+
 
 using namespace c2d;
 
@@ -14,6 +16,8 @@ Player::Player(Main *_main) : Rectangle(_main->getRenderer()->getSize()) {
     main = _main;
     setFillColor(Color::Transparent);
 
+    osd = new PlayerOSD(this);
+    add(osd);
 }
 
 bool Player::load(const c2d::Io::File &file) {
@@ -82,6 +86,9 @@ bool Player::load(const c2d::Io::File &file) {
     texture->setFiltering(C2D_TEXTURE_FILTER_LINEAR);
     add(texture);
 
+    // osd..
+    osd->setLayer(100);
+
     // start playback
     Kit_PlayerPlay(player);
 
@@ -92,7 +99,9 @@ void Player::run() {
 
     while (true) {
 
-        // handle input
+        //////////////////
+        /// handle inputs
+        //////////////////
         unsigned int keys = main->getInput()->update()[0].state;
 
         if (keys > 0) {
@@ -102,29 +111,39 @@ void Player::run() {
                 // TODO: menu ?
             }
 
-            if (keys & EV_QUIT) { // SDL2 quit event
+            if (keys & EV_QUIT) {
                 break;
             }
 
-            if (keys & Input::Key::KEY_FIRE2) {
+            if (keys & Input::Key::KEY_FIRE1) {
+                if (paused) {
+                    osd->setVisibility(Visibility::Hidden);
+                    resume();
+                } else {
+                    pause();
+                    osd->setVisibility(Visibility::Visible);
+                }
+            } else if (keys & Input::Key::KEY_FIRE2) {
                 // TODO: ask confirmation to exit
                 break;
             }
         }
 
         /// process audio/video
-        if (Kit_GetPlayerState(player) == KIT_STOPPED) {
+        if (Kit_GetPlayerState(player) == KIT_STOPPED
+            || Kit_GetPlayerState(player) == KIT_CLOSED) {
             printf("STOPPED\n");
             break;
         }
-        if (Kit_GetPlayerState(player) == KIT_PAUSED) {
-            printf("PAUSED\n");
-        }
-        if (Kit_GetPlayerState(player) == KIT_CLOSED) {
-            printf("CLOSED\n");
-            break;
+
+        if (paused) {
+            main->getRenderer()->flip();
+            continue;
         }
 
+        //////////////////
+        /// step ffmpeg
+        //////////////////
         /// audio
         int queued = SDL_GetQueuedAudioSize(audioDeviceID);
         if (queued < AUDIO_BUFFER_SIZE) {
@@ -144,7 +163,6 @@ void Player::run() {
                 SDL_PauseAudioDevice(audioDeviceID, 0);
             }
         }
-
         /// video
         void *video_data;
         texture->lock(nullptr, &video_data, nullptr);
@@ -163,6 +181,11 @@ void Player::run() {
         texture->setPosition(getSize().x / 2.0f, getSize().y / 2.0f);
         texture->setScale(scale);
 
+        // handle osd
+        double position = Kit_GetPlayerPosition(player);
+        double duration = Kit_GetPlayerDuration(player);
+        osd->setProgress((float) duration, (float) position);
+
         /// render
         main->getRenderer()->flip();
     }
@@ -172,20 +195,25 @@ void Player::run() {
 
 void Player::pause() {
 
-    if (player) {
+    if (player && !paused) {
         Kit_PlayerPause(player);
     }
+
+    paused = true;
 }
 
 void Player::resume() {
-    if (player) {
+
+    if (player && paused) {
         Kit_PlayerPlay(player);
     }
+
+    paused = false;
 }
 
 void Player::stop() {
 
-    // Kit
+    /// Kit
     if (player) {
         Kit_PlayerStop(player);
         Kit_ClosePlayer(player);
@@ -197,36 +225,26 @@ void Player::stop() {
     }
     Kit_Quit();
 
-    // Audio
+    /// Audio
     if (audioDeviceID) {
         SDL_CloseAudioDevice(audioDeviceID);
         audioDeviceID = 0;
     }
 
-    // Video
+    /// Video
     if (texture) {
         delete (texture);
         texture = nullptr;
     }
+
+    osd->setVisibility(Visibility::Hidden);
+    paused = false;
+}
+
+Main *Player::getMain() {
+    return main;
 }
 
 Player::~Player() {
 
 }
-
-// utils
-#if 0
-static std::string formatTime(double seconds) {
-
-    int h((int) seconds / 3600);
-    int min((int) seconds / 60 - h * 60);
-    int sec((int) seconds - (h * 60 + min) * 60);
-
-    std::ostringstream oss;
-    oss << std::setfill('0') << std::setw(2) << h << ":";
-    oss << std::setfill('0') << std::setw(2) << min << ":";
-    oss << std::setfill('0') << std::setw(2) << sec;
-
-    return oss.str();
-}
-#endif

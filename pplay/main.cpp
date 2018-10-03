@@ -11,13 +11,12 @@ Main::Main() {
 
     // create main renderer
     renderer = new C2DRenderer(Vector2f(1280, 720));
-    renderer->setFillColor(COLOR_GRAY);
+    renderer->setFillColor(COLOR_GRAY_LIGHT);
 
     // create a font
     font = new Font();
-    font->setFiltering(C2D_TEXTURE_FILTER_POINT);
-    font->loadFromFile("./skin/OpenSans-CondBold.ttf");
-    //font->loadFromFile("./skin/OpenSans-Regular.ttf");
+    font->setFiltering(C2D_TEXTURE_FILTER_LINEAR);
+    font->loadFromFile("./skin/RobotoCondensed-Bold.ttf");
     font->setYOffset(-3);
 
     // create io
@@ -86,7 +85,7 @@ void Main::run() {
                     player->run();
                     player->setVisibility(C2DObject::Hidden);
                     mainRect->setVisibility(C2DObject::Visible);
-                    renderer->setFillColor(COLOR_GRAY);
+                    renderer->setFillColor(COLOR_GRAY_LIGHT);
                 }
             }
         }
