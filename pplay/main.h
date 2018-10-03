@@ -10,7 +10,7 @@
 #include "player.h"
 #include "player_osd.h"
 
-#define INPUT_DELAY 200
+#define INPUT_DELAY 250
 #define FONT_SIZE 30
 
 #define COLOR_CLOUD         Color(0xecf0f1ff)

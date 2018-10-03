@@ -17,7 +17,7 @@ public:
 private:
     Player *player = nullptr;
     c2d::TweenAlpha *tweenAlpha = nullptr;
-    c2d::Rectangle *status = nullptr;
+    c2d::RoundedRectangle *status = nullptr;
     c2d::Progress *progress = nullptr;
     c2d::Text *remaining = nullptr;
 };

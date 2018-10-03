@@ -42,7 +42,7 @@ private:
     std::vector<c2d::Io::File> files;
     c2d::Io *io;
     c2d::ListBox *listBox;
-    c2d::Rectangle *pathRect;
+    c2d::RoundedRectangle *pathRect;
     c2d::Text *pathText;
     int index = 0;
 

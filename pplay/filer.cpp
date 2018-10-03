@@ -15,9 +15,8 @@ Filer::Filer(c2d::Io *io, const std::string &path, const c2d::Font &font,
     this->setFillColor(Color::Transparent);
 
     // create current path box
-    FloatRect r = {0, 0, rect.width, fontSize + 10};
-    pathRect = new C2DRectangle(r);
-    pathRect->setFillColor(COLOR_BLUE);
+    pathRect = new RoundedRectangle({rect.width, fontSize + 10}, 5, 4);
+    pathRect->setFillColor(COLOR_GRAY_DARK);
     pathRect->setOutlineColor(COLOR_PURPLE);
     pathRect->setOutlineThickness(4);
     pathText = new C2DText("CURRENT PATH: /", font, (unsigned int) fontSize);
@@ -27,6 +26,7 @@ Filer::Filer(c2d::Io *io, const std::string &path, const c2d::Font &font,
     pathText->setSizeMax(rect.width - 8, 0);
     pathRect->add(pathText);
 
+    /*
     Rectangle *border = new Rectangle(pathRect->getLocalBounds());
     border->setFillColor(Color::Transparent);
     border->setOutlineColor(Color::Black);
@@ -41,11 +41,12 @@ Filer::Filer(c2d::Io *io, const std::string &path, const c2d::Font &font,
     border->setSize(r.width - 2, r.height - 2);
     border->move(5, 5);
     pathRect->add(border);
+    */
 
     add(pathRect);
 
     float y = pathRect->getGlobalBounds().top + pathRect->getGlobalBounds().height;
-    r = {0, y + 8, rect.width, rect.height - y};
+    FloatRect r = {0, y + 8, rect.width, rect.height - y};
     listBox = new ListBox(font, fontSize, r, std::vector<Io::File>());
     listBox->setFillColor(COLOR_GRAY);
     listBox->setOutlineColor(COLOR_BLUE);
@@ -57,6 +58,7 @@ Filer::Filer(c2d::Io *io, const std::string &path, const c2d::Font &font,
     auto *tween = new TweenAlpha(50, 100, 0.6f, TweenLoop::PingPong);
     listBox->setHighlightTween(tween);
 
+    /*
     border = new Rectangle(listBox->getLocalBounds());
     border->setFillColor(Color::Transparent);
     border->setOutlineColor(Color::Black);
@@ -71,6 +73,7 @@ Filer::Filer(c2d::Io *io, const std::string &path, const c2d::Font &font,
     border->setSize(r.width - 2, r.height - 2);
     border->move(5, 5);
     listBox->add(border);
+    */
 
     add(listBox);
 

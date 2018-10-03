@@ -12,7 +12,7 @@ PlayerOSD::PlayerOSD(Player *p) : Rectangle(p->getSize()) {
     player = p;
     setFillColor(Color::Transparent);
 
-    status = new Rectangle({getSize().x - 256, 96});
+    status = new RoundedRectangle({getSize().x - 256, 96});
     status->setPosition(128, getSize().y - 128);
     Color color = COLOR_GRAY_DARK;
     color.a = 200;
@@ -30,13 +30,13 @@ PlayerOSD::PlayerOSD(Player *p) : Rectangle(p->getSize()) {
     progress->setOutlineColor(COLOR_GRAY_LIGHT);
     status->add(progress);
 
-    remaining = new Text("01:23:45", *player->getMain()->getFont());
-    remaining->setOriginCenter();
+    remaining = new Text("01:23:45", *player->getMain()->getFont(), 22);
+    remaining->setOrigin(remaining->getLocalBounds().width, 22 / 2);
     remaining->setPosition(
-            status->getSize().x - remaining->getLocalBounds().width / 2.0f - 10,
-            status->getSize().y / 2.0f - 6);
+            status->getSize().x - 20,
+            status->getSize().y / 2.0f - 2);
+    remaining->setOutlineThickness(1);
     status->add(remaining);
-
 
     // TODO: tween alpha not working properly ?
     //tweenAlpha = new TweenAlpha(0, 230, 5);
@@ -47,8 +47,9 @@ PlayerOSD::PlayerOSD(Player *p) : Rectangle(p->getSize()) {
 
 void PlayerOSD::setProgress(float duration, float position) {
 
-    std::string dur = Utils::formatTime(duration);
-    remaining->setString(dur);
+    std::string remain = Utils::formatTime(duration - position);
+    remaining->setString(remain);
+    remaining->setOrigin(remaining->getLocalBounds().width, 22 / 2);
     progress->setProgress(position / duration);
 }
 

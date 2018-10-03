@@ -14,7 +14,9 @@ std::string Utils::formatTime(double seconds) {
     int sec((int) seconds - (h * 60 + min) * 60);
 
     std::ostringstream oss;
-    oss << std::setfill('0') << std::setw(2) << h << ":";
+    if(h > 0) {
+        oss << std::setfill('0') << std::setw(2) << h << ":";
+    }
     oss << std::setfill('0') << std::setw(2) << min << ":";
     oss << std::setfill('0') << std::setw(2) << sec;
 

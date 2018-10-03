@@ -97,7 +97,13 @@ bool Player::load(const c2d::Io::File &file) {
 
 void Player::run() {
 
+    double position, duration;
+    main->getInput()->setRepeatDelay(1000);
+
     while (true) {
+
+        position = Kit_GetPlayerPosition(player);
+        duration = Kit_GetPlayerDuration(player);
 
         //////////////////
         /// handle inputs
@@ -107,15 +113,18 @@ void Player::run() {
         if (keys > 0) {
 
             if (((keys & c2d::Input::Key::KEY_START)
-                 && (keys & c2d::Input::Key::KEY_COIN))) {
-                // TODO: menu ?
-            }
-
-            if (keys & EV_QUIT) {
+                 || (keys & c2d::Input::Key::KEY_COIN)
+                 || (keys & EV_QUIT))) {
                 break;
             }
 
             if (keys & Input::Key::KEY_FIRE1) {
+                if (osd->getVisibility() == Visible) {
+                    osd->setVisibility(Visibility::Hidden);
+                } else {
+                    osd->setVisibility(Visibility::Visible);
+                }
+            } else if (keys & Input::Key::KEY_FIRE2) {
                 if (paused) {
                     osd->setVisibility(Visibility::Hidden);
                     resume();
@@ -123,9 +132,16 @@ void Player::run() {
                     pause();
                     osd->setVisibility(Visibility::Visible);
                 }
-            } else if (keys & Input::Key::KEY_FIRE2) {
-                // TODO: ask confirmation to exit
-                break;
+            }
+
+            if (keys & c2d::Input::Key::KEY_LEFT) {
+                printf("Kit_PlayerSeek(pos=%f, dur=%f\n", position, duration);
+                Kit_PlayerSeek(player, position - 10);
+            } else if (keys & c2d::Input::Key::KEY_RIGHT) {
+                printf("Kit_PlayerSeek(pos=%f, dur=%f\n", position, duration);
+                if (position + 10 < duration) {
+                    Kit_PlayerSeek(player, position + 10.0);
+                }
             }
         }
 
@@ -181,14 +197,14 @@ void Player::run() {
         texture->setPosition(getSize().x / 2.0f, getSize().y / 2.0f);
         texture->setScale(scale);
 
-        // handle osd
-        double position = Kit_GetPlayerPosition(player);
-        double duration = Kit_GetPlayerDuration(player);
+        // update osd
         osd->setProgress((float) duration, (float) position);
 
         /// render
         main->getRenderer()->flip();
     }
+
+    main->getInput()->setRepeatDelay(INPUT_DELAY);
 
     stop();
 }
