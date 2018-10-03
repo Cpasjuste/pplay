@@ -7,6 +7,7 @@
 
 #include "c2d.h"
 #include "filer.h"
+#include "player.h"
 
 #define INPUT_DELAY 150
 #define FONT_SIZE 30
@@ -29,13 +30,23 @@ public:
 
     void run();
 
+    c2d::Renderer *getRenderer();
+
+    c2d::Io *getIo();
+
+    c2d::Font *getFont();
+
+    c2d::Input *getInput();
+
 private:
-    c2d::Renderer *renderer;
-    c2d::Font *font;
-    c2d::Io *io;
-    c2d::Input *input;
-    c2d::Clock *timer;
-    Filer *filer;
+    c2d::Renderer *renderer = nullptr;
+    c2d::Rectangle *mainRect = nullptr;
+    c2d::Font *font = nullptr;
+    c2d::Io *io = nullptr;
+    c2d::Input *input = nullptr;
+    c2d::Clock *timer = nullptr;
+    Filer *filer = nullptr;
+    Player *player = nullptr;
 };
 
 #endif //PPLAY_MAIN_H

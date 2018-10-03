@@ -3,7 +3,6 @@
 //
 
 #include "main.h"
-#include "filer.h"
 #include "data/skin/default.h"
 
 using namespace c2d;
@@ -27,28 +26,35 @@ Main::Main() {
     // create input
     input = new C2DInput();
     input->setJoystickMapping(0, C2D_DEFAULT_JOY_KEYS, 0);
+#ifndef NO_KEYBOARD
     input->setKeyboardMapping(C2D_DEFAULT_KB_KEYS);
+#endif
 
     // create a timer
     timer = new C2DClock();
 
     // create a rect
-    Rectangle *rect = new C2DRectangle({renderer->getSize().x - 8, renderer->getSize().y - 8});
-    rect->setPosition(4, 4);
-    rect->setFillColor(Color::Transparent);
-    rect->setOutlineColor(COLOR_BLUE);
-    rect->setOutlineThickness(4);
+    mainRect = new C2DRectangle({renderer->getSize().x - 8, renderer->getSize().y - 8});
+    mainRect->setPosition(4, 4);
+    mainRect->setFillColor(Color::Transparent);
+    mainRect->setOutlineColor(COLOR_BLUE);
+    mainRect->setOutlineThickness(4);
 
-    filer = new Filer(io, "/", *font, FONT_SIZE,
-                      {rect->getPosition().x + 16, rect->getPosition().y + 16,
-                       (rect->getSize().x / 2) - 16, rect->getSize().y - 40});
-    rect->add(filer);
+    filer = new Filer(io, "./medias", *font, FONT_SIZE,
+                      {mainRect->getPosition().x + 16, mainRect->getPosition().y + 16,
+                       (mainRect->getSize().x / 2) - 16, mainRect->getSize().y - 40});
+    mainRect->add(filer);
 
-    // add all this crap to the renderer
-    renderer->add(rect);
+    // add all this crap
+    renderer->add(mainRect);
 
     input->setRepeatEnable(true);
     input->setRepeatDelay(INPUT_DELAY);
+
+    // ffmpeg player
+    player = new Player(this);
+    player->setVisibility(C2DObject::Hidden);
+    renderer->add(player);
 }
 
 void Main::run() {
@@ -63,20 +69,46 @@ void Main::run() {
                 break;
             }
 
-            if (keys & Input::Key::KEY_FIRE2) {
+            if (keys & Input::Key::KEY_START || keys & Input::Key::KEY_COIN) {
                 // TODO: ask confirmation to exit
-                //break;
+                break;
             }
 
             int fire_press = (keys & Input::Key::KEY_FIRE1);
             Io::File file = filer->processInput(keys);
             if (fire_press && file.type == Io::Type::File) {
                 printf("file: %s\n", file.path.c_str());
+                // TODO: if supported..
+                if (player->load(file)) {
+                    renderer->setFillColor(Color::Black);
+                    mainRect->setVisibility(C2DObject::Hidden);
+                    player->setVisibility(C2DObject::Visible);
+                    player->run();
+                    player->setVisibility(C2DObject::Hidden);
+                    mainRect->setVisibility(C2DObject::Visible);
+                    renderer->setFillColor(COLOR_GRAY);
+                }
             }
         }
 
         renderer->flip();
     }
+}
+
+c2d::Renderer *Main::getRenderer() {
+    return renderer;
+}
+
+c2d::Io *Main::getIo() {
+    return io;
+}
+
+c2d::Font *Main::getFont() {
+    return font;
+}
+
+c2d::Input *Main::getInput() {
+    return input;
 }
 
 Main::~Main() {
