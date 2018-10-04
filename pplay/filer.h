@@ -7,7 +7,7 @@
 
 #include "c2d.h"
 
-class Filer : public c2d::Rectangle {
+class Filer : public c2d::C2DRectangle {
 
 public:
 
@@ -42,7 +42,7 @@ private:
     std::vector<c2d::Io::File> files;
     c2d::Io *io;
     c2d::ListBox *listBox;
-    c2d::RoundedRectangle *pathRect;
+    c2d::C2DRectangle *pathRect;
     c2d::Text *pathText;
     int index = 0;
 

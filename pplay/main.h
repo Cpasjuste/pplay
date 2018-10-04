@@ -11,7 +11,7 @@
 #include "player_osd.h"
 
 #define INPUT_DELAY 250
-#define FONT_SIZE 30
+#define FONT_SIZE 22
 
 #define COLOR_CLOUD         Color(0xecf0f1ff)
 #define COLOR_GRAY          Color(0x636e72ff)
@@ -21,7 +21,7 @@
 #define COLOR_BLUE_LIGHT    Color(0x74b9ffff)
 #define COLOR_PURPLE        Color(0x6c5ce7ff)
 #define COLOR_PURPLE_LIGHT  Color(0xa29bfeff)
-#define COLOR_GREEN         Color(0x00b894ff)
+#define COLOR_GREEN         Color(0x1abc9cff)
 #define COLOR_GREEN_LIGHT   Color(0x55efc4ff)
 
 class Main {
@@ -33,21 +33,21 @@ public:
 
     void run();
 
-    c2d::Renderer *getRenderer();
+    c2d::C2DRenderer *getRenderer();
 
-    c2d::Io *getIo();
+    c2d::C2DIo *getIo();
 
-    c2d::Font *getFont();
+    c2d::C2DFont *getFont();
 
-    c2d::Input *getInput();
+    c2d::C2DInput *getInput();
 
 private:
-    c2d::Renderer *renderer = nullptr;
-    c2d::Rectangle *mainRect = nullptr;
-    c2d::Font *font = nullptr;
-    c2d::Io *io = nullptr;
-    c2d::Input *input = nullptr;
-    c2d::Clock *timer = nullptr;
+    c2d::C2DRenderer *renderer = nullptr;
+    c2d::C2DRectangle *mainRect = nullptr;
+    c2d::C2DFont *font = nullptr;
+    c2d::C2DIo *io = nullptr;
+    c2d::C2DInput *input = nullptr;
+    c2d::C2DClock *timer = nullptr;
     Filer *filer = nullptr;
     Player *player = nullptr;
 };

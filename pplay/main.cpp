@@ -15,9 +15,9 @@ Main::Main() {
 
     // create a font
     font = new Font();
-    font->setFiltering(C2D_TEXTURE_FILTER_LINEAR);
+    font->setFilter(Texture::Filter::Linear);
     font->loadFromFile("./skin/RobotoCondensed-Bold.ttf");
-    font->setYOffset(-3);
+    font->setOffset({0, -4});
 
     // create io
     io = new C2DIo();
@@ -40,8 +40,8 @@ Main::Main() {
     mainRect->setOutlineThickness(4);
 
     filer = new Filer(io, "./medias", *font, FONT_SIZE,
-                      {mainRect->getPosition().x + 16, mainRect->getPosition().y + 16,
-                       (mainRect->getSize().x / 2) - 16, mainRect->getSize().y - 40});
+                      {16, 16,
+                       (mainRect->getSize().x / 2) - 16, mainRect->getSize().y - 32});
     mainRect->add(filer);
 
     // add all this crap
@@ -52,7 +52,7 @@ Main::Main() {
 
     // ffmpeg player
     player = new Player(this);
-    player->setVisibility(C2DObject::Hidden);
+    player->setVisibility(Visibility::Hidden);
     renderer->add(player);
 }
 
@@ -80,11 +80,11 @@ void Main::run() {
                 // TODO: if supported..
                 if (player->load(file)) {
                     renderer->setFillColor(Color::Black);
-                    mainRect->setVisibility(C2DObject::Hidden);
-                    player->setVisibility(C2DObject::Visible);
+                    mainRect->setVisibility(Visibility::Hidden);
+                    player->setVisibility(Visibility::Visible);
                     player->run();
-                    player->setVisibility(C2DObject::Hidden);
-                    mainRect->setVisibility(C2DObject::Visible);
+                    player->setVisibility(Visibility::Hidden);
+                    mainRect->setVisibility(Visibility::Visible);
                     renderer->setFillColor(COLOR_GRAY_LIGHT);
                 }
             }
@@ -94,19 +94,19 @@ void Main::run() {
     }
 }
 
-c2d::Renderer *Main::getRenderer() {
+c2d::C2DRenderer *Main::getRenderer() {
     return renderer;
 }
 
-c2d::Io *Main::getIo() {
+c2d::C2DIo *Main::getIo() {
     return io;
 }
 
-c2d::Font *Main::getFont() {
+c2d::C2DFont *Main::getFont() {
     return font;
 }
 
-c2d::Input *Main::getInput() {
+c2d::C2DInput *Main::getInput() {
     return input;
 }
 

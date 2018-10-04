@@ -8,47 +8,45 @@
 using namespace c2d;
 
 Filer::Filer(c2d::Io *io, const std::string &path, const c2d::Font &font,
-             int fontSize, const c2d::FloatRect &rect) : Rectangle(rect) {
+             int fontSize, const c2d::FloatRect &rect) : C2DRectangle(rect) {
 
     this->io = io;
     this->path = path;
     this->setFillColor(Color::Transparent);
 
     // create current path box
-    pathRect = new RoundedRectangle({rect.width, fontSize + 10}, 5, 4);
+    pathRect = new C2DRectangle({rect.width, fontSize + 10});
     pathRect->setFillColor(COLOR_GRAY_DARK);
-    pathRect->setOutlineColor(COLOR_PURPLE);
+    pathRect->setOutlineColor(COLOR_BLUE);
     pathRect->setOutlineThickness(4);
     pathText = new C2DText("CURRENT PATH: /", font, (unsigned int) fontSize);
     pathText->setOutlineThickness(2);
-    pathText->setOrigin(0, pathText->getLocalBounds().height / 2);
-    pathText->setPosition(4, (pathRect->getSize().y / 2) - 4);
+    pathText->setOrigin(Origin::Left);
+    pathText->setPosition(4, (pathRect->getSize().y / 2));
     pathText->setSizeMax(rect.width - 8, 0);
     pathRect->add(pathText);
 
-    /*
-    Rectangle *border = new Rectangle(pathRect->getLocalBounds());
+    C2DRectangle *border = new C2DRectangle(pathRect->getLocalBounds());
     border->setFillColor(Color::Transparent);
     border->setOutlineColor(Color::Black);
     border->setOutlineThickness(1);
-    border->setSize(r.width + 8, r.height + 8);
+    border->setSize(pathRect->getSize().x + 8, pathRect->getSize().y + 8);
     pathRect->add(border);
 
-    border = new Rectangle(pathRect->getLocalBounds());
+    border = new C2DRectangle(pathRect->getLocalBounds());
     border->setFillColor(Color::Transparent);
     border->setOutlineColor(Color::Black);
     border->setOutlineThickness(1);
-    border->setSize(r.width - 2, r.height - 2);
+    border->setSize(pathRect->getSize().x - 2, pathRect->getSize().y - 2);
     border->move(5, 5);
     pathRect->add(border);
-    */
 
     add(pathRect);
 
     float y = pathRect->getGlobalBounds().top + pathRect->getGlobalBounds().height;
-    FloatRect r = {0, y + 8, rect.width, rect.height - y};
+    FloatRect r = {0, y + 8, rect.width, rect.height - y - 8};
     listBox = new ListBox(font, fontSize, r, std::vector<Io::File>());
-    listBox->setFillColor(COLOR_GRAY);
+    listBox->setFillColor(COLOR_GRAY_DARK);
     listBox->setOutlineColor(COLOR_BLUE);
     listBox->setOutlineThickness(4);
     listBox->setTextOutlineThickness(2);
@@ -58,22 +56,20 @@ Filer::Filer(c2d::Io *io, const std::string &path, const c2d::Font &font,
     auto *tween = new TweenAlpha(50, 100, 0.6f, TweenLoop::PingPong);
     listBox->setHighlightTween(tween);
 
-    /*
-    border = new Rectangle(listBox->getLocalBounds());
+    border = new RectangleShape(listBox->getLocalBounds());
     border->setFillColor(Color::Transparent);
     border->setOutlineColor(Color::Black);
     border->setOutlineThickness(1);
     border->setSize(r.width + 8, r.height + 8);
     listBox->add(border);
 
-    border = new Rectangle(listBox->getLocalBounds());
+    border = new RectangleShape(listBox->getLocalBounds());
     border->setFillColor(Color::Transparent);
     border->setOutlineColor(Color::Black);
     border->setOutlineThickness(1);
     border->setSize(r.width - 2, r.height - 2);
     border->move(5, 5);
     listBox->add(border);
-    */
 
     add(listBox);
 

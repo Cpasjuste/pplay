@@ -12,7 +12,7 @@
 class Main;
 class PlayerOSD;
 
-class Player : public c2d::Rectangle {
+class Player : public c2d::C2DRectangle {
 
 public:
 

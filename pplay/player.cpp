@@ -11,7 +11,7 @@
 
 using namespace c2d;
 
-Player::Player(Main *_main) : Rectangle(_main->getRenderer()->getSize()) {
+Player::Player(Main *_main) : C2DRectangle(_main->getRenderer()->getSize()) {
 
     main = _main;
     setFillColor(Color::Transparent);
@@ -82,8 +82,8 @@ bool Player::load(const c2d::Io::File &file) {
 
     // init video texture
     texture = new C2DTexture(
-            {playerInfo.video.output.width, playerInfo.video.output.height}, C2D_TEXTURE_FMT_ABGR8);
-    texture->setFiltering(C2D_TEXTURE_FILTER_LINEAR);
+            {playerInfo.video.output.width, playerInfo.video.output.height}, Texture::Format::RGBA8);
+    texture->setFilter(Texture::Filter::Linear);
     add(texture);
 
     // osd..
@@ -118,19 +118,17 @@ void Player::run() {
                 break;
             }
 
+            if (!osd->isVisible()) {
+                osd->setVisibility(Visibility::Visible);
+            }
+
             if (keys & Input::Key::KEY_FIRE1) {
-                if (osd->getVisibility() == Visible) {
-                    osd->setVisibility(Visibility::Hidden);
-                } else {
-                    osd->setVisibility(Visibility::Visible);
+                if (osd->isVisible()) {
+                    // TODO: handle osd fire1
                 }
             } else if (keys & Input::Key::KEY_FIRE2) {
-                if (paused) {
+                if (osd->isVisible()) {
                     osd->setVisibility(Visibility::Hidden);
-                    resume();
-                } else {
-                    pause();
-                    osd->setVisibility(Visibility::Visible);
                 }
             }
 
@@ -193,7 +191,7 @@ void Player::run() {
         if (scale.x > max_scale.x) {
             scale.x = scale.y = max_scale.x;
         }
-        texture->setOriginCenter();
+        texture->setOrigin(Origin::Center);
         texture->setPosition(getSize().x / 2.0f, getSize().y / 2.0f);
         texture->setScale(scale);
 
