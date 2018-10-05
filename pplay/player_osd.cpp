@@ -4,6 +4,8 @@
 
 #include "main.h"
 #include "utility.h"
+#include "player_osd.h"
+
 
 using namespace c2d;
 
@@ -34,13 +36,12 @@ PlayerOSD::PlayerOSD(Player *p) : C2DRectangle(p->getSize()) {
     remaining->setOrigin(Origin::Right);
     remaining->setPosition(
             status->getSize().x - 20,
-            status->getSize().y / 2.0f);
+            status->getSize().y / 2.0f - 2);
     remaining->setOutlineThickness(1);
     status->add(remaining);
 
-    // TODO: tween alpha not working properly ?
-    //tweenAlpha = new TweenAlpha(0, 230, 5);
-    //status->add(tweenAlpha);
+    tweenAlpha = new TweenAlpha(0, 200, 0.6f);
+    status->add(tweenAlpha);
 
     setVisibility(Visibility::Hidden, false);
 }
@@ -50,6 +51,18 @@ void PlayerOSD::setProgress(float duration, float position) {
     std::string remain = Utils::formatTime(duration - position);
     remaining->setString(remain);
     progress->setProgress(position / duration);
+}
+
+bool PlayerOSD::isVisible() {
+    return status->getVisibility() == Visibility::Visible;
+}
+
+c2d::Visibility PlayerOSD::getVisibility() {
+    return status->getVisibility();
+}
+
+void PlayerOSD::setVisibility(c2d::Visibility visibility, bool tweenPlay) {
+    status->setVisibility(visibility, tweenPlay);
 }
 
 PlayerOSD::~PlayerOSD() {

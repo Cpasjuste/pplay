@@ -14,6 +14,12 @@ public:
 
     void setProgress(float duration, float position);
 
+    bool isVisible();
+
+    c2d::Visibility getVisibility() override;
+
+    void setVisibility(c2d::Visibility visibility, bool tweenPlay = true) override;
+
 private:
     Player *player = nullptr;
     c2d::TweenAlpha *tweenAlpha = nullptr;

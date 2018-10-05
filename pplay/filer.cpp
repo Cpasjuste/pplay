@@ -52,8 +52,9 @@ Filer::Filer(c2d::Io *io, const std::string &path, const c2d::Font &font,
     listBox->setTextOutlineThickness(2);
     listBox->setHighlightThickness(2);
     listBox->setHighlightColor(COLOR_GRAY_LIGHT);
+    listBox->setHighlightOutlineColor(COLOR_BLUE);
     listBox->setHighlightUseFileColor(false);
-    auto *tween = new TweenAlpha(50, 100, 0.6f, TweenLoop::PingPong);
+    auto *tween = new TweenAlpha(80, 150, 0.6f, TweenLoop::PingPong);
     listBox->setHighlightTween(tween);
 
     border = new RectangleShape(listBox->getLocalBounds());

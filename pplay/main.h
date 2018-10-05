@@ -23,6 +23,8 @@
 #define COLOR_PURPLE_LIGHT  Color(0xa29bfeff)
 #define COLOR_GREEN         Color(0x1abc9cff)
 #define COLOR_GREEN_LIGHT   Color(0x55efc4ff)
+#define COLOR_ORANGE        Color(0xd35400ff)
+#define COLOR_ORANGE_LIGHT  Color(0xe67e22ff)
 
 class Main {
 

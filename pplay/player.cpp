@@ -134,7 +134,7 @@ void Player::run() {
 
             if (keys & c2d::Input::Key::KEY_LEFT) {
                 printf("Kit_PlayerSeek(pos=%f, dur=%f\n", position, duration);
-                Kit_PlayerSeek(player, position - 10);
+                Kit_PlayerSeek(player, position - 10.0);
             } else if (keys & c2d::Input::Key::KEY_RIGHT) {
                 printf("Kit_PlayerSeek(pos=%f, dur=%f\n", position, duration);
                 if (position + 10 < duration) {
