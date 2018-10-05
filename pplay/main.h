@@ -10,6 +10,7 @@
 #include "player.h"
 #include "player_osd.h"
 
+#define HOME_PATH "./"
 #define INPUT_DELAY 250
 #define FONT_SIZE 22
 

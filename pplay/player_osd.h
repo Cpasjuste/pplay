@@ -14,6 +14,10 @@ public:
 
     void setProgress(float duration, float position);
 
+    void pause();
+
+    void resume();
+
     bool isVisible();
 
     c2d::Visibility getVisibility() override;
@@ -26,6 +30,12 @@ private:
     c2d::C2DRoundedRectangle *status = nullptr;
     c2d::Progress *progress = nullptr;
     c2d::Text *remaining = nullptr;
+    c2d::Text *current = nullptr;
+
+    c2d::C2DTexture *button_play = nullptr;
+    c2d::C2DTexture *button_pause = nullptr;
+
+    c2d::C2DClock clock;
 };
 
 #endif //PPLAY_PLAYER_OSD_H

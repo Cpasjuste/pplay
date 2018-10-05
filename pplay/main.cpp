@@ -16,7 +16,7 @@ Main::Main() {
     // create a font
     font = new Font();
     font->setFilter(Texture::Filter::Linear);
-    font->loadFromFile("./skin/RobotoCondensed-Bold.ttf");
+    font->loadFromFile(std::string(HOME_PATH) + "skin/RobotoCondensed-Bold.ttf");
     font->setOffset({0, -4});
 
     // create io
