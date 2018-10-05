@@ -143,12 +143,12 @@ void Player::run() {
                 if (keys & c2d::Input::Key::KEY_LEFT) {
                     osd->setVisibility(Visibility::Visible);
                     printf("Kit_PlayerSeek(pos=%f, dur=%f\n", position, duration);
-                    Kit_PlayerSeek(player, position - 10.0);
+                    Kit_PlayerSeek(player, position - 60.0);
                 } else if (keys & c2d::Input::Key::KEY_RIGHT) {
                     osd->setVisibility(Visibility::Visible);
                     printf("Kit_PlayerSeek(pos=%f, dur=%f\n", position, duration);
-                    if (position + 10 < duration) {
-                        Kit_PlayerSeek(player, position + 10.0);
+                    if (position + 60 < duration) {
+                        Kit_PlayerSeek(player, position + 60.0);
                     }
                 } else if (keys & c2d::Input::Key::KEY_UP) {
                     osd->setVisibility(Visibility::Visible);
