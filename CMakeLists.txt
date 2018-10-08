@@ -9,18 +9,12 @@ set(PPLAY_VERSION_MINOR 0)
 set(BUILD_SFML OFF CACHE BOOL "Build with SFML support")
 set(BUILD_SDL1 OFF CACHE BOOL "Build with SDL1 support (software, osmesa) support")
 set(BUILD_SDL1_GL OFF CACHE BOOL "Build with SDL1 support (hardware rendering, fast, needs BUILD_SDL1=ON)")
-set(BUILD_SDL2 OFF CACHE BOOL "Build with SDL2 (software) support")
-set(BUILD_SDL2_GL OFF CACHE BOOL "Build with SDL2 support (hardware rendering, fast, needs BUILD_SDL2=ON)")
-set(BUILD_PSP2 OFF CACHE BOOL "Build with PSP2 support")
+set(BUILD_SDL2 ON CACHE BOOL "Build with SDL2 support")
+set(BUILD_SDL2_SOFT OFF CACHE BOOL "Build with SDL2 support (software rendering, needs BUILD_SDL2=ON)")
+set(BUILD_VITA OFF CACHE BOOL "Build with PSP2 support")
 set(BUILD_PS3 OFF CACHE BOOL "Build with PS3 support")
 set(BUILD_3DS OFF CACHE BOOL "Build with 3DS support")
-set(BUILD_NX ON CACHE BOOL "Build with NX (SWITCH) support")
-
-set(UPDATE_CONFIG OFF CACHE BOOL "Force config file updating")
-
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(BUILD_DEBUG true CACHE BOOL "Debug build")
-endif ()
+set(BUILD_SWITCH OFF CACHE BOOL "Build with NX (SWITCH) support")
 
 include(libcross2d/Toolchain.cmake)
 add_subdirectory(libcross2d)
@@ -61,10 +55,6 @@ set(PPLAY_CFLAGS
         -D__PPLAY_VERSION_MINOR__=${PPLAY_VERSION_MINOR}
         )
 
-if (BUILD_DEBUG)
-    list(APPEND PPLAY_CFLAGS -g -O0)
-endif (BUILD_DEBUG)
-
 set(PPLAY_LDFLAGS
         swscale swresample avformat avcodec avutil ass fribidi
         m png z)
@@ -72,7 +62,7 @@ set(PPLAY_LDFLAGS
 #####################
 # PLATORM SPECIFIC
 #####################
-if (BUILD_NX)
+if (BUILD_SWITCH)
     #####################
     # NX PLATORM
     #####################
@@ -81,7 +71,7 @@ elseif (BUILD_SDL2)
     # SDL2 PLATORM
     #####################
     list(APPEND PPLAY_LDFLAGS -lpthread -llzma)
-endif (BUILD_NX)
+endif (BUILD_SWITCH)
 
 #####################
 # pplay executable

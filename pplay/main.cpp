@@ -3,7 +3,6 @@
 //
 
 #include "main.h"
-#include "data/skin/default.h"
 
 using namespace c2d;
 
@@ -11,12 +10,11 @@ Main::Main() {
 
     // create main renderer
     renderer = new C2DRenderer(Vector2f(1280, 720));
-    renderer->setFillColor(COLOR_GRAY_LIGHT);
+    renderer->setClearColor(COLOR_GRAY_LIGHT);
 
     // create a font
     font = new Font();
-    font->setFilter(Texture::Filter::Linear);
-    font->loadFromFile(std::string(HOME_PATH) + "skin/RobotoCondensed-Bold.ttf");
+    font->load();
     font->setOffset({0, -4});
 
     // create io
@@ -25,9 +23,7 @@ Main::Main() {
     // create input
     input = new C2DInput();
     input->setJoystickMapping(0, C2D_DEFAULT_JOY_KEYS, 0);
-#ifndef NO_KEYBOARD
     input->setKeyboardMapping(C2D_DEFAULT_KB_KEYS);
-#endif
 
     // create a timer
     timer = new C2DClock();
@@ -79,13 +75,13 @@ void Main::run() {
                 printf("file: %s\n", file.path.c_str());
                 // TODO: if supported..
                 if (player->load(file)) {
-                    renderer->setFillColor(Color::Black);
+                    renderer->setClearColor(Color::Black);
                     mainRect->setVisibility(Visibility::Hidden);
                     player->setVisibility(Visibility::Visible);
                     player->run();
                     player->setVisibility(Visibility::Hidden);
                     mainRect->setVisibility(Visibility::Visible);
-                    renderer->setFillColor(COLOR_GRAY_LIGHT);
+                    renderer->setClearColor(COLOR_GRAY_LIGHT);
                 }
             }
         }

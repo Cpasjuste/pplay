@@ -19,7 +19,7 @@ PlayerOSD::PlayerOSD(Player *p) : C2DRectangle(p->getSize()) {
     std::string path = std::string(HOME_PATH) + "skin/play-button.png";
     button_play = new C2DTexture(path.c_str());
     auto size = button_play->getTextureRect();
-    button_play->setColor(COLOR_BLUE);
+    button_play->setFillColor(COLOR_BLUE);
     button_play->setOrigin(Origin::Left);
     button_play->setPosition(16, OSD_STATUS_HEIGHT / 2);
     button_play->setScale((OSD_STATUS_HEIGHT * 0.6f) / (float) size.width,
@@ -28,7 +28,7 @@ PlayerOSD::PlayerOSD(Player *p) : C2DRectangle(p->getSize()) {
 
     path = std::string(HOME_PATH) + "skin/pause-button.png";
     button_pause = new C2DTexture(path.c_str());
-    button_pause->setColor(COLOR_BLUE);
+    button_pause->setFillColor(COLOR_BLUE);
     button_pause->setOrigin(Origin::Left);
     button_pause->setPosition(16, OSD_STATUS_HEIGHT / 2);
     button_pause->setScale((OSD_STATUS_HEIGHT * 0.6f) / (float) size.width,
@@ -86,8 +86,8 @@ void PlayerOSD::setProgress(float duration, float position) {
         std::string cur = Utils::formatTime(position);
         current->setString(cur);
         current->setPosition(
-                progress->getGlobalBounds().left + progress->getProgressBounds().width,
-                progress->getGlobalBounds().top - 2);
+                progress->getPosition().x + progress->getProgressWidth(),
+                progress->getPosition().y - 12);
 
         progress->setProgress(position / duration);
     }

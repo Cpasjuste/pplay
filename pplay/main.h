@@ -5,7 +5,7 @@
 #ifndef PPLAY_MAIN_H
 #define PPLAY_MAIN_H
 
-#include "c2d.h"
+#include "cross2d/c2d.h"
 #include "filer.h"
 #include "player.h"
 #include "player_osd.h"

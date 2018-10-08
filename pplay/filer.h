@@ -5,7 +5,7 @@
 #ifndef NXFILER_FILER_H
 #define NXFILER_FILER_H
 
-#include "c2d.h"
+#include "cross2d/c2d.h"
 
 class Filer : public c2d::C2DRectangle {
 
