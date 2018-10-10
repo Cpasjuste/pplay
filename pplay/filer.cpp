@@ -187,19 +187,11 @@ void Filer::exit() {
         path.erase(path.size() - 1);
     }
 
-    if (path.size() > 1 && endWith(path, "/")) {
+    if (path.size() > 1 && Utility::endsWith(path, "/")) {
         path.erase(path.size() - 1);
     }
 
     getDir(path);
-}
-
-bool Filer::endWith(std::string const &str, std::string const &ending) {
-    if (str.length() >= ending.length()) {
-        return (0 == str.compare(str.length() - ending.length(), ending.length(), ending));
-    } else {
-        return false;
-    }
 }
 
 Filer::~Filer() {

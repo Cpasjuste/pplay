@@ -45,8 +45,6 @@ private:
     c2d::C2DRectangle *pathRect;
     c2d::Text *pathText;
     int index = 0;
-
-    bool endWith(std::string const &str, std::string const &ending);
 };
 
 #endif //NXFILER_FILER_H
