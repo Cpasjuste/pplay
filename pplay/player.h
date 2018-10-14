@@ -22,13 +22,15 @@ public:
 
     bool load(const c2d::Io::File &file);
 
-    void run();
+    void step(unsigned int keys);
 
     void pause();
 
     void resume();
 
     void stop();
+
+    bool isPlaying();
 
     Main *getMain();
 

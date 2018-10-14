@@ -53,34 +53,29 @@ void Main::run() {
 
     while (true) {
 
-        // handle input
         unsigned int keys = input->update()[0].state;
+
+        player->step(keys);
+
         if (keys > 0) {
 
-            if (keys & EV_QUIT) { // SDL2 quit event
-                break;
+            if (((keys & c2d::Input::Key::KEY_START)
+                 || (keys & c2d::Input::Key::KEY_COIN)
+                 || (keys & EV_QUIT))) {
+                if (player->isPlaying()) {
+                    player->stop();
+                } else {
+                    break;
+                }
             }
 
-            if (keys & Input::Key::KEY_START || keys & Input::Key::KEY_COIN) {
-                // TODO: ask confirmation to exit
-                break;
-            }
-
-            int fire_press = (keys & Input::Key::KEY_FIRE1);
-            Io::File file = filer->processInput(keys);
-            if (fire_press && file.type == Io::Type::File) {
-                printf("file: %s\n", file.path.c_str());
-                // TODO: if supported..
-                if (player->load(file)) {
-                    //renderer->setClearColor(Color::Black);
-                    //mainRect->setVisibility(Visibility::Hidden);
-                    player->setScale(0.4f, 0.4f);
-                    player->setPosition(renderer->getSize().x * 0.55f, renderer->getSize().y * 0.55f);
-                    player->setVisibility(Visibility::Visible);
-                    player->run();
-                    player->setVisibility(Visibility::Hidden);
-                    //mainRect->setVisibility(Visibility::Visible);
-                    //renderer->setClearColor(COLOR_GRAY_LIGHT);
+            if (!player->isPlaying()) {
+                Io::File file = filer->step(keys);
+                if (keys & Input::Key::KEY_FIRE1 && file.type == Io::Type::File) {
+                    if (player->load(file)) {
+                        player->setScale(0.4f, 0.4f);
+                        player->setPosition(renderer->getSize().x * 0.55f, renderer->getSize().y * 0.55f);
+                    }
                 }
             }
         }

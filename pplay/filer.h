@@ -20,7 +20,7 @@ public:
 
     std::string getPath();
 
-    c2d::Io::File processInput(unsigned int keys);
+    c2d::Io::File step(unsigned int keys);
 
     c2d::Io::File getSelection();
 

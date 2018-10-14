@@ -96,7 +96,7 @@ std::string Filer::getPath() {
     return path;
 }
 
-Io::File Filer::processInput(unsigned int keys) {
+Io::File Filer::step(unsigned int keys) {
 
     if (keys & Input::Key::KEY_UP) {
         up();

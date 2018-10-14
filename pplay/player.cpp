@@ -88,7 +88,8 @@ bool Player::load(const c2d::Io::File &file) {
         add(texture);
     }
 
-    // osd..
+    setVisibility(Visibility::Visible);
+    osd->setVisibility(Visibility::Visible);
     osd->setLayer(100);
 
     // start playback
@@ -97,139 +98,111 @@ bool Player::load(const c2d::Io::File &file) {
     return true;
 }
 
-void Player::run() {
+void Player::step(unsigned int keys) {
 
     double position, duration;
-    main->getInput()->setRepeatDelay(1000);
 
-    while (true) {
-
-        position = Kit_GetPlayerPosition(player);
-        duration = Kit_GetPlayerDuration(player);
-        // update osd
-        osd->setProgress((float) duration, (float) position);
-
-        //////////////////
-        /// handle inputs
-        //////////////////
-        unsigned int keys = main->getInput()->update()[0].state;
-        if (keys > 0) {
-
-            if (((keys & c2d::Input::Key::KEY_START)
-                 || (keys & c2d::Input::Key::KEY_COIN)
-                 || (keys & EV_QUIT))) {
-                break;
-            }
-
-            if (keys & Input::Key::KEY_FIRE1) {
-                if (osd->isVisible()) {
-                    // TODO: handle osd fire1
-                    if (paused) {
-                        resume();
-                        osd->resume();
-                    } else {
-                        pause();
-                        osd->pause();
-                    }
-                } else {
-                    osd->setVisibility(Visibility::Visible);
-                }
-            } else if (keys & Input::Key::KEY_FIRE2) {
-                if (osd->isVisible()) {
-                    osd->setVisibility(Visibility::Hidden);
-                } else {
-                    osd->setVisibility(Visibility::Visible);
-                }
-            } else if (!paused) {
-
-                if (keys & c2d::Input::Key::KEY_LEFT) {
-                    osd->setVisibility(Visibility::Visible);
-                    printf("Kit_PlayerSeek(pos=%f, dur=%f\n", position, duration);
-                    Kit_PlayerSeek(player, position - 60.0);
-                } else if (keys & c2d::Input::Key::KEY_RIGHT) {
-                    osd->setVisibility(Visibility::Visible);
-                    printf("Kit_PlayerSeek(pos=%f, dur=%f\n", position, duration);
-                    if (position + 60 < duration) {
-                        Kit_PlayerSeek(player, position + 60.0);
-                    }
-                } else if (keys & c2d::Input::Key::KEY_UP) {
-                    osd->setVisibility(Visibility::Visible);
-                    printf("Kit_PlayerSeek(pos=%f, dur=%f\n", position, duration);
-                    if (position + (60.0 * 10.0) < duration) {
-                        Kit_PlayerSeek(player, position + (60.0 * 10.0));
-                    }
-                } else if (keys & c2d::Input::Key::KEY_DOWN) {
-                    osd->setVisibility(Visibility::Visible);
-                    printf("Kit_PlayerSeek(pos=%f, dur=%f\n", position, duration);
-                    Kit_PlayerSeek(player, position - (60.0 * 10.0));
-                }
-            }
-        }
-
-        /// process audio/video
-        if (Kit_GetPlayerState(player) == KIT_STOPPED
-            || Kit_GetPlayerState(player) == KIT_CLOSED) {
-            printf("STOPPED\n");
-            break;
-        }
-
-        if (paused) {
-            main->getRenderer()->flip();
-            continue;
-        }
-
-        //////////////////
-        /// step ffmpeg
-        //////////////////
-        /// audio
-        if (has_audio) {
-            int queued = SDL_GetQueuedAudioSize(audioDeviceID);
-            if (queued < AUDIO_BUFFER_SIZE) {
-                int need = AUDIO_BUFFER_SIZE - queued;
-                while (need > 0) {
-                    int ret = Kit_GetPlayerAudioData(
-                            player, (unsigned char *) audioBuffer, AUDIO_BUFFER_SIZE);
-                    need -= ret;
-                    if (ret > 0) {
-                        SDL_QueueAudio(audioDeviceID, audioBuffer, (Uint32) ret);
-                    } else {
-                        break;
-                    }
-                }
-                // If we now have data, start playback (again)
-                if (SDL_GetQueuedAudioSize(audioDeviceID) > 0) {
-                    SDL_PauseAudioDevice(audioDeviceID, 0);
-                }
-            }
-        }
-
-        /// video
-        if (has_video) {
-            void *video_data;
-            texture->lock(nullptr, &video_data, nullptr);
-            if (Kit_GetPlayerVideoDataRaw(player, video_data)) {
-                texture->unlock();
-            }
-            // scaling
-            Vector2f max_scale = {
-                    getSize().x / texture->getTextureRect().width,
-                    getSize().y / texture->getTextureRect().height};
-            Vector2f scale = {max_scale.y, max_scale.y};
-            if (scale.x > max_scale.x) {
-                scale.x = scale.y = max_scale.x;
-            }
-            texture->setOrigin(Origin::Center);
-            texture->setPosition(getSize().x / 2.0f, getSize().y / 2.0f);
-            texture->setScale(scale);
-        }
-
-        /// render
-        main->getRenderer()->flip();
+    if (!isVisible() || !isPlaying()) {
+        stop();
+        return;
     }
 
-    main->getInput()->setRepeatDelay(INPUT_DELAY);
+    position = Kit_GetPlayerPosition(player);
+    duration = Kit_GetPlayerDuration(player);
+    osd->setProgress((float) duration, (float) position);
 
-    stop();
+    //////////////////
+    /// handle inputs
+    //////////////////
+    if (keys & Input::Key::KEY_FIRE1) {
+        if (osd->isVisible()) {
+            if (paused) {
+                resume();
+                osd->resume();
+            } else {
+                pause();
+                osd->pause();
+            }
+        } else {
+            osd->setVisibility(Visibility::Visible);
+        }
+    } else if (keys & Input::Key::KEY_FIRE2) {
+        if (osd->isVisible()) {
+            osd->setVisibility(Visibility::Hidden);
+        } else {
+            osd->setVisibility(Visibility::Visible);
+        }
+    } else if (!paused) {
+        if (keys & c2d::Input::Key::KEY_LEFT) {
+            osd->setVisibility(Visibility::Visible);
+            Kit_PlayerSeek(player, position - 60.0);
+        } else if (keys & c2d::Input::Key::KEY_RIGHT) {
+            osd->setVisibility(Visibility::Visible);
+            if (position + 60 < duration) {
+                Kit_PlayerSeek(player, position + 60.0);
+            }
+        } else if (keys & c2d::Input::Key::KEY_UP) {
+            osd->setVisibility(Visibility::Visible);
+            if (position + (60.0 * 10.0) < duration) {
+                Kit_PlayerSeek(player, position + (60.0 * 10.0));
+            }
+        } else if (keys & c2d::Input::Key::KEY_DOWN) {
+            osd->setVisibility(Visibility::Visible);
+            Kit_PlayerSeek(player, position - (60.0 * 10.0));
+        }
+    }
+
+    //////////////////
+    /// step ffmpeg
+    //////////////////
+    /// audio
+    if (has_audio) {
+        int queued = SDL_GetQueuedAudioSize(audioDeviceID);
+        if (queued < AUDIO_BUFFER_SIZE) {
+            int need = AUDIO_BUFFER_SIZE - queued;
+            while (need > 0) {
+                int ret = Kit_GetPlayerAudioData(
+                        player, (unsigned char *) audioBuffer, AUDIO_BUFFER_SIZE);
+                need -= ret;
+                if (ret > 0) {
+                    SDL_QueueAudio(audioDeviceID, audioBuffer, (Uint32) ret);
+                } else {
+                    break;
+                }
+            }
+            // If we now have data, start playback (again)
+            if (SDL_GetQueuedAudioSize(audioDeviceID) > 0) {
+                SDL_PauseAudioDevice(audioDeviceID, 0);
+            }
+        }
+    }
+
+    /// video
+    if (has_video) {
+        void *video_data;
+        texture->lock(nullptr, &video_data, nullptr);
+        if (Kit_GetPlayerVideoDataRaw(player, video_data)) {
+            texture->unlock();
+        }
+        // scaling
+        Vector2f max_scale = {
+                getSize().x / texture->getTextureRect().width,
+                getSize().y / texture->getTextureRect().height};
+        Vector2f scale = {max_scale.y, max_scale.y};
+        if (scale.x > max_scale.x) {
+            scale.x = scale.y = max_scale.x;
+        }
+        texture->setOrigin(Origin::Center);
+        texture->setPosition(getSize().x / 2.0f, getSize().y / 2.0f);
+        texture->setScale(scale);
+    }
+}
+
+bool Player::isPlaying() {
+
+    return player != nullptr
+           && (Kit_GetPlayerState(player) == KIT_PLAYING
+               || Kit_GetPlayerState(player) == KIT_PAUSED);
 }
 
 void Player::pause() {
@@ -276,8 +249,12 @@ void Player::stop() {
         texture = nullptr;
     }
 
-    osd->setVisibility(Visibility::Hidden);
+    has_video = false;
+    has_audio = false;
     paused = false;
+
+    osd->setVisibility(Visibility::Hidden);
+    setVisibility(Visibility::Hidden);
 }
 
 Main *Player::getMain() {
