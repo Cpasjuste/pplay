@@ -30,10 +30,7 @@ Main::Main() {
 
     // create a rect
     mainRect = new C2DRectangle({renderer->getSize().x - 8, renderer->getSize().y - 8});
-    mainRect->setPosition(4, 4);
     mainRect->setFillColor(Color::Transparent);
-    mainRect->setOutlineColor(COLOR_BLUE);
-    mainRect->setOutlineThickness(4);
 
     filer = new Filer(io, "./medias", *font, FONT_SIZE,
                       {16, 16,
@@ -75,13 +72,15 @@ void Main::run() {
                 printf("file: %s\n", file.path.c_str());
                 // TODO: if supported..
                 if (player->load(file)) {
-                    renderer->setClearColor(Color::Black);
-                    mainRect->setVisibility(Visibility::Hidden);
+                    //renderer->setClearColor(Color::Black);
+                    //mainRect->setVisibility(Visibility::Hidden);
+                    player->setScale(0.4f, 0.4f);
+                    player->setPosition(renderer->getSize().x * 0.55f, renderer->getSize().y * 0.55f);
                     player->setVisibility(Visibility::Visible);
                     player->run();
                     player->setVisibility(Visibility::Hidden);
-                    mainRect->setVisibility(Visibility::Visible);
-                    renderer->setClearColor(COLOR_GRAY_LIGHT);
+                    //mainRect->setVisibility(Visibility::Visible);
+                    //renderer->setClearColor(COLOR_GRAY_LIGHT);
                 }
             }
         }

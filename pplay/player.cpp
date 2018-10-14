@@ -8,7 +8,6 @@
 #include "main.h"
 #include "player.h"
 
-
 using namespace c2d;
 
 Player::Player(Main *_main) : C2DRectangle(_main->getRenderer()->getSize()) {
@@ -54,11 +53,10 @@ bool Player::load(const c2d::Io::File &file) {
 
     // get some information;
     Kit_GetPlayerInfo(player, &playerInfo);
-    // make sure there is video in the file to play first.
-    if (Kit_GetPlayerVideoStream(player) == -1) {
-        printf("file contains no video!\n");
-        stop();
-        return false;
+    has_video = Kit_GetPlayerVideoStream(player) != -1;
+    has_audio = Kit_GetPlayerAudioStream(player) != -1;
+    if (!has_audio && !has_video) {
+        printf("no usable audio or video stream found: %s\n", Kit_GetError());
     }
 
     printf("Video(%s, %s): %i x %i , Audio(%s): %i hz\n",
@@ -69,22 +67,26 @@ bool Player::load(const c2d::Io::File &file) {
            playerInfo.audio.output.samplerate);
 
     // init audio
-    if (!SDL_WasInit(SDL_INIT_AUDIO)) {
-        SDL_InitSubSystem(SDL_INIT_AUDIO);
+    if (has_audio) {
+        if (!SDL_WasInit(SDL_INIT_AUDIO)) {
+            SDL_InitSubSystem(SDL_INIT_AUDIO);
+        }
+        SDL_AudioSpec wanted_spec, audio_spec;
+        SDL_memset(&wanted_spec, 0, sizeof(wanted_spec));
+        wanted_spec.freq = playerInfo.audio.output.samplerate;
+        wanted_spec.format = (SDL_AudioFormat) playerInfo.audio.output.format;
+        wanted_spec.channels = (Uint8) playerInfo.audio.output.channels;
+        audioDeviceID = SDL_OpenAudioDevice(nullptr, 0, &wanted_spec, &audio_spec, 0);
+        SDL_PauseAudioDevice(audioDeviceID, 0);
     }
-    SDL_AudioSpec wanted_spec, audio_spec;
-    SDL_memset(&wanted_spec, 0, sizeof(wanted_spec));
-    wanted_spec.freq = playerInfo.audio.output.samplerate;
-    wanted_spec.format = (SDL_AudioFormat) playerInfo.audio.output.format;
-    wanted_spec.channels = (Uint8) playerInfo.audio.output.channels;
-    audioDeviceID = SDL_OpenAudioDevice(nullptr, 0, &wanted_spec, &audio_spec, 0);
-    SDL_PauseAudioDevice(audioDeviceID, 0);
 
-    // init video texture
-    texture = new C2DTexture(
-            {playerInfo.video.output.width, playerInfo.video.output.height}, Texture::Format::RGBA8);
-    texture->setFilter(Texture::Filter::Linear);
-    add(texture);
+    if (has_video) {
+        // init video texture
+        texture = new C2DTexture(
+                {playerInfo.video.output.width, playerInfo.video.output.height}, Texture::Format::RGBA8);
+        texture->setFilter(Texture::Filter::Linear);
+        add(texture);
+    }
 
     // osd..
     osd->setLayer(100);
@@ -180,41 +182,46 @@ void Player::run() {
         /// step ffmpeg
         //////////////////
         /// audio
-        int queued = SDL_GetQueuedAudioSize(audioDeviceID);
-        if (queued < AUDIO_BUFFER_SIZE) {
-            int need = AUDIO_BUFFER_SIZE - queued;
-            while (need > 0) {
-                int ret = Kit_GetPlayerAudioData(
-                        player, (unsigned char *) audioBuffer, AUDIO_BUFFER_SIZE);
-                need -= ret;
-                if (ret > 0) {
-                    SDL_QueueAudio(audioDeviceID, audioBuffer, (Uint32) ret);
-                } else {
-                    break;
+        if (has_audio) {
+            int queued = SDL_GetQueuedAudioSize(audioDeviceID);
+            if (queued < AUDIO_BUFFER_SIZE) {
+                int need = AUDIO_BUFFER_SIZE - queued;
+                while (need > 0) {
+                    int ret = Kit_GetPlayerAudioData(
+                            player, (unsigned char *) audioBuffer, AUDIO_BUFFER_SIZE);
+                    need -= ret;
+                    if (ret > 0) {
+                        SDL_QueueAudio(audioDeviceID, audioBuffer, (Uint32) ret);
+                    } else {
+                        break;
+                    }
+                }
+                // If we now have data, start playback (again)
+                if (SDL_GetQueuedAudioSize(audioDeviceID) > 0) {
+                    SDL_PauseAudioDevice(audioDeviceID, 0);
                 }
             }
-            // If we now have data, start playback (again)
-            if (SDL_GetQueuedAudioSize(audioDeviceID) > 0) {
-                SDL_PauseAudioDevice(audioDeviceID, 0);
-            }
         }
+
         /// video
-        void *video_data;
-        texture->lock(nullptr, &video_data, nullptr);
-        if (Kit_GetPlayerVideoDataRaw(player, video_data)) {
-            texture->unlock();
+        if (has_video) {
+            void *video_data;
+            texture->lock(nullptr, &video_data, nullptr);
+            if (Kit_GetPlayerVideoDataRaw(player, video_data)) {
+                texture->unlock();
+            }
+            // scaling
+            Vector2f max_scale = {
+                    getSize().x / texture->getTextureRect().width,
+                    getSize().y / texture->getTextureRect().height};
+            Vector2f scale = {max_scale.y, max_scale.y};
+            if (scale.x > max_scale.x) {
+                scale.x = scale.y = max_scale.x;
+            }
+            texture->setOrigin(Origin::Center);
+            texture->setPosition(getSize().x / 2.0f, getSize().y / 2.0f);
+            texture->setScale(scale);
         }
-        // scaling
-        Vector2f max_scale = {
-                getSize().x / texture->getTextureRect().width,
-                getSize().y / texture->getTextureRect().height};
-        Vector2f scale = {max_scale.y, max_scale.y};
-        if (scale.x > max_scale.x) {
-            scale.x = scale.y = max_scale.x;
-        }
-        texture->setOrigin(Origin::Center);
-        texture->setPosition(getSize().x / 2.0f, getSize().y / 2.0f);
-        texture->setScale(scale);
 
         /// render
         main->getRenderer()->flip();

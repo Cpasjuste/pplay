@@ -45,6 +45,8 @@ private:
     SDL_AudioDeviceID audioDeviceID;
     char audioBuffer[AUDIO_BUFFER_SIZE];
 
+    bool has_video = false;
+    bool has_audio = false;
     bool paused = false;
 };
 
