@@ -55,7 +55,7 @@ void Main::run() {
 
         unsigned int keys = input->update()[0].state;
 
-        player->step(keys);
+        player->step(player->isMaximized() ? keys : 0);
 
         if (keys > 0) {
 
@@ -69,7 +69,7 @@ void Main::run() {
                 }
             }
 
-            if (!player->isPlaying()) {
+            if (!player->isMaximized()) {
                 Io::File file = filer->step(keys);
                 if (keys & Input::Key::KEY_FIRE1 && file.type == Io::Type::File) {
                     if (player->load(file)) {

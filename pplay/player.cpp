@@ -21,6 +21,10 @@ Player::Player(Main *_main) : C2DRectangle(_main->getRenderer()->getSize()) {
 
 bool Player::load(const c2d::Io::File &file) {
 
+    if(isPlaying()) {
+        stop();
+    }
+
     // init Kit library
     int err = Kit_Init(KIT_INIT_ASS);
     if (err != 0) {
@@ -89,7 +93,7 @@ bool Player::load(const c2d::Io::File &file) {
     }
 
     setVisibility(Visibility::Visible);
-    osd->setVisibility(Visibility::Visible);
+    //osd->setVisibility(Visibility::Visible);
     osd->setLayer(100);
 
     // start playback
@@ -203,6 +207,10 @@ bool Player::isPlaying() {
     return player != nullptr
            && (Kit_GetPlayerState(player) == KIT_PLAYING
                || Kit_GetPlayerState(player) == KIT_PAUSED);
+}
+
+bool Player::isMaximized() {
+    return fullscreen;
 }
 
 void Player::pause() {

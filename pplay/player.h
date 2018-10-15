@@ -32,6 +32,8 @@ public:
 
     bool isPlaying();
 
+    bool isMaximized();
+
     Main *getMain();
 
 private:
@@ -49,6 +51,7 @@ private:
 
     bool has_video = false;
     bool has_audio = false;
+    bool fullscreen = false;
     bool paused = false;
 };
 
