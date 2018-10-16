@@ -10,8 +10,9 @@ source /opt/devkitpro/switchvars.sh
     --disable-encoders --disable-muxers \
     --disable-programs --disable-debug --disable-doc
 
+    # some hackery, sorry WntrMute :)
     sed 's/#define HAVE_INET_ATON 0/#define HAVE_INET_ATON 1/g' -i config.h
     sed 's/#define HAVE_GETADDRINFO 0/#define HAVE_GETADDRINFO 1/g' -i config.h
     sed 's/#include <sys\/poll.h>/#include <poll.h>/g' -i libavformat/rtpproto.c
-
-# --disable-network --disable-protocols --enable-protocol=file \
+    sed '/#include <sys\/socket.h>/a typedef __uint32_t in_addr_t;' -i libavformat/network.h
+    sed '/#include <sys\/socket.h>/a typedef __uint16_t in_port_t;' -i libavformat/network.h
