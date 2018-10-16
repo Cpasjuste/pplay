@@ -15,7 +15,6 @@ Main::Main() {
     // create a font
     font = new Font();
     font->load();
-    font->setOffset({0, -4});
 
     // create io
     io = new C2DIo();

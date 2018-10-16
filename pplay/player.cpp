@@ -26,7 +26,7 @@ bool Player::load(const c2d::Io::File &file) {
     }
 
     // init Kit library
-    int err = Kit_Init(KIT_INIT_ASS);
+    int err = Kit_Init(KIT_INIT_NETWORK | KIT_INIT_ASS);
     if (err != 0) {
         printf("unable to initialize Kitchensink: %s\n", Kit_GetError());
         stop();
@@ -34,7 +34,8 @@ bool Player::load(const c2d::Io::File &file) {
     }
 
     // open source file
-    source = Kit_CreateSourceFromUrl(file.path.c_str());
+    //source = Kit_CreateSourceFromUrl(file.path.c_str());
+    source = Kit_CreateSourceFromUrl("http://divers.klikissi.fr/telechargements/FILMS/120.Battements.Par.Minute.mkv");
     if (!source) {
         printf("unable to load file '%s': %s\n", file.path.c_str(), Kit_GetError());
         stop();
