@@ -21,7 +21,7 @@ Player::Player(Main *_main) : C2DRectangle(_main->getRenderer()->getSize()) {
 
 bool Player::load(const c2d::Io::File &file) {
 
-    if(isPlaying()) {
+    if (isPlaying()) {
         stop();
     }
 
@@ -34,8 +34,7 @@ bool Player::load(const c2d::Io::File &file) {
     }
 
     // open source file
-    //source = Kit_CreateSourceFromUrl(file.path.c_str());
-    source = Kit_CreateSourceFromUrl("http://divers.klikissi.fr/telechargements/FILMS/120.Battements.Par.Minute.mkv");
+    source = Kit_CreateSourceFromUrl(file.path.c_str());
     if (!source) {
         printf("unable to load file '%s': %s\n", file.path.c_str(), Kit_GetError());
         stop();
@@ -214,6 +213,10 @@ bool Player::isMaximized() {
     return fullscreen;
 }
 
+void Player::setMaximized(bool maximize) {
+    fullscreen = maximize;
+}
+
 void Player::pause() {
 
     if (player && !paused) {
@@ -273,3 +276,4 @@ Main *Player::getMain() {
 Player::~Player() {
 
 }
+

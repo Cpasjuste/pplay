@@ -31,9 +31,9 @@ Main::Main() {
     mainRect = new C2DRectangle({renderer->getSize().x - 8, renderer->getSize().y - 8});
     mainRect->setFillColor(Color::Transparent);
 
-    filer = new Filer(io, "./medias", *font, FONT_SIZE,
-                      {16, 16,
-                       (mainRect->getSize().x / 2) - 16, mainRect->getSize().y - 32});
+    filer = new HttpFiler(io, "http://divers.klikissi.fr/telechargements/", *font, FONT_SIZE,
+                          {16, 16,
+                           (mainRect->getSize().x / 2) - 16, mainRect->getSize().y - 32});
     mainRect->add(filer);
 
     // add all this crap
@@ -68,12 +68,33 @@ void Main::run() {
                 }
             }
 
+            if (keys & c2d::Input::KEY_FIRE3) {
+                if (player->isPlaying()) {
+                    if (player->isMaximized()) {
+                        renderer->setClearColor(COLOR_GRAY_LIGHT);
+                        mainRect->setVisibility(Visibility::Visible);
+                        player->setScale(0.4f, 0.4f);
+                        player->setPosition(renderer->getSize().x * 0.55f, renderer->getSize().y * 0.55f);
+                        player->setMaximized(false);
+                    } else {
+                        renderer->setClearColor(Color::Black);
+                        mainRect->setVisibility(Visibility::Hidden);
+                        player->setScale(1.0f, 1.0f);
+                        player->setPosition(0, 0);
+                        player->setMaximized(true);
+                    }
+                }
+            }
+
             if (!player->isMaximized()) {
                 Io::File file = filer->step(keys);
-                if (keys & Input::Key::KEY_FIRE1 && file.type == Io::Type::File) {
+                if (file.type == Io::Type::File && keys & Input::Key::KEY_FIRE1) {
+                    // TODO: "if is http filer then..."
+                    file.path = filer->getPath() + file.path;
                     if (player->load(file)) {
                         player->setScale(0.4f, 0.4f);
                         player->setPosition(renderer->getSize().x * 0.55f, renderer->getSize().y * 0.55f);
+                        player->setMaximized(false);
                     }
                 }
             }
@@ -111,9 +132,17 @@ Main::~Main() {
 
 int main() {
 
+#ifdef __SWITCH__
+    socketInitializeDefault();
+#endif
+
     Main *main = new Main();
     main->run();
     delete (main);
+
+#ifdef __SWITCH__
+    socketExit();
+#endif
 
     return 0;
 }

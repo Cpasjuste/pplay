@@ -30,9 +30,13 @@ public:
 
     void stop();
 
+    void maximize();
+
     bool isPlaying();
 
     bool isMaximized();
+
+    void setMaximized(bool maximize);
 
     Main *getMain();
 

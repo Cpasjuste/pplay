@@ -16,7 +16,7 @@ set(BUILD_SDL2_SOFT OFF CACHE BOOL "Build with SDL2 support (software rendering,
 set(BUILD_VITA OFF CACHE BOOL "Build with PSP2 support")
 set(BUILD_PS3 OFF CACHE BOOL "Build with PS3 support")
 set(BUILD_3DS OFF CACHE BOOL "Build with 3DS support")
-set(BUILD_SWITCH OFF CACHE BOOL "Build with NX (SWITCH) support")
+set(BUILD_SWITCH ON CACHE BOOL "Build with NX (SWITCH) support")
 
 include(libcross2d/Toolchain.cmake)
 add_subdirectory(libcross2d)
@@ -43,7 +43,7 @@ set(PPLAY_CFLAGS
         -D__VERSION_MAJOR__=${VERSION_MAJOR}
         -D__VERSION_MINOR__=${VERSION_MINOR})
 
-set(PPLAY_LDFLAGS swscale swresample avformat avcodec avutil ass fribidi m png z)
+set(PPLAY_LDFLAGS swscale swresample avformat avcodec avutil ass fribidi curl png z m)
 
 #####################
 # PLATORM SPECIFIC
@@ -58,7 +58,7 @@ elseif (BUILD_SDL2)
     # SDL2 PLATORM
     #####################
     list(APPEND PPLAY_INC /usr/include/SDL2)
-    list(APPEND PPLAY_LDFLAGS -lpthread -llzma)
+    list(APPEND PPLAY_LDFLAGS pthread lzma)
 endif (BUILD_SWITCH)
 
 #####################

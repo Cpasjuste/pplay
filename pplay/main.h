@@ -7,6 +7,7 @@
 
 #include "cross2d/c2d.h"
 #include "filer.h"
+#include "filer_http.h"
 #include "player.h"
 #include "player_osd.h"
 
@@ -50,7 +51,7 @@ private:
     c2d::C2DIo *io = nullptr;
     c2d::C2DInput *input = nullptr;
     c2d::C2DClock *timer = nullptr;
-    Filer *filer = nullptr;
+    HttpFiler *filer = nullptr;
     Player *player = nullptr;
 };
 
