@@ -87,11 +87,13 @@ void Main::run() {
             }
 
             if (keys & c2d::Input::KEY_FIRE5 || keys & c2d::Input::KEY_FIRE6) {
+                filer->setVisibility(Visibility::Hidden);
                 if (filer == filerHttp) {
                     filer = filerSdmc;
                 } else {
                     filer = filerHttp;
                 }
+                filer->setVisibility(Visibility::Visible);
             }
 
             if (keys & c2d::Input::KEY_FIRE3) {
