@@ -6,23 +6,30 @@
 #define NXFILER_FILER_H
 
 #include "cross2d/c2d.h"
+#include "outline_rect.h"
 
 class Filer : public c2d::C2DRectangle {
 
 public:
 
-    Filer(c2d::Io *io, const std::string &path, const c2d::Font &font,
+    Filer(const std::string &path, const c2d::Font &font,
           int fontSize, const c2d::FloatRect &rect);
 
     ~Filer();
 
-    bool getDir(const std::string &path);
+    virtual bool getDir(const std::string &path) { return false; };
 
-    std::string getPath();
+    virtual std::string getPath();
 
-    c2d::Io::File step(unsigned int keys);
+    virtual bool step(unsigned int keys);
 
-    c2d::Io::File getSelection();
+    virtual c2d::Io::File getSelection();
+
+private:
+
+    friend class FilerSdmc;
+
+    friend class FilerHttp;
 
     void down();
 
@@ -32,17 +39,14 @@ public:
 
     void right();
 
-    void enter();
+    virtual void enter() {};
 
-    void exit();
-
-private:
+    virtual void exit() {};
 
     std::string path;
     std::vector<c2d::Io::File> files;
-    c2d::Io *io;
     c2d::ListBox *listBox;
-    c2d::C2DRectangle *pathRect;
+    OutlineRect *pathRect;
     c2d::Text *pathText;
     int index = 0;
 };

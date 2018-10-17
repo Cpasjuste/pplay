@@ -36,6 +36,8 @@ public:
 
     void run();
 
+    void setPlayerSize(bool fs);
+
     c2d::C2DRenderer *getRenderer();
 
     c2d::C2DIo *getIo();
@@ -51,7 +53,10 @@ private:
     c2d::C2DIo *io = nullptr;
     c2d::C2DInput *input = nullptr;
     c2d::C2DClock *timer = nullptr;
-    HttpFiler *filer = nullptr;
+
+    Filer *filerSdmc = nullptr;
+    Filer *filerHttp = nullptr;
+    Filer *filer = nullptr;
     Player *player = nullptr;
 };
 

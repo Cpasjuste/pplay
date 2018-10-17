@@ -10,13 +10,24 @@
 
 using namespace c2d;
 
-Player::Player(Main *_main) : C2DRectangle(_main->getRenderer()->getSize()) {
+Player::Player(Main *_main) : OutlineRect(_main->getRenderer()->getSize(), 4) {
 
     main = _main;
-    setFillColor(Color::Transparent);
+    setFillColor(Color::Black);
+    setOutlineColor(COLOR_BLUE);
+    setOutlineThickness(4);
+
+    tweenPosition = new TweenPosition(
+            {main->getRenderer()->getSize().x * 0.55f, main->getRenderer()->getSize().y * 0.55f},
+            {0, 0}, 0.5f);
+    add(tweenPosition);
+    tweenScale = new TweenScale({0.4f, 0.4f}, {1, 1}, 0.5f);
+    add(tweenScale);
 
     osd = new PlayerOSD(this);
     add(osd);
+
+    setVisibility(Visibility::Hidden);
 }
 
 bool Player::load(const c2d::Io::File &file) {
@@ -93,7 +104,6 @@ bool Player::load(const c2d::Io::File &file) {
     }
 
     setVisibility(Visibility::Visible);
-    //osd->setVisibility(Visibility::Visible);
     osd->setLayer(100);
 
     // start playback
@@ -128,30 +138,30 @@ void Player::step(unsigned int keys) {
                 osd->pause();
             }
         } else {
-            osd->setVisibility(Visibility::Visible);
+            osd->setVisibility(Visibility::Visible, true);
         }
     } else if (keys & Input::Key::KEY_FIRE2) {
         if (osd->isVisible()) {
-            osd->setVisibility(Visibility::Hidden);
+            osd->setVisibility(Visibility::Hidden, true);
         } else {
-            osd->setVisibility(Visibility::Visible);
+            osd->setVisibility(Visibility::Visible, true);
         }
     } else if (!paused) {
         if (keys & c2d::Input::Key::KEY_LEFT) {
-            osd->setVisibility(Visibility::Visible);
+            osd->setVisibility(Visibility::Visible, true);
             Kit_PlayerSeek(player, position - 60.0);
         } else if (keys & c2d::Input::Key::KEY_RIGHT) {
-            osd->setVisibility(Visibility::Visible);
+            osd->setVisibility(Visibility::Visible, true);
             if (position + 60 < duration) {
                 Kit_PlayerSeek(player, position + 60.0);
             }
         } else if (keys & c2d::Input::Key::KEY_UP) {
-            osd->setVisibility(Visibility::Visible);
+            osd->setVisibility(Visibility::Visible, true);
             if (position + (60.0 * 10.0) < duration) {
                 Kit_PlayerSeek(player, position + (60.0 * 10.0));
             }
         } else if (keys & c2d::Input::Key::KEY_DOWN) {
-            osd->setVisibility(Visibility::Visible);
+            osd->setVisibility(Visibility::Visible, true);
             Kit_PlayerSeek(player, position - (60.0 * 10.0));
         }
     }
@@ -267,13 +277,21 @@ void Player::stop() {
 
     osd->setVisibility(Visibility::Hidden);
     setVisibility(Visibility::Hidden);
+    setFullscreen(false);
 }
 
 Main *Player::getMain() {
     return main;
 }
 
+c2d::TweenPosition *Player::getTweenPosition() {
+    return tweenPosition;
+}
+
+c2d::TweenScale *Player::getTweenScale() {
+    return tweenScale;
+}
+
 Player::~Player() {
 
 }
-

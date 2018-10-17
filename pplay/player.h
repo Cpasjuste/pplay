@@ -12,11 +12,11 @@
 class Main;
 class PlayerOSD;
 
-class Player : public c2d::C2DRectangle {
+class Player : public OutlineRect {
 
 public:
 
-    Player(Main *main);
+    explicit Player(Main *main);
 
     ~Player();
 
@@ -30,8 +30,6 @@ public:
 
     void stop();
 
-    void maximize();
-
     bool isPlaying();
 
     bool isFullscreen();
@@ -40,11 +38,16 @@ public:
 
     Main *getMain();
 
+    c2d::TweenPosition *getTweenPosition();
+    c2d::TweenScale *getTweenScale();
+
 private:
 
     Main *main = nullptr;
     PlayerOSD *osd = nullptr;
     c2d::Texture *texture = nullptr;
+    c2d::TweenPosition *tweenPosition;
+    c2d::TweenScale *tweenScale;
 
     Kit_Source *source = nullptr;
     Kit_Player *player = nullptr;

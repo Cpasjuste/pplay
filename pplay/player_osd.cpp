@@ -83,7 +83,7 @@ void PlayerOSD::setProgress(float duration, float position) {
         std::string rem = Utils::formatTime(duration - position);
         remaining->setString(rem);
 
-        std::string cur = Utils::formatTime(position);
+        std::string cur = Utils::formatTimeShort(position);
         current->setString(cur);
         current->setPosition(
                 progress->getPosition().x + progress->getProgressWidth(),

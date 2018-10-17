@@ -6,50 +6,27 @@
 #define FILER_HTTP_H
 
 #include "cross2d/c2d.h"
+#include "filer.h"
 
 class Browser;
 
-class HttpFiler : public c2d::C2DRectangle {
+class FilerHttp : public Filer {
 
 public:
 
-    HttpFiler(c2d::Io *io, const std::string &path, const c2d::Font &font,
-              int fontSize, const c2d::FloatRect &rect);
+    FilerHttp(const c2d::Font &font, int fontSize, const c2d::FloatRect &rect);
 
-    ~HttpFiler();
+    ~FilerHttp();
 
-    bool getDir(const std::string &path, bool reopen = true);
-
-    std::string getPath();
-
-    ///
-    /// \param keys
-    /// \return true if a file is selected
-    bool step(unsigned int keys);
-
-    c2d::Io::File getSelection();
+    bool getDir(const std::string &path) override;
 
 private:
 
-    void down();
+    void enter() override;
 
-    void up();
+    void exit() override;
 
-    void left();
-
-    void right();
-
-    void enter();
-
-    void exit();
-
-    std::vector<c2d::Io::File> files;
-    c2d::Io *io;
-    c2d::ListBox *listBox;
-    c2d::C2DRectangle *pathRect;
-    c2d::Text *pathText;
     Browser *browser;
-    int index = 0;
 };
 
 #endif //FILER_HTTP_H

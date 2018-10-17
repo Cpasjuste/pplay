@@ -12,6 +12,8 @@ class Utils {
 public:
 
     static std::string formatTime(double seconds);
+
+    static std::string formatTimeShort(double seconds);
 };
 
 

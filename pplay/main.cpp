@@ -3,6 +3,7 @@
 //
 
 #include "main.h"
+#include "filer_sdmc.h"
 
 using namespace c2d;
 
@@ -23,6 +24,8 @@ Main::Main() {
     input = new C2DInput();
     input->setJoystickMapping(0, C2D_DEFAULT_JOY_KEYS, 0);
     input->setKeyboardMapping(C2D_DEFAULT_KB_KEYS);
+    input->setRepeatEnable(true);
+    input->setRepeatDelay(INPUT_DELAY);
 
     // create a timer
     timer = new C2DClock();
@@ -31,21 +34,36 @@ Main::Main() {
     mainRect = new C2DRectangle({renderer->getSize().x - 8, renderer->getSize().y - 8});
     mainRect->setFillColor(Color::Transparent);
 
-    filer = new HttpFiler(io, "http://divers.klikissi.fr/telechargements/", *font, FONT_SIZE,
-                          {16, 16,
-                           (mainRect->getSize().x / 2) - 16, mainRect->getSize().y - 32});
-    mainRect->add(filer);
+    // create filers
+    FloatRect filerRect = {16, 16,
+                           (mainRect->getSize().x / 2) - 16, mainRect->getSize().y - 32};
+    filerSdmc = new FilerSdmc(io, ".", *font, FONT_SIZE, filerRect);
+    mainRect->add(filerSdmc);
+    filerHttp = new FilerHttp(*font, FONT_SIZE, filerRect);
+    // "http://divers.klikissi.fr/telechargements/"
+    filerHttp->setVisibility(Visibility::Hidden);
+    mainRect->add(filerHttp);
+    filer = filerSdmc;
 
     // add all this crap
     renderer->add(mainRect);
 
-    input->setRepeatEnable(true);
-    input->setRepeatDelay(INPUT_DELAY);
-
     // ffmpeg player
     player = new Player(this);
-    player->setVisibility(Visibility::Hidden);
     renderer->add(player);
+}
+
+void Main::setPlayerSize(bool fs) {
+    if (fs) {
+        mainRect->setVisibility(Visibility::Visible);
+        player->getTweenPosition()->play(TweenDirection::Forward);
+        player->getTweenScale()->play(TweenDirection::Forward);
+    } else {
+        //mainRect->setVisibility(Visibility::Hidden);
+        player->getTweenPosition()->play(TweenDirection::Backward);
+        player->getTweenScale()->play(TweenDirection::Backward);
+    }
+    player->setFullscreen(fs);
 }
 
 void Main::run() {
@@ -57,47 +75,39 @@ void Main::run() {
         player->step(player->isFullscreen() ? keys : 0);
 
         if (keys > 0) {
-
             if (((keys & c2d::Input::Key::KEY_START)
                  || (keys & c2d::Input::Key::KEY_COIN)
                  || (keys & EV_QUIT))) {
                 if (player->isPlaying()) {
                     player->stop();
+                    //mainRect->setVisibility(Visibility::Visible);
                 } else {
                     break;
                 }
             }
 
+            if (keys & c2d::Input::KEY_FIRE5 || keys & c2d::Input::KEY_FIRE6) {
+                if (filer == filerHttp) {
+                    filer = filerSdmc;
+                } else {
+                    filer = filerHttp;
+                }
+            }
+
             if (keys & c2d::Input::KEY_FIRE3) {
                 if (player->isPlaying()) {
-                    if (player->isFullscreen()) {
-                        renderer->setClearColor(COLOR_GRAY_LIGHT);
-                        mainRect->setVisibility(Visibility::Visible);
-                        player->setScale(0.4f, 0.4f);
-                        player->setPosition(renderer->getSize().x * 0.55f, renderer->getSize().y * 0.55f);
-                        player->setFullscreen(false);
-                    } else {
-                        renderer->setClearColor(Color::Black);
-                        mainRect->setVisibility(Visibility::Hidden);
-                        player->setScale(1.0f, 1.0f);
-                        player->setPosition(0, 0);
-                        player->setFullscreen(true);
-                    }
+                    setPlayerSize(!player->isFullscreen());
                 }
             }
 
             if (!player->isFullscreen()) {
                 if (filer->step(keys)) {
                     Io::File file = filer->getSelection();
-                    printf("file: %s, type: %i\n", file.name.c_str(), file.type);
-                    // TODO: "if is http filer then..."
-                    file.path = filer->getPath() + file.path;
+                    if (filer == filerHttp) {
+                        file.path = filerHttp->getPath() + file.path;
+                    }
                     if (player->load(file)) {
-                        renderer->setClearColor(Color::Black);
-                        mainRect->setVisibility(Visibility::Hidden);
-                        player->setScale(1.0f, 1.0f);
-                        player->setPosition(0, 0);
-                        player->setFullscreen(true);
+                        setPlayerSize(true);
                     }
                 }
             }
