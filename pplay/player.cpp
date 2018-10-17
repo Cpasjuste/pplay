@@ -209,12 +209,12 @@ bool Player::isPlaying() {
                || Kit_GetPlayerState(player) == KIT_PAUSED);
 }
 
-bool Player::isMaximized() {
+bool Player::isFullscreen() {
     return fullscreen;
 }
 
-void Player::setMaximized(bool maximize) {
-    fullscreen = maximize;
+void Player::setFullscreen(bool fs) {
+    fullscreen = fs;
 }
 
 void Player::pause() {

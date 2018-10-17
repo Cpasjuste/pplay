@@ -54,7 +54,7 @@ void Main::run() {
 
         unsigned int keys = input->update()[0].state;
 
-        player->step(player->isMaximized() ? keys : 0);
+        player->step(player->isFullscreen() ? keys : 0);
 
         if (keys > 0) {
 
@@ -70,31 +70,34 @@ void Main::run() {
 
             if (keys & c2d::Input::KEY_FIRE3) {
                 if (player->isPlaying()) {
-                    if (player->isMaximized()) {
+                    if (player->isFullscreen()) {
                         renderer->setClearColor(COLOR_GRAY_LIGHT);
                         mainRect->setVisibility(Visibility::Visible);
                         player->setScale(0.4f, 0.4f);
                         player->setPosition(renderer->getSize().x * 0.55f, renderer->getSize().y * 0.55f);
-                        player->setMaximized(false);
+                        player->setFullscreen(false);
                     } else {
                         renderer->setClearColor(Color::Black);
                         mainRect->setVisibility(Visibility::Hidden);
                         player->setScale(1.0f, 1.0f);
                         player->setPosition(0, 0);
-                        player->setMaximized(true);
+                        player->setFullscreen(true);
                     }
                 }
             }
 
-            if (!player->isMaximized()) {
-                Io::File file = filer->step(keys);
-                if (file.type == Io::Type::File && keys & Input::Key::KEY_FIRE1) {
+            if (!player->isFullscreen()) {
+                if (filer->step(keys)) {
+                    Io::File file = filer->getSelection();
+                    printf("file: %s, type: %i\n", file.name.c_str(), file.type);
                     // TODO: "if is http filer then..."
                     file.path = filer->getPath() + file.path;
                     if (player->load(file)) {
-                        player->setScale(0.4f, 0.4f);
-                        player->setPosition(renderer->getSize().x * 0.55f, renderer->getSize().y * 0.55f);
-                        player->setMaximized(false);
+                        renderer->setClearColor(Color::Black);
+                        mainRect->setVisibility(Visibility::Hidden);
+                        player->setScale(1.0f, 1.0f);
+                        player->setPosition(0, 0);
+                        player->setFullscreen(true);
                     }
                 }
             }

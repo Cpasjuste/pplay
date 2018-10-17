@@ -1163,14 +1163,22 @@ void Browser::limit_time(int limit)
 ///=============================Escape/Unescape strings==============================///
 std::string Browser::escape(std::string the_string)
 {
-    std::string output;
-    output = curl_easy_escape( curl, the_string.c_str(), 0 );
+    std::string output = the_string;
+    char *tmp = curl_easy_escape( curl, the_string.c_str(), 0 );
+    if(tmp) {
+        output = tmp;
+        curl_free(tmp);
+    }
     return output;
 }
 std::string Browser::unescape(std::string the_string)
 {
-    std::string output;
-    output = curl_easy_escape( curl, the_string.c_str(), 0 );
+    std::string output = the_string;
+    char *tmp = curl_easy_unescape( curl, the_string.c_str(), 0, nullptr );
+    if(tmp) {
+        output = tmp;
+        curl_free(tmp);
+    }
     return output;
 }
 ///=================================================================================///

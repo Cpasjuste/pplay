@@ -34,9 +34,9 @@ public:
 
     bool isPlaying();
 
-    bool isMaximized();
+    bool isFullscreen();
 
-    void setMaximized(bool maximize);
+    void setFullscreen(bool maximize);
 
     Main *getMain();
 

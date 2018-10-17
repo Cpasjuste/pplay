@@ -75,7 +75,7 @@ bool HttpFiler::getDir(const std::string &p, bool reopen) {
 
     if (reopen) {
         browser->open(p, 5);
-        if (browser->links.size() < 1) {
+        if (browser->error() || browser->links.size() < 1) {
             return false;
         }
     }
@@ -83,22 +83,31 @@ bool HttpFiler::getDir(const std::string &p, bool reopen) {
     index = 0;
     files.clear();
 
+    // add up/back ("..")
+    files.emplace_back("..", "..", Io::Type::Directory, COLOR_BLUE_LIGHT);
+
     for (int i = 0; i < browser->links.size(); i++) {
-        Io::File file;
-        file.type = Utility::endsWith(browser->links[i].url(), "/") ?
-                    Io::Type::Directory : Io::Type::File;
-        file.color = file.type == Io::Type::Directory ?
-                     COLOR_BLUE_LIGHT : Color::White;
-        file.name = Utility::removeLastSlash(browser->links[i].name());
-        file.path = browser->links[i].url();
-        //printf("name: %s, path: %s\n", file.name.c_str(), file.path.c_str());
-        files.push_back(file);
+
+        // skip apache2 stuff
+        if (browser->links[i].name() == "Name"
+            || browser->links[i].name() == "Last modified"
+            || browser->links[i].name() == "Size"
+            || browser->links[i].name() == "Description"
+            || browser->links[i].name() == "Parent Directory") {
+            continue;
+        }
+
+        Io::Type type = Utility::endsWith(browser->links[i].url(), "/") ?
+                        Io::Type::Directory : Io::Type::File;
+        Color color = type == Io::Type::Directory ?
+                      COLOR_BLUE_LIGHT : Color::White;
+        files.emplace_back(Utility::removeLastSlash(browser->links[i].name()),
+                           browser->links[i].url(), type, color);
     }
 
     listBox->setFiles(files);
     listBox->setSelection(0);
-
-    pathText->setString(browser->geturl());
+    pathText->setString(browser->unescape(browser->geturl()));
 
     return true;
 }
@@ -107,7 +116,7 @@ std::string HttpFiler::getPath() {
     return browser->geturl();
 }
 
-Io::File HttpFiler::step(unsigned int keys) {
+bool HttpFiler::step(unsigned int keys) {
 
     if (keys & Input::Key::KEY_UP) {
         up();
@@ -118,12 +127,15 @@ Io::File HttpFiler::step(unsigned int keys) {
     } else if (keys & Input::Key::KEY_LEFT) {
         left();
     } else if (keys & Input::Key::KEY_FIRE1) {
+        if (getSelection().type == Io::Type::File) {
+            return true;
+        }
         enter();
     } else if (keys & Input::Key::KEY_FIRE2) {
         exit();
     }
 
-    return getSelection();
+    return false;
 }
 
 c2d::Io::File HttpFiler::getSelection() {
@@ -172,13 +184,13 @@ void HttpFiler::enter() {
         return;
     }
 
-    browser->follow_link(file.path);
+    printf("follow: %s\n", browser->unescape(file.path).c_str());
+    browser->follow_link(browser->unescape(file.path));
     getDir(browser->geturl(), false);
 }
 
 void HttpFiler::exit() {
 
-    //printf("history: %i\n", (int) browser->get_history().size());
     if (browser->get_history().size() > 1) {
         browser->back(10);
         getDir(browser->geturl(), false);

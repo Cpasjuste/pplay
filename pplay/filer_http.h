@@ -14,7 +14,7 @@ class HttpFiler : public c2d::C2DRectangle {
 public:
 
     HttpFiler(c2d::Io *io, const std::string &path, const c2d::Font &font,
-          int fontSize, const c2d::FloatRect &rect);
+              int fontSize, const c2d::FloatRect &rect);
 
     ~HttpFiler();
 
@@ -22,9 +22,14 @@ public:
 
     std::string getPath();
 
-    c2d::Io::File step(unsigned int keys);
+    ///
+    /// \param keys
+    /// \return true if a file is selected
+    bool step(unsigned int keys);
 
     c2d::Io::File getSelection();
+
+private:
 
     void down();
 
@@ -37,8 +42,6 @@ public:
     void enter();
 
     void exit();
-
-private:
 
     std::vector<c2d::Io::File> files;
     c2d::Io *io;
