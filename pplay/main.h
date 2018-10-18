@@ -12,7 +12,7 @@
 #include "player_osd.h"
 
 #define INPUT_DELAY 250
-#define FONT_SIZE 22
+#define FONT_SIZE 20
 
 #define COLOR_CLOUD         Color(0xecf0f1ff)
 #define COLOR_GRAY          Color(0x636e72ff)
@@ -34,26 +34,29 @@ public:
 
     ~Main();
 
+    void initConfig();
+
     void run();
 
     void setPlayerSize(bool fs);
 
-    c2d::C2DRenderer *getRenderer();
+    c2d::Renderer *getRenderer();
 
-    c2d::C2DIo *getIo();
+    c2d::Io *getIo();
 
-    c2d::C2DFont *getFont();
+    c2d::Font *getFont();
 
-    c2d::C2DInput *getInput();
+    c2d::Input *getInput();
+
+    c2d::config::Config *getConfig();
 
 private:
-    c2d::C2DRenderer *renderer = nullptr;
-    c2d::C2DRectangle *mainRect = nullptr;
-    c2d::C2DFont *font = nullptr;
-    c2d::C2DIo *io = nullptr;
-    c2d::C2DInput *input = nullptr;
-    c2d::C2DClock *timer = nullptr;
+    c2d::Renderer *renderer = nullptr;
+    c2d::RectangleShape *mainRect = nullptr;
+    c2d::Font *font = nullptr;
+    c2d::Clock *timer = nullptr;
 
+    c2d::config::Config *config = nullptr;
     Filer *filerSdmc = nullptr;
     Filer *filerHttp = nullptr;
     Filer *filer = nullptr;

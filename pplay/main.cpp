@@ -6,6 +6,24 @@
 #include "filer_sdmc.h"
 
 using namespace c2d;
+using namespace c2d::config;
+
+void Main::initConfig() {
+
+    Section section("HTTP_SERVERS");
+    section.add({"SERVER0", "http://divers.klikissi.fr/telechargements/"});
+    section.add({"SERVER1", ""});
+    section.add({"SERVER2", ""});
+    section.add({"SERVER3", ""});
+    section.add({"SERVER4", ""});
+    config->add(section);
+
+    // load the configuration from file, overwriting default values
+    if (!config->load()) {
+        // file doesn't exist or is malformed, (re)create it
+        config->save();
+    }
+}
 
 Main::Main() {
 
@@ -13,22 +31,20 @@ Main::Main() {
     renderer = new C2DRenderer(Vector2f(1280, 720));
     renderer->setClearColor(COLOR_GRAY_LIGHT);
 
+    // configure input
+    getInput()->setRepeatEnable(true);
+    getInput()->setRepeatDelay(INPUT_DELAY);
+
     // create a font
     font = new Font();
     font->load();
 
-    // create io
-    io = new C2DIo();
-
-    // create input
-    input = new C2DInput();
-    input->setJoystickMapping(0, C2D_DEFAULT_JOY_KEYS, 0);
-    input->setKeyboardMapping(C2D_DEFAULT_KB_KEYS);
-    input->setRepeatEnable(true);
-    input->setRepeatDelay(INPUT_DELAY);
-
     // create a timer
     timer = new C2DClock();
+
+    // init/load config file
+    config = new Config("PPLAY", getIo()->getHomePath() + "/pplay.cfg");
+    initConfig();
 
     // create a rect
     mainRect = new C2DRectangle({renderer->getSize().x - 8, renderer->getSize().y - 8});
@@ -37,7 +53,7 @@ Main::Main() {
     // create filers
     FloatRect filerRect = {16, 16,
                            (mainRect->getSize().x / 2) - 16, mainRect->getSize().y - 32};
-    filerSdmc = new FilerSdmc(io, ".", *font, FONT_SIZE, filerRect);
+    filerSdmc = new FilerSdmc(renderer->getIo(), ".", *font, FONT_SIZE, filerRect);
     mainRect->add(filerSdmc);
     filerHttp = new FilerHttp(*font, FONT_SIZE, filerRect);
     // "http://divers.klikissi.fr/telechargements/"
@@ -70,7 +86,7 @@ void Main::run() {
 
     while (true) {
 
-        unsigned int keys = input->update()[0].state;
+        unsigned int keys = getInput()->getKeys();
 
         player->step(player->isFullscreen() ? keys : 0);
 
@@ -119,27 +135,30 @@ void Main::run() {
     }
 }
 
-c2d::C2DRenderer *Main::getRenderer() {
+c2d::Renderer *Main::getRenderer() {
     return renderer;
 }
 
-c2d::C2DIo *Main::getIo() {
-    return io;
+c2d::Io *Main::getIo() {
+    return renderer->getIo();
 }
 
-c2d::C2DFont *Main::getFont() {
+c2d::Font *Main::getFont() {
     return font;
 }
 
-c2d::C2DInput *Main::getInput() {
-    return input;
+c2d::Input *Main::getInput() {
+    return renderer->getInput();
+}
+
+c2d::config::Config *Main::getConfig() {
+    return config;
 }
 
 Main::~Main() {
 
+    delete (config);
     delete (timer);
-    delete (input);
-    delete (io);
     delete (font);
     // will delete widgets recursively
     delete (renderer);

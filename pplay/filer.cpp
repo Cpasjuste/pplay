@@ -19,7 +19,7 @@ Filer::Filer(const std::string &path, const c2d::Font &font,
     pathRect->setOutlineColor(COLOR_BLUE);
     pathRect->setOutlineThickness(2);
     pathText = new C2DText("CURRENT PATH: /", font, (unsigned int) fontSize);
-    pathText->setOutlineThickness(2);
+    pathText->setOutlineThickness(1);
     pathText->setOrigin(Origin::Left);
     pathText->setPosition(4, (pathRect->getSize().y / 2));
     pathText->setSizeMax(rect.width - 8, 0);
@@ -32,7 +32,7 @@ Filer::Filer(const std::string &path, const c2d::Font &font,
     listBox->setFillColor(COLOR_GRAY_DARK);
     listBox->setOutlineColor(COLOR_BLUE);
     listBox->setOutlineThickness(2);
-    listBox->setTextOutlineThickness(2);
+    listBox->setTextOutlineThickness(1);
     listBox->setHighlightThickness(2);
     listBox->setHighlightColor(COLOR_GRAY_LIGHT);
     listBox->setHighlightOutlineColor(COLOR_BLUE);
