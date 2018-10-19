@@ -8,23 +8,6 @@
 using namespace c2d;
 using namespace c2d::config;
 
-void Main::initConfig() {
-
-    Section section("HTTP_SERVERS");
-    section.add({"SERVER0", "http://divers.klikissi.fr/telechargements/"});
-    section.add({"SERVER1", ""});
-    section.add({"SERVER2", ""});
-    section.add({"SERVER3", ""});
-    section.add({"SERVER4", ""});
-    config->add(section);
-
-    // load the configuration from file, overwriting default values
-    if (!config->load()) {
-        // file doesn't exist or is malformed, (re)create it
-        config->save();
-    }
-}
-
 Main::Main() {
 
     // create main renderer
@@ -43,7 +26,7 @@ Main::Main() {
     timer = new C2DClock();
 
     // init/load config file
-    config = new Config("PPLAY", getIo()->getHomePath() + "/pplay.cfg");
+    config = new Config("PPLAY", getIo()->getHomePath() + "pplay.cfg");
     initConfig();
 
     // create a rect
@@ -56,7 +39,6 @@ Main::Main() {
     filerSdmc = new FilerSdmc(renderer->getIo(), ".", *font, FONT_SIZE, filerRect);
     mainRect->add(filerSdmc);
     filerHttp = new FilerHttp(*font, FONT_SIZE, filerRect);
-    // "http://divers.klikissi.fr/telechargements/"
     filerHttp->setVisibility(Visibility::Hidden);
     mainRect->add(filerHttp);
     filer = filerSdmc;
@@ -67,6 +49,15 @@ Main::Main() {
     // ffmpeg player
     player = new Player(this);
     renderer->add(player);
+
+    float w = renderer->getSize().x / 3;
+    float h = renderer->getSize().y / 3;
+    messageBox = new MessageBox({w, h, w, h},
+                                renderer->getInput(), *font, FONT_SIZE);
+    messageBox->setFillColor(COLOR_BLUE_LIGHT);
+    messageBox->setOutlineColor(COLOR_GRAY);
+    messageBox->setOutlineThickness(2);
+    renderer->add(messageBox);
 }
 
 void Main::setPlayerSize(bool fs) {
@@ -108,6 +99,7 @@ void Main::run() {
                     filer = filerSdmc;
                 } else {
                     filer = filerHttp;
+                    filer->getDir(httpServerList[0]);
                 }
                 filer->setVisibility(Visibility::Visible);
             }
@@ -132,6 +124,31 @@ void Main::run() {
         }
 
         renderer->flip();
+    }
+}
+
+void Main::initConfig() {
+
+    //http://divers.klikissi.fr/telechargements/
+    Section section("HTTP_SERVERS");
+    section.add({"SERVER0", ""});
+    section.add({"SERVER1", ""});
+    section.add({"SERVER2", ""});
+    section.add({"SERVER3", ""});
+    section.add({"SERVER4", ""});
+    config->add(section);
+
+    // load the configuration from file, overwriting default values
+    if (!config->load()) {
+        // file doesn't exist or is malformed, (re)create it
+        config->save();
+    }
+
+    for (Option &option : *config->getSection("HTTP_SERVERS")->getOptions()) {
+        if (!option.getString().empty()) {
+            httpServerList.emplace_back(option.getString());
+            printf("server: %s\n", httpServerList[httpServerList.size() - 1].c_str());
+        }
     }
 }
 

@@ -55,8 +55,9 @@ private:
     c2d::RectangleShape *mainRect = nullptr;
     c2d::Font *font = nullptr;
     c2d::Clock *timer = nullptr;
-
+    c2d::MessageBox *messageBox = nullptr;
     c2d::config::Config *config = nullptr;
+    std::vector<std::string> httpServerList;
     Filer *filerSdmc = nullptr;
     Filer *filerHttp = nullptr;
     Filer *filer = nullptr;
