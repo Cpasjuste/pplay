@@ -7,7 +7,7 @@
 
 using namespace c2d;
 
-Filer::Filer(const std::string &path, const c2d::Font &font,
+Filer::Filer(const std::string &path, Font *font,
              int fontSize, const c2d::FloatRect &rect) : C2DRectangle(rect) {
 
     this->path = path;
@@ -16,7 +16,7 @@ Filer::Filer(const std::string &path, const c2d::Font &font,
     // create current path box
     pathRect = new OutlineRect({rect.width, fontSize + 10});
     pathRect->setFillColor(COLOR_GRAY_DARK);
-    pathRect->setOutlineColor(COLOR_BLUE);
+    pathRect->setOutlineColor(COLOR_ORANGE);
     pathRect->setOutlineThickness(2);
     pathText = new C2DText("CURRENT PATH: /", font, (unsigned int) fontSize);
     pathText->setOutlineThickness(1);
@@ -33,12 +33,10 @@ Filer::Filer(const std::string &path, const c2d::Font &font,
     listBox->setOutlineColor(COLOR_BLUE);
     listBox->setOutlineThickness(2);
     listBox->setTextOutlineThickness(1);
-    listBox->setHighlightThickness(2);
-    listBox->setHighlightColor(COLOR_GRAY_LIGHT);
-    listBox->setHighlightOutlineColor(COLOR_BLUE);
-    listBox->setHighlightUseFileColor(false);
-    auto *tween = new TweenAlpha(80, 150, 0.6f, TweenLoop::PingPong);
-    listBox->setHighlightTween(tween);
+    listBox->getHighlight()->setFillColor(COLOR_GRAY_LIGHT);
+    listBox->getHighlight()->setOutlineColor(COLOR_BLUE);
+    listBox->getHighlight()->setOutlineThickness(2);
+    listBox->getHighlight()->add(new TweenAlpha(80, 150, 0.6f, TweenLoop::PingPong));
 
     auto *border = new RectangleShape(listBox->getLocalBounds());
     border->setFillColor(Color::Transparent);

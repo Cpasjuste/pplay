@@ -26,6 +26,7 @@
 #define COLOR_GREEN_LIGHT   Color(0x55efc4ff)
 #define COLOR_ORANGE        Color(0xd35400ff)
 #define COLOR_ORANGE_LIGHT  Color(0xe67e22ff)
+#define COLOR_RED           Color(0xff0000ff)
 
 class Main {
 
@@ -53,7 +54,6 @@ public:
 private:
     c2d::Renderer *renderer = nullptr;
     c2d::RectangleShape *mainRect = nullptr;
-    c2d::Font *font = nullptr;
     c2d::Clock *timer = nullptr;
     c2d::MessageBox *messageBox = nullptr;
     c2d::config::Config *config = nullptr;

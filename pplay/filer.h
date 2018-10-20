@@ -12,7 +12,7 @@ class Filer : public c2d::C2DRectangle {
 
 public:
 
-    Filer(const std::string &path, const c2d::Font &font,
+    Filer(const std::string &path, c2d::Font *font,
           int fontSize, const c2d::FloatRect &rect);
 
     ~Filer();

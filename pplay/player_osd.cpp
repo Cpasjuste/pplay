@@ -55,7 +55,7 @@ PlayerOSD::PlayerOSD(Player *p) : C2DRectangle(p->getSize()) {
     progress->setOutlineColor(COLOR_GRAY_LIGHT);
     status->add(progress);
 
-    remaining = new Text("01:23:45", *player->getMain()->getFont(), 22);
+    remaining = new Text("01:23:45", player->getMain()->getFont(), 22);
     remaining->setOrigin(Origin::Right);
     remaining->setPosition(
             status->getSize().x - 20,
@@ -63,7 +63,7 @@ PlayerOSD::PlayerOSD(Player *p) : C2DRectangle(p->getSize()) {
     remaining->setOutlineThickness(1);
     status->add(remaining);
 
-    current = new Text("01:23:45", *player->getMain()->getFont(), 18);
+    current = new Text("01:23:45", player->getMain()->getFont(), 18);
     current->setOrigin(Origin::Bottom);
     current->setOutlineThickness(1);
     status->add(current);

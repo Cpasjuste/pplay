@@ -7,8 +7,8 @@
 
 using namespace c2d;
 
-FilerSdmc::FilerSdmc(c2d::Io *io, const std::string &path,
-                     const c2d::Font &font, int fontSize, const c2d::FloatRect &rect)
+FilerSdmc::FilerSdmc(Io *io, const std::string &path,
+                     Font *font, int fontSize, const FloatRect &rect)
         : Filer(path, font, fontSize, rect) {
 
     this->io = io;

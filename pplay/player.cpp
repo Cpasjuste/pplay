@@ -14,7 +14,7 @@ Player::Player(Main *_main) : OutlineRect(_main->getRenderer()->getSize(), 4) {
 
     main = _main;
     setFillColor(Color::Black);
-    setOutlineColor(COLOR_BLUE);
+    setOutlineColor(COLOR_ORANGE);
     setOutlineThickness(4);
 
     tweenPosition = new TweenPosition(

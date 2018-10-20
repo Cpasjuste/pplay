@@ -14,7 +14,7 @@ class FilerHttp : public Filer {
 
 public:
 
-    FilerHttp(const c2d::Font &font, int fontSize, const c2d::FloatRect &rect);
+    FilerHttp(c2d::Font *font, int fontSize, const c2d::FloatRect &rect);
 
     ~FilerHttp();
 

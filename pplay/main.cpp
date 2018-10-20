@@ -18,10 +18,6 @@ Main::Main() {
     getInput()->setRepeatEnable(true);
     getInput()->setRepeatDelay(INPUT_DELAY);
 
-    // create a font
-    font = new Font();
-    font->load();
-
     // create a timer
     timer = new C2DClock();
 
@@ -36,9 +32,9 @@ Main::Main() {
     // create filers
     FloatRect filerRect = {16, 16,
                            (mainRect->getSize().x / 2) - 16, mainRect->getSize().y - 32};
-    filerSdmc = new FilerSdmc(renderer->getIo(), ".", *font, FONT_SIZE, filerRect);
+    filerSdmc = new FilerSdmc(renderer->getIo(), ".", getFont(), FONT_SIZE, filerRect);
     mainRect->add(filerSdmc);
-    filerHttp = new FilerHttp(*font, FONT_SIZE, filerRect);
+    filerHttp = new FilerHttp(getFont(), FONT_SIZE, filerRect);
     filerHttp->setVisibility(Visibility::Hidden);
     mainRect->add(filerHttp);
     filer = filerSdmc;
@@ -53,7 +49,7 @@ Main::Main() {
     float w = renderer->getSize().x / 3;
     float h = renderer->getSize().y / 3;
     messageBox = new MessageBox({w, h, w, h},
-                                renderer->getInput(), *font, FONT_SIZE);
+                                renderer->getInput(), getFont(), FONT_SIZE);
     messageBox->setFillColor(COLOR_BLUE_LIGHT);
     messageBox->setOutlineColor(COLOR_GRAY);
     messageBox->setOutlineThickness(2);
@@ -97,7 +93,7 @@ void Main::run() {
                 filer->setVisibility(Visibility::Hidden);
                 if (filer == filerHttp) {
                     filer = filerSdmc;
-                } else {
+                } else if (!httpServerList.empty()) {
                     filer = filerHttp;
                     filer->getDir(httpServerList[0]);
                 }
@@ -130,13 +126,13 @@ void Main::run() {
 void Main::initConfig() {
 
     //http://divers.klikissi.fr/telechargements/
-    Section section("HTTP_SERVERS");
-    section.add({"SERVER0", ""});
-    section.add({"SERVER1", ""});
-    section.add({"SERVER2", ""});
-    section.add({"SERVER3", ""});
-    section.add({"SERVER4", ""});
-    config->add(section);
+    Group group("HTTP_SERVERS");
+    group.addOption({"SERVER0", ""});
+    group.addOption({"SERVER1", ""});
+    group.addOption({"SERVER2", ""});
+    group.addOption({"SERVER3", ""});
+    group.addOption({"SERVER4", ""});
+    config->addGroup(group);
 
     // load the configuration from file, overwriting default values
     if (!config->load()) {
@@ -144,7 +140,7 @@ void Main::initConfig() {
         config->save();
     }
 
-    for (Option &option : *config->getSection("HTTP_SERVERS")->getOptions()) {
+    for (Option &option : *config->getGroup("HTTP_SERVERS")->getOptions()) {
         if (!option.getString().empty()) {
             httpServerList.emplace_back(option.getString());
             printf("server: %s\n", httpServerList[httpServerList.size() - 1].c_str());
@@ -161,7 +157,7 @@ c2d::Io *Main::getIo() {
 }
 
 c2d::Font *Main::getFont() {
-    return font;
+    return renderer->getFont();
 }
 
 c2d::Input *Main::getInput() {
@@ -176,7 +172,6 @@ Main::~Main() {
 
     delete (config);
     delete (timer);
-    delete (font);
     // will delete widgets recursively
     delete (renderer);
 }
