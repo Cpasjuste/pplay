@@ -12,7 +12,7 @@ Main::Main() {
 
     // create main renderer
     renderer = new C2DRenderer(Vector2f(1280, 720));
-    renderer->setClearColor(COLOR_GRAY_LIGHT);
+    renderer->setClearColor(COLOR_GRAY);
 
     // configure input
     getInput()->setRepeatEnable(true);
