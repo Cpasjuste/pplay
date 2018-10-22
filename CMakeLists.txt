@@ -8,11 +8,8 @@ set(PROJECT_AUTHOR "Cpasjuste")
 set(TITLE_ID "PPLAY0001")
 
 # delete cmake cache folder before changing this option
-set(BUILD_SFML OFF CACHE BOOL "Build with SFML support")
-set(BUILD_SDL1 OFF CACHE BOOL "Build with SDL1 support (software, osmesa) support")
-set(BUILD_SDL1_GL OFF CACHE BOOL "Build with SDL1 support (hardware rendering, fast, needs BUILD_SDL1=ON)")
-set(BUILD_SDL2 ON CACHE BOOL "Build with SDL2 support")
-set(BUILD_SDL2_SOFT OFF CACHE BOOL "Build with SDL2 support (software rendering, needs BUILD_SDL2=ON)")
+set(BUILD_LINUX ON CACHE BOOL "Build with SDL2 support")
+set(BUILD_WINDOWS OFF CACHE BOOL "Build with Windows support (MSYS/MinGW")
 set(BUILD_VITA OFF CACHE BOOL "Build with PSP2 support")
 set(BUILD_PS3 OFF CACHE BOOL "Build with PS3 support")
 set(BUILD_3DS OFF CACHE BOOL "Build with 3DS support")
@@ -50,16 +47,16 @@ set(PPLAY_LDFLAGS swscale swresample avformat avcodec avutil ass fribidi curl pn
 #####################
 if (BUILD_SWITCH)
     #####################
-    # NX PLATORM
+    # SWITCH PLATORM
     #####################
     list(APPEND PPLAY_INC ${DEVKITPRO}/portlibs/switch/include/SDL2)
-elseif (BUILD_SDL2)
+elseif (BUILD_LINUX)
     #####################
-    # SDL2 PLATORM
+    # LINUX PLATORM
     #####################
     list(APPEND PPLAY_INC /usr/include/SDL2)
     list(APPEND PPLAY_LDFLAGS pthread lzma)
-endif (BUILD_SWITCH)
+endif ()
 
 #####################
 # pplay executable

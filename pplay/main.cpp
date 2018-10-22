@@ -56,19 +56,6 @@ Main::Main() {
     renderer->add(messageBox);
 }
 
-void Main::setPlayerSize(bool fs) {
-    if (fs) {
-        mainRect->setVisibility(Visibility::Visible);
-        player->getTweenPosition()->play(TweenDirection::Forward);
-        player->getTweenScale()->play(TweenDirection::Forward);
-    } else {
-        //mainRect->setVisibility(Visibility::Hidden);
-        player->getTweenPosition()->play(TweenDirection::Backward);
-        player->getTweenScale()->play(TweenDirection::Backward);
-    }
-    player->setFullscreen(fs);
-}
-
 void Main::run() {
 
     while (true) {
@@ -146,6 +133,19 @@ void Main::initConfig() {
             printf("server: %s\n", httpServerList[httpServerList.size() - 1].c_str());
         }
     }
+}
+
+void Main::setPlayerSize(bool fs) {
+    if (fs) {
+        mainRect->setVisibility(Visibility::Visible);
+        player->getTweenPosition()->play(TweenDirection::Forward);
+        player->getTweenScale()->play(TweenDirection::Forward);
+    } else {
+        //mainRect->setVisibility(Visibility::Hidden);
+        player->getTweenPosition()->play(TweenDirection::Backward);
+        player->getTweenScale()->play(TweenDirection::Backward);
+    }
+    player->setFullscreen(fs);
 }
 
 c2d::Renderer *Main::getRenderer() {

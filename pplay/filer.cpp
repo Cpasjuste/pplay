@@ -14,15 +14,15 @@ Filer::Filer(const std::string &path, Font *font,
     this->setFillColor(Color::Transparent);
 
     // create current path box
-    pathRect = new OutlineRect({rect.width, fontSize + 10});
+    pathRect = new OutlineRect({rect.width, fontSize + 16});
     pathRect->setFillColor(COLOR_GRAY_DARK);
     pathRect->setOutlineColor(COLOR_ORANGE);
     pathRect->setOutlineThickness(2);
-    pathText = new C2DText("CURRENT PATH: /", font, (unsigned int) fontSize);
+    pathText = new C2DText("CURRENT PATH: /", (unsigned int) fontSize, font);
     pathText->setOutlineThickness(1);
     pathText->setOrigin(Origin::Left);
     pathText->setPosition(4, (pathRect->getSize().y / 2));
-    pathText->setSizeMax(rect.width - 8, 0);
+    pathText->setWidth(rect.width - 8);
     pathRect->add(pathText);
     add(pathRect);
 
