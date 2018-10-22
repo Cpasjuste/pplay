@@ -92,11 +92,9 @@ void Main::run() {
                 if (keys & c2d::Input::KEY_FIRE5 || keys & c2d::Input::KEY_FIRE6) {
                     // handle local/http file browser selection
                     if (filerPaths->isVisible()) {
-                        filer->getListBox()->setHighlightEnabled(true);
                         filerPaths->setVisibility(Visibility::Hidden, true);
                     } else {
                         filerPaths->setVisibility(Visibility::Visible, true);
-                        filer->getListBox()->setHighlightEnabled(false);
                     };
                 }
 
@@ -110,14 +108,12 @@ void Main::run() {
                             filerSdmc->setVisibility(Visibility::Hidden);
                             filerHttp->setVisibility(Visibility::Visible);
                             filer = filerHttp;
-                            filer->getListBox()->setHighlightEnabled(true);
                             filer->getDir(file.name);
                         } else if (Utility::startWith(file.name, "local")) {
                             filerPaths->setVisibility(Visibility::Hidden, true);
                             filerHttp->setVisibility(Visibility::Hidden);
                             filerSdmc->setVisibility(Visibility::Visible);
                             filer = filerSdmc;
-                            filer->getListBox()->setHighlightEnabled(true);
                         } else {
                             // TODO: messagebox
                             messageBox->show("Oups", "This doesn't look like a valid link...\n"
