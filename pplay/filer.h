@@ -7,13 +7,14 @@
 
 #include "cross2d/c2d.h"
 #include "outline_rect.h"
+#include "config.h"
 
 class Filer : public c2d::C2DRectangle {
 
 public:
 
-    Filer(const std::string &path, c2d::Font *font,
-          int fontSize, const c2d::FloatRect &rect);
+    Filer(const std::string &path,
+          c2d::Font *font, int fontSize, const c2d::FloatRect &rect);
 
     ~Filer();
 
@@ -25,11 +26,15 @@ public:
 
     virtual c2d::Io::File getSelection();
 
+    virtual c2d::ListBox *getListBox();
+
 private:
 
     friend class FilerSdmc;
 
     friend class FilerHttp;
+
+    friend class FilerPaths;
 
     void down();
 

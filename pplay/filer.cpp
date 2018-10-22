@@ -26,6 +26,7 @@ Filer::Filer(const std::string &path, Font *font,
     pathRect->add(pathText);
     add(pathRect);
 
+    // add the filer listbox
     float y = pathRect->getGlobalBounds().top + pathRect->getGlobalBounds().height;
     FloatRect r = {0, y + 8, rect.width, rect.height - y - 8};
     listBox = new ListBox(font, fontSize, r, std::vector<Io::File>());
@@ -37,7 +38,6 @@ Filer::Filer(const std::string &path, Font *font,
     listBox->getHighlight()->setOutlineColor(COLOR_BLUE);
     listBox->getHighlight()->setOutlineThickness(2);
     listBox->getHighlight()->add(new TweenAlpha(80, 150, 0.6f, TweenLoop::PingPong));
-
     auto *border = new RectangleShape(listBox->getLocalBounds());
     border->setFillColor(Color::Transparent);
     border->setOutlineColor(Color::Black);
@@ -46,10 +46,6 @@ Filer::Filer(const std::string &path, Font *font,
     listBox->add(border);
 
     add(listBox);
-}
-
-std::string Filer::getPath() {
-    return path;
 }
 
 bool Filer::step(unsigned int keys) {
@@ -107,6 +103,15 @@ void Filer::right() {
     listBox->setSelection(index);
 }
 
+std::string Filer::getPath() {
+    return path;
+}
+
+c2d::ListBox *Filer::getListBox() {
+    return listBox;
+}
+
 Filer::~Filer() {
     files.clear();
 }
+

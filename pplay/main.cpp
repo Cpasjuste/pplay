@@ -4,6 +4,7 @@
 
 #include "main.h"
 #include "filer_sdmc.h"
+#include "filer_paths.h"
 
 using namespace c2d;
 using namespace c2d::config;
@@ -22,8 +23,7 @@ Main::Main() {
     timer = new C2DClock();
 
     // init/load config file
-    config = new Config("PPLAY", getIo()->getHomePath() + "pplay.cfg");
-    initConfig();
+    config = new PPLAYConfig("PPLAY", getIo()->getHomePath() + "pplay.cfg");
 
     // create a rect
     mainRect = new C2DRectangle({renderer->getSize().x - 8, renderer->getSize().y - 8});
@@ -37,6 +37,11 @@ Main::Main() {
     filerHttp = new FilerHttp(getFont(), FONT_SIZE, filerRect);
     filerHttp->setVisibility(Visibility::Hidden);
     mainRect->add(filerHttp);
+    filerRect.top += FONT_SIZE + 16;
+    filerRect.height = FONT_SIZE * 5 + 16 * 5;
+    filerPaths = new FilerPaths(config, getFont(), FONT_SIZE, filerRect);
+    filerPaths->setVisibility(Visibility::Hidden);
+    mainRect->add(filerPaths);
     filer = filerSdmc;
 
     // add all this crap
@@ -46,6 +51,7 @@ Main::Main() {
     player = new Player(this);
     renderer->add(player);
 
+    // a messagebox
     float w = renderer->getSize().x / 3;
     float h = renderer->getSize().y / 3;
     messageBox = new MessageBox({w, h, w, h},
@@ -70,21 +76,9 @@ void Main::run() {
                  || (keys & EV_QUIT))) {
                 if (player->isPlaying()) {
                     player->stop();
-                    //mainRect->setVisibility(Visibility::Visible);
                 } else {
                     break;
                 }
-            }
-
-            if (keys & c2d::Input::KEY_FIRE5 || keys & c2d::Input::KEY_FIRE6) {
-                filer->setVisibility(Visibility::Hidden);
-                if (filer == filerHttp) {
-                    filer = filerSdmc;
-                } else if (!httpServerList.empty()) {
-                    filer = filerHttp;
-                    filer->getDir(httpServerList[0]);
-                }
-                filer->setVisibility(Visibility::Visible);
             }
 
             if (keys & c2d::Input::KEY_FIRE3) {
@@ -94,44 +88,57 @@ void Main::run() {
             }
 
             if (!player->isFullscreen()) {
-                if (filer->step(keys)) {
-                    Io::File file = filer->getSelection();
-                    if (filer == filerHttp) {
-                        file.path = filerHttp->getPath() + file.path;
+
+                if (keys & c2d::Input::KEY_FIRE5 || keys & c2d::Input::KEY_FIRE6) {
+                    // handle local/http file browser selection
+                    if (filerPaths->isVisible()) {
+                        filer->getListBox()->setHighlightEnabled(true);
+                        filerPaths->setVisibility(Visibility::Hidden, true);
+                    } else {
+                        filerPaths->setVisibility(Visibility::Visible, true);
+                        filer->getListBox()->setHighlightEnabled(false);
+                    };
+                }
+
+                if (filerPaths->isVisible()) {
+                    if (filerPaths->step(keys)) {
+                        Io::File file = filerPaths->getSelection();
+                        printf("%s\n", file.name.c_str());
+                        // TODO: ???!!!
+                        if (Utility::startWith(file.name, "http")) {
+                            filerPaths->setVisibility(Visibility::Hidden, true);
+                            filerSdmc->setVisibility(Visibility::Hidden);
+                            filerHttp->setVisibility(Visibility::Visible);
+                            filer = filerHttp;
+                            filer->getListBox()->setHighlightEnabled(true);
+                            filer->getDir(file.name);
+                        } else if (Utility::startWith(file.name, "local")) {
+                            filerPaths->setVisibility(Visibility::Hidden, true);
+                            filerHttp->setVisibility(Visibility::Hidden);
+                            filerSdmc->setVisibility(Visibility::Visible);
+                            filer = filerSdmc;
+                            filer->getListBox()->setHighlightEnabled(true);
+                        } else {
+                            // TODO: messagebox
+                            messageBox->show("Oups", "This doesn't look like a valid link...\n"
+                                                     "Maybe a bad config file ?", "OK");
+                        }
                     }
-                    if (player->load(file)) {
-                        setPlayerSize(true);
+                } else {
+                    if (filer->step(keys)) {
+                        Io::File file = filer->getSelection();
+                        if (filer == filerHttp) {
+                            file.path = filerHttp->getPath() + file.path;
+                        }
+                        if (player->load(file)) {
+                            setPlayerSize(true);
+                        }
                     }
                 }
             }
         }
 
         renderer->flip();
-    }
-}
-
-void Main::initConfig() {
-
-    //http://divers.klikissi.fr/telechargements/
-    Group group("HTTP_SERVERS");
-    group.addOption({"SERVER0", ""});
-    group.addOption({"SERVER1", ""});
-    group.addOption({"SERVER2", ""});
-    group.addOption({"SERVER3", ""});
-    group.addOption({"SERVER4", ""});
-    config->addGroup(group);
-
-    // load the configuration from file, overwriting default values
-    if (!config->load()) {
-        // file doesn't exist or is malformed, (re)create it
-        config->save();
-    }
-
-    for (Option &option : *config->getGroup("HTTP_SERVERS")->getOptions()) {
-        if (!option.getString().empty()) {
-            httpServerList.emplace_back(option.getString());
-            printf("server: %s\n", httpServerList[httpServerList.size() - 1].c_str());
-        }
     }
 }
 
@@ -164,7 +171,7 @@ c2d::Input *Main::getInput() {
     return renderer->getInput();
 }
 
-c2d::config::Config *Main::getConfig() {
+PPLAYConfig *Main::getConfig() {
     return config;
 }
 

@@ -10,9 +10,10 @@
 #include "filer_http.h"
 #include "player.h"
 #include "player_osd.h"
+#include "config.h"
 
 #define INPUT_DELAY 250
-#define FONT_SIZE 20
+#define FONT_SIZE 25
 
 #define COLOR_CLOUD         Color(0xecf0f1ff)
 #define COLOR_GRAY          Color(0x636e72ff)
@@ -35,8 +36,6 @@ public:
 
     ~Main();
 
-    void initConfig();
-
     void run();
 
     void setPlayerSize(bool fs);
@@ -49,17 +48,17 @@ public:
 
     c2d::Input *getInput();
 
-    c2d::config::Config *getConfig();
+    PPLAYConfig *getConfig();
 
 private:
     c2d::Renderer *renderer = nullptr;
     c2d::RectangleShape *mainRect = nullptr;
     c2d::Clock *timer = nullptr;
     c2d::MessageBox *messageBox = nullptr;
-    c2d::config::Config *config = nullptr;
-    std::vector<std::string> httpServerList;
+    PPLAYConfig *config = nullptr;
     Filer *filerSdmc = nullptr;
     Filer *filerHttp = nullptr;
+    Filer *filerPaths = nullptr;
     Filer *filer = nullptr;
     Player *player = nullptr;
 };
