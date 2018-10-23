@@ -52,12 +52,13 @@ Main::Main() {
     renderer->add(player);
 
     // a messagebox
-    float w = renderer->getSize().x / 3;
-    float h = renderer->getSize().y / 3;
+    float w = renderer->getSize().x / 2;
+    float h = renderer->getSize().y / 2;
     messageBox = new MessageBox({w, h, w, h},
                                 renderer->getInput(), getFont(), FONT_SIZE);
-    messageBox->setFillColor(COLOR_BLUE_LIGHT);
-    messageBox->setOutlineColor(COLOR_GRAY);
+    messageBox->setOrigin(Origin::Center);
+    messageBox->setFillColor(COLOR_GRAY_DARK);
+    messageBox->setOutlineColor(COLOR_ORANGE);
     messageBox->setOutlineThickness(2);
     renderer->add(messageBox);
 }
@@ -101,10 +102,6 @@ void Main::run() {
                 if (filerPaths->isVisible()) {
                     if (filerPaths->step(keys)) {
                         Io::File *file = filerPaths->getSelection();
-
-                        messageBox->show("Oups", "This doesn't look like a valid link...\n"
-                                                 "Maybe a bad config file ?", "OK");
-                        
                         if (Utility::startWith(file->name, "http:")) {
                             filerPaths->setVisibility(Visibility::Hidden, true);
                             filerSdmc->setVisibility(Visibility::Hidden);
@@ -117,7 +114,6 @@ void Main::run() {
                             filerSdmc->setVisibility(Visibility::Visible);
                             filer = filerSdmc;
                         } else {
-                            // TODO: messagebox bug
                             messageBox->show("Oups", "This doesn't look like a valid link...\n"
                                                      "Maybe a bad config file ?", "OK");
                         }
