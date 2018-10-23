@@ -30,7 +30,7 @@ Player::Player(Main *_main) : OutlineRect(_main->getRenderer()->getSize(), 4) {
     setVisibility(Visibility::Hidden);
 }
 
-bool Player::load(const c2d::Io::File &file) {
+bool Player::load(c2d::Io::File *file) {
 
     if (isPlaying()) {
         stop();
@@ -45,9 +45,10 @@ bool Player::load(const c2d::Io::File &file) {
     }
 
     // open source file
-    source = Kit_CreateSourceFromUrl(file.path.c_str());
+    printf("Player::load: %s\n", file->path.c_str());
+    source = Kit_CreateSourceFromUrl(file->path.c_str());
     if (!source) {
-        printf("unable to load file '%s': %s\n", file.path.c_str(), Kit_GetError());
+        printf("unable to load file '%s': %s\n", file->path.c_str(), Kit_GetError());
         stop();
         return false;
     }

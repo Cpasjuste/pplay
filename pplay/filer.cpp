@@ -59,7 +59,7 @@ bool Filer::step(unsigned int keys) {
     } else if (keys & Input::Key::KEY_LEFT) {
         left();
     } else if (keys & Input::Key::KEY_FIRE1) {
-        if (getSelection().type == Io::Type::File) {
+        if (getSelection()->type == Io::Type::File) {
             return true;
         }
         enter();
@@ -70,7 +70,7 @@ bool Filer::step(unsigned int keys) {
     return false;
 }
 
-c2d::Io::File Filer::getSelection() {
+c2d::Io::File *Filer::getSelection() {
     return listBox->getSelection();
 }
 

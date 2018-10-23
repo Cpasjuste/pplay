@@ -10,6 +10,7 @@
 #define AUDIO_BUFFER_SIZE (1024 * 64)
 
 class Main;
+
 class PlayerOSD;
 
 class Player : public OutlineRect {
@@ -20,7 +21,7 @@ public:
 
     ~Player();
 
-    bool load(const c2d::Io::File &file);
+    bool load(c2d::Io::File *file);
 
     void step(unsigned int keys);
 
@@ -39,6 +40,7 @@ public:
     Main *getMain();
 
     c2d::TweenPosition *getTweenPosition();
+
     c2d::TweenScale *getTweenScale();
 
 private:

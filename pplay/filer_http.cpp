@@ -51,10 +51,17 @@ bool FilerHttp::getDir(const std::string &p) {
 
         Io::Type type = Utility::endsWith(browser->links[i].url(), "/") ?
                         Io::Type::Directory : Io::Type::File;
-        Color color = type == Io::Type::Directory ?
-                      COLOR_BLUE_LIGHT : Color::White;
-        files.emplace_back(Utility::removeLastSlash(browser->links[i].name()),
-                           browser->links[i].url(), type, color);
+
+        if (type == Io::Type::File) {
+            Color color = Color::White;
+            std::string p = browser->geturl() + browser->links[i].url();
+            files.emplace_back(Utility::removeLastSlash(browser->links[i].name()),
+                               p, type, color);
+        } else {
+            Color color = COLOR_BLUE_LIGHT;
+            files.emplace_back(Utility::removeLastSlash(browser->links[i].name()),
+                               browser->links[i].url(), type, color);
+        }
     }
 
     listBox->setFiles(files);
@@ -67,14 +74,17 @@ bool FilerHttp::getDir(const std::string &p) {
 
 void FilerHttp::enter() {
 
-    Io::File file = listBox->getSelection();
+    Io::File *file = listBox->getSelection();
+    if (!file) {
+        return;
+    }
 
-    if (file.name == "..") {
+    if (file->name == "..") {
         exit();
         return;
     }
 
-    browser->follow_link(browser->unescape(file.path));
+    browser->follow_link(browser->unescape(file->path));
     getDir(browser->geturl());
 }
 
@@ -84,6 +94,10 @@ void FilerHttp::exit() {
         browser->back(10);
         getDir(browser->geturl());
     }
+}
+
+Browser *FilerHttp::getBrowser() {
+    return browser;
 }
 
 FilerHttp::~FilerHttp() {

@@ -100,33 +100,31 @@ void Main::run() {
 
                 if (filerPaths->isVisible()) {
                     if (filerPaths->step(keys)) {
-                        Io::File file = filerPaths->getSelection();
-                        printf("%s\n", file.name.c_str());
-                        // TODO: ???!!!
-                        if (Utility::startWith(file.name, "http")) {
+                        Io::File *file = filerPaths->getSelection();
+
+                        messageBox->show("Oups", "This doesn't look like a valid link...\n"
+                                                 "Maybe a bad config file ?", "OK");
+                        
+                        if (Utility::startWith(file->name, "http:")) {
                             filerPaths->setVisibility(Visibility::Hidden, true);
                             filerSdmc->setVisibility(Visibility::Hidden);
                             filerHttp->setVisibility(Visibility::Visible);
                             filer = filerHttp;
-                            filer->getDir(file.name);
-                        } else if (Utility::startWith(file.name, "local")) {
+                            filer->getDir(file->name);
+                        } else if (Utility::startWith(file->name, "sdmc:")) {
                             filerPaths->setVisibility(Visibility::Hidden, true);
                             filerHttp->setVisibility(Visibility::Hidden);
                             filerSdmc->setVisibility(Visibility::Visible);
                             filer = filerSdmc;
                         } else {
-                            // TODO: messagebox
+                            // TODO: messagebox bug
                             messageBox->show("Oups", "This doesn't look like a valid link...\n"
                                                      "Maybe a bad config file ?", "OK");
                         }
                     }
                 } else {
                     if (filer->step(keys)) {
-                        Io::File file = filer->getSelection();
-                        if (filer == filerHttp) {
-                            file.path = filerHttp->getPath() + file.path;
-                        }
-                        if (player->load(file)) {
+                        if (player->load(filer->getSelection())) {
                             setPlayerSize(true);
                         }
                     }

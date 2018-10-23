@@ -17,8 +17,6 @@ public:
 private:
 
     void enter() override;
-
-    void exit() override;
 };
 
 #endif //FILER_PATHS_H

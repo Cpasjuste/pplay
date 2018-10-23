@@ -24,7 +24,7 @@ public:
 
     virtual bool step(unsigned int keys);
 
-    virtual c2d::Io::File getSelection();
+    virtual c2d::Io::File *getSelection();
 
     virtual c2d::ListBox *getListBox();
 

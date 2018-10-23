@@ -17,7 +17,7 @@ FilerPaths::FilerPaths(PPLAYConfig *config, Font *font, int fontSize, const Floa
 
     // path selection
     std::vector<Io::File> paths;
-    paths.emplace_back("local", "local");
+    paths.emplace_back("sdmc:", "sdmc:");
     config::Group *group = config->getGroup("HTTP_SERVERS");
     for (config::Option &option : *group->getOptions()) {
         if (!option.getString().empty()) {
@@ -44,10 +44,7 @@ FilerPaths::FilerPaths(PPLAYConfig *config, Font *font, int fontSize, const Floa
 
 void FilerPaths::enter() {
 
-    Io::File file = listBox->getSelection();
+    //Io::File *file = listBox->getSelection();
 
 }
 
-void FilerPaths::exit() {
-
-}

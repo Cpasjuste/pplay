@@ -49,17 +49,20 @@ bool FilerSdmc::getDir(const std::string &p) {
 
 void FilerSdmc::enter() {
 
-    Io::File file = listBox->getSelection();
+    Io::File *file = listBox->getSelection();
+    if (!file) {
+        return;
+    }
 
-    if (file.name == "..") {
+    if (file->name == "..") {
         exit();
         return;
     }
 
     if (path == "/") {
-        getDir(path + file.name);
+        getDir(path + file->name);
     } else {
-        getDir(path + "/" + file.name);
+        getDir(path + "/" + file->name);
     }
 }
 

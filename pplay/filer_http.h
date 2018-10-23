@@ -20,6 +20,8 @@ public:
 
     bool getDir(const std::string &path) override;
 
+    Browser *getBrowser();
+
 private:
 
     void enter() override;
