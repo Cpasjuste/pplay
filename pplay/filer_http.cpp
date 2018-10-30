@@ -54,9 +54,9 @@ bool FilerHttp::getDir(const std::string &p) {
 
         if (type == Io::Type::File) {
             Color color = Color::White;
-            std::string p = browser->geturl() + browser->links[i].url();
+            std::string s = browser->geturl() + browser->links[i].url();
             files.emplace_back(Utility::removeLastSlash(browser->links[i].name()),
-                               p, type, color);
+                               s, type, color);
         } else {
             Color color = COLOR_BLUE_LIGHT;
             files.emplace_back(Utility::removeLastSlash(browser->links[i].name()),
