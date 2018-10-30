@@ -19,7 +19,7 @@ PlayerOSD::PlayerOSD(Player *p) : C2DRectangle(p->getSize()) {
     std::string path = p->getMain()->getIo()->getDataPath() + "skin/play-button.png";
     button_play = new C2DTexture(path);
     auto size = button_play->getTextureRect();
-    button_play->setFillColor(COLOR_BLUE);
+    //button_play->setFillColor(COLOR_BLUE);
     button_play->setOrigin(Origin::Left);
     button_play->setPosition(16, OSD_STATUS_HEIGHT / 2);
     button_play->setScale((OSD_STATUS_HEIGHT * 0.6f) / (float) size.width,
@@ -28,7 +28,7 @@ PlayerOSD::PlayerOSD(Player *p) : C2DRectangle(p->getSize()) {
 
     path = p->getMain()->getIo()->getDataPath() + "skin/pause-button.png";
     button_pause = new C2DTexture(path);
-    button_pause->setFillColor(COLOR_BLUE);
+    //button_pause->setFillColor(COLOR_BLUE);
     button_pause->setOrigin(Origin::Left);
     button_pause->setPosition(16, OSD_STATUS_HEIGHT / 2);
     button_pause->setScale((OSD_STATUS_HEIGHT * 0.6f) / (float) size.width,
@@ -38,7 +38,7 @@ PlayerOSD::PlayerOSD(Player *p) : C2DRectangle(p->getSize()) {
     status->setOrigin(Origin::Bottom);
     status->setPosition(getSize().x / 2, getSize().y - 32);
     status->setFillColor(COLOR_GRAY_DARK);
-    status->setOutlineColor(COLOR_BLUE);
+    status->setOutlineColor(Color::White);
     status->setOutlineThickness(2);
 
     status->add(button_play);
