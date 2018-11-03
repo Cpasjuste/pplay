@@ -41,7 +41,9 @@ bool FilerHttp::getDir(const std::string &p) {
     for (int i = 0; i < browser->links.size(); i++) {
 
         // skip apache2 stuff
-        if (browser->links[i].name() == "Name"
+        if (browser->links[i].name() == ".."
+            || browser->links[i].name() == "../"
+            || browser->links[i].name() == "Name"
             || browser->links[i].name() == "Last modified"
             || browser->links[i].name() == "Size"
             || browser->links[i].name() == "Description"
