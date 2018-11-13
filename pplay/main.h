@@ -11,6 +11,7 @@
 #include "player.h"
 #include "player_osd.h"
 #include "config.h"
+#include "media_thread.h"
 
 #define INPUT_DELAY 250
 #define FONT_SIZE 25
@@ -61,6 +62,7 @@ private:
     Filer *filerPaths = nullptr;
     Filer *filer = nullptr;
     Player *player = nullptr;
+    MediaThread *mediaInfo = nullptr;
 };
 
 #endif //PPLAY_MAIN_H

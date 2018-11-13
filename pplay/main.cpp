@@ -51,6 +51,10 @@ Main::Main() {
     player = new Player(this);
     renderer->add(player);
 
+    // media info
+    getIo()->create(getIo()->getHomePath() + "cache");
+    mediaInfo = new MediaThread();
+
     // a messagebox
     float w = renderer->getSize().x / 2;
     float h = renderer->getSize().y / 2;
@@ -124,6 +128,15 @@ void Main::run() {
                             setPlayerSize(true);
                         }
                     }
+                    // TODO: extract media info
+                    if (keys & c2d::Input::KEY_UP || keys & c2d::Input::KEY_DOWN
+                        || keys & c2d::Input::KEY_LEFT || keys & c2d::Input::KEY_RIGHT) {
+                        Io::File *file = filer->getSelection();
+                        if (file && file->type == Io::Type::File) {
+                            mediaInfo->getInfo(getIo(), file->name, file->path,
+                                               getIo()->getHomePath() + "cache/" + file->name);
+                        }
+                    }
                 }
             }
         }
@@ -167,6 +180,7 @@ PPLAYConfig *Main::getConfig() {
 
 Main::~Main() {
 
+    delete (mediaInfo);
     delete (config);
     delete (timer);
     // will delete widgets recursively
