@@ -8,6 +8,7 @@
 #include "kitchensink/kitchensink.h"
 
 #define AUDIO_BUFFER_SIZE (1024 * 64)
+#define MAX_STREAM_LIST_SIZE 32
 
 class Main;
 
@@ -16,6 +17,13 @@ class PlayerOSD;
 class Player : public OutlineRect {
 
 public:
+
+    class Stream {
+    public:
+        int streams[MAX_STREAM_LIST_SIZE]{};
+        int size = 0;
+        int current = 0;
+    };
 
     explicit Player(Main *main);
 
@@ -51,15 +59,18 @@ private:
     c2d::TweenPosition *tweenPosition;
     c2d::TweenScale *tweenScale;
 
+    // kit player
     Kit_Source *source = nullptr;
     Kit_Player *player = nullptr;
     Kit_PlayerInfo playerInfo;
+    Stream video_streams;
+    Stream audio_streams;
+    Stream subtitles_streams;
+
     // audio
     SDL_AudioDeviceID audioDeviceID;
     char audioBuffer[AUDIO_BUFFER_SIZE];
 
-    bool has_video = false;
-    bool has_audio = false;
     bool fullscreen = false;
     bool paused = false;
 };

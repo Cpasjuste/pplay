@@ -37,7 +37,7 @@ bool Player::load(c2d::Io::File *file) {
     }
 
     // init Kit library
-    int err = Kit_Init(KIT_INIT_NETWORK | KIT_INIT_ASS);
+    int err = Kit_Init(KIT_INIT_NETWORK /*| KIT_INIT_ASS*/);
     if (err != 0) {
         printf("unable to initialize Kitchensink: %s\n", Kit_GetError());
         stop();
@@ -48,17 +48,31 @@ bool Player::load(c2d::Io::File *file) {
     printf("Player::load: %s\n", file->path.c_str());
     source = Kit_CreateSourceFromUrl(file->path.c_str());
     if (!source) {
-        printf("unable to load file '%s': %s\n", file->path.c_str(), Kit_GetError());
+        printf("unable to load '%s': %s\n", file->path.c_str(), Kit_GetError());
         stop();
         return false;
     }
 
-    // create the player. pick best video, audio and subtitle streams, and set subtitle
-    // rendering resolution to screen resolution.
+    // find available streams
+    video_streams.size = Kit_GetSourceStreamList(
+            source, KIT_STREAMTYPE_VIDEO, video_streams.streams, MAX_STREAM_LIST_SIZE);
+    audio_streams.size = Kit_GetSourceStreamList(
+            source, KIT_STREAMTYPE_AUDIO, audio_streams.streams, MAX_STREAM_LIST_SIZE);
+    subtitles_streams.size = Kit_GetSourceStreamList(
+            source, KIT_STREAMTYPE_SUBTITLE, subtitles_streams.streams, MAX_STREAM_LIST_SIZE);
+    printf("Player::load: \n\tVIDEO STREAMS: %i\n\tAUDIO STREAMS: %i\n\tSUBTITLES STREAMS: %i\n",
+           video_streams.size, audio_streams.size, subtitles_streams.size);
+    if (!video_streams.size && !audio_streams.size) {
+        printf("no usable audio or video stream found: %s\n", Kit_GetError());
+        stop();
+        return false;
+    }
+
+    // create the player
     player = Kit_CreatePlayer(
             source,
-            Kit_GetBestSourceStream(source, KIT_STREAMTYPE_VIDEO),
-            Kit_GetBestSourceStream(source, KIT_STREAMTYPE_AUDIO),
+            video_streams.size > 0 ? video_streams.streams[0] : -1,
+            audio_streams.size > 0 ? audio_streams.streams[0] : -1,
             -1, //Kit_GetBestSourceStream(src, KIT_STREAMTYPE_SUBTITLE), // TODO: subtitles
             (int) getSize().x, (int) getSize().y);
     if (!player) {
@@ -69,12 +83,6 @@ bool Player::load(c2d::Io::File *file) {
 
     // get some information;
     Kit_GetPlayerInfo(player, &playerInfo);
-    has_video = Kit_GetPlayerVideoStream(player) != -1;
-    has_audio = Kit_GetPlayerAudioStream(player) != -1;
-    if (!has_audio && !has_video) {
-        printf("no usable audio or video stream found: %s\n", Kit_GetError());
-    }
-
     printf("Video(%s, %s): %i x %i , Audio(%s): %i hz\n",
            playerInfo.video.codec.name,
            SDL_GetPixelFormatName(playerInfo.video.output.format),
@@ -83,7 +91,7 @@ bool Player::load(c2d::Io::File *file) {
            playerInfo.audio.output.samplerate);
 
     // init audio
-    if (has_audio) {
+    if (audio_streams.size > 0) {
         if (!SDL_WasInit(SDL_INIT_AUDIO)) {
             SDL_InitSubSystem(SDL_INIT_AUDIO);
         }
@@ -96,7 +104,7 @@ bool Player::load(c2d::Io::File *file) {
         SDL_PauseAudioDevice(audioDeviceID, 0);
     }
 
-    if (has_video) {
+    if (video_streams.size > 0) {
         // init video texture
         texture = new C2DTexture(
                 {playerInfo.video.output.width, playerInfo.video.output.height}, Texture::Format::RGBA8);
@@ -171,7 +179,7 @@ void Player::step(unsigned int keys) {
     /// step ffmpeg
     //////////////////
     /// audio
-    if (has_audio) {
+    if (audio_streams.size > 0) {
         int queued = SDL_GetQueuedAudioSize(audioDeviceID);
         if (queued < AUDIO_BUFFER_SIZE) {
             int need = AUDIO_BUFFER_SIZE - queued;
@@ -193,7 +201,7 @@ void Player::step(unsigned int keys) {
     }
 
     /// video
-    if (has_video) {
+    if (video_streams.size > 0) {
         void *video_data;
         texture->lock(nullptr, &video_data, nullptr);
         if (Kit_GetPlayerVideoDataRaw(player, video_data)) {
@@ -272,8 +280,12 @@ void Player::stop() {
         texture = nullptr;
     }
 
-    has_video = false;
-    has_audio = false;
+    video_streams.size = 0;
+    video_streams.current = 0;
+    audio_streams.size = 0;
+    audio_streams.current = 0;
+    subtitles_streams.size = 0;
+    subtitles_streams.current = 0;
     paused = false;
 
     osd->setVisibility(Visibility::Hidden);
