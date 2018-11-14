@@ -2,13 +2,25 @@
 // Created by cpasjuste on 13/11/18.
 //
 
+extern "C" {
 #include <libavformat/avformat.h>
-#include "kitchensink/kitchensink.h"
+#include <libavcodec/avcodec.h>
+#include <libavutil/opt.h>
+}
+
 #include "media_thread.h"
 
 static std::string srcName;
 static std::string srcPath;
 static std::string dstPath;
+
+static void dump_metadata(const std::string &desc, AVDictionary *dic) {
+    AVDictionaryEntry *t = nullptr;
+    printf("- %s\n", desc.c_str());
+    while ((t = av_dict_get(dic, "", t, AV_DICT_IGNORE_SUFFIX))) {
+        printf("\t%s -> %s\n", t->key, t->value);
+    }
+}
 
 static int media_info_thread(void *ptr) {
 
@@ -27,50 +39,80 @@ static int media_info_thread(void *ptr) {
 
         // TODO: extract media info
         printf("media_info_thread: process: %s => %s\n", srcPath.c_str(), dstPath.c_str());
-        // init Kit library
-        int err = Kit_Init(KIT_INIT_NETWORK /*| KIT_INIT_ASS*/);
-        if (err != 0) {
-            printf("media_info_thread: unable to initialize Kitchensink: %s\n", Kit_GetError());
-            return false;
+
+        // open
+        avformat_network_init();
+        AVFormatContext *ctx = nullptr;
+        if (avformat_open_input(&ctx, srcPath.c_str(), nullptr, nullptr) != 0) {
+            printf("media_info_thread: unable to open '%s'\n", srcPath.c_str());
+            avformat_network_deinit();
+            continue;
         }
 
-        // open source file
-        Kit_Source *source = Kit_CreateSourceFromUrl(srcPath.c_str());
-        if (!source) {
-            printf("media_info_thread: unable to load '%s': %s\n", srcPath.c_str(), Kit_GetError());
-            Kit_Quit();
-            return false;
+        av_opt_set_int(ctx, "probesize", INT_MAX, 0);
+        av_opt_set_int(ctx, "analyzeduration", INT_MAX, 0);
+        if (avformat_find_stream_info(ctx, nullptr) < 0) {
+            printf("media_info_thread: unable to open '%s'\n", srcPath.c_str());
+            avformat_close_input(&ctx);
+            avformat_network_deinit();
+            continue;
         }
+
+#if 1
+        dump_metadata("media", ctx->metadata);
+#endif
 
         MediaInfo mediaInfo;
-        mediaInfo.name = srcName;
+        AVDictionaryEntry *tag = av_dict_get(ctx->metadata, "title", nullptr, 0);
+        mediaInfo.name = tag ? tag->value : srcName;
         mediaInfo.path = srcPath;
 
-        auto *ctx = (AVFormatContext *) source->format_ctx;
-        int stream_count = Kit_GetSourceStreamCount(source);
-        for (int i = 0; i < stream_count; i++) {
+        for (int i = 0; i < (int) ctx->nb_streams; i++) {
             const AVCodecParameters *codec = ctx->streams[i]->codecpar;
-            const AVCodecDescriptor *codec_desc = avcodec_descriptor_get(codec->codec_id);
             int type = codec->codec_type;
             if (type == AVMEDIA_TYPE_VIDEO) {
                 MediaInfo::StreamInfo stream;
-                // TODO: name
-                stream.name = av_dict_get_string(ctx->streams[i]->metadata, ) //ctx->streams[i]->metadata
-                stream.codec = codec_desc ? codec_desc->name : "unknown";
+                tag = av_dict_get(ctx->streams[i]->metadata, "language", nullptr, 0);
+                stream.name = tag ? tag->value : "unknown";
+                stream.codec = avcodec_get_name(codec->codec_id);
                 stream.rate = (int) codec->bit_rate;
                 stream.width = codec->width;
                 stream.height = codec->height;
                 mediaInfo.videos.push_back(stream);
+#if 1
+                dump_metadata("video stream", ctx->streams[i]->metadata);
+#endif
             } else if (type == AVMEDIA_TYPE_AUDIO) {
-
+                MediaInfo::StreamInfo stream;
+                tag = av_dict_get(ctx->streams[i]->metadata, "language", nullptr, 0);
+                stream.name = tag ? tag->value : "unknown";
+                stream.codec = avcodec_get_name(codec->codec_id);
+                stream.rate = (int) codec->bit_rate;
+                mediaInfo.audios.push_back(stream);
+#if 1
+                dump_metadata("audio stream", ctx->streams[i]->metadata);
+#endif
             } else if (type == AVMEDIA_TYPE_SUBTITLE) {
-
+                MediaInfo::StreamInfo stream;
+                tag = av_dict_get(ctx->streams[i]->metadata, "language", nullptr, 0);
+                stream.name = tag ? tag->value : "unknown";
+                stream.codec = avcodec_get_name(codec->codec_id);
+                mediaInfo.subtitles.push_back(stream);
+#if 1
+                dump_metadata("subtitle stream", ctx->streams[i]->metadata);
+#endif
             }
         }
 
         mediaInfo.serialize(dstPath);
 
+        // close
+        avformat_close_input(&ctx);
+        avformat_network_deinit();
+
         SDL_UnlockMutex(mediaThread->getMutex());
+
+        printf("media_info_thread: process: OK\n");
     }
 
     printf("media_info_thread: end\n");

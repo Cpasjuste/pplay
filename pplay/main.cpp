@@ -133,8 +133,17 @@ void Main::run() {
                         || keys & c2d::Input::KEY_LEFT || keys & c2d::Input::KEY_RIGHT) {
                         Io::File *file = filer->getSelection();
                         if (file && file->type == Io::Type::File) {
-                            mediaInfo->getInfo(getIo(), file->name, file->path,
-                                               getIo()->getHomePath() + "cache/" + file->name);
+                            MediaInfo *info = mediaInfo->getInfo(
+                                    getIo(), file->name, file->path,
+                                    getIo()->getHomePath() + "cache/" + file->name + ".txt");
+                            if (info) {
+                                printf("MediaInfo: name: %s\n\tvideo streams: %i (%s)\n\taudio streams: %i (%s)\n\tsubtitles streams: %i (%s)\n",
+                                       info->name.c_str(),
+                                       info->videos.size(), info->videos[0].name.c_str(),
+                                       info->audios.size(), info->audios[0].name.c_str(),
+                                       info->subtitles.size(), info->subtitles[0].name.c_str());
+                                delete (info);
+                            }
                         }
                     }
                 }
