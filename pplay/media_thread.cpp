@@ -6,6 +6,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libavutil/opt.h>
+int ffmpeg_main(int argc, const char **argv);
 }
 
 #include "media_thread.h"
@@ -117,6 +118,13 @@ static int media_info_thread(void *ptr) {
         // close
         avformat_close_input(&ctx);
         avformat_network_deinit();
+
+        // TODO: extract thumbnail
+        std::string p = cachePath + ".png";
+        const char *argv[] = {
+                "ffmpeg", "-i", mediaPath.c_str(), "-ss", "00:00:30", "-vframes", "1", p.c_str()
+        };
+        ffmpeg_main(8, argv);
 
         printf("media_info_thread: process: OK\n");
     }

@@ -27,12 +27,14 @@ project(pplay)
 ##############
 set(PPLAY_INC
         pplay
+        pplay/fftools
         SDL_kitchensink/include
         SDL_kitchensink/include/kitchensink
         SDL_kitchensink/include/kitchensink/internal)
 
 file(GLOB_RECURSE PPLAY_SRC
         pplay/*.c*
+        pplay/fftools/*.c*
         SDL_kitchensink/src/*.c*)
 
 set(PPLAY_CFLAGS
@@ -40,7 +42,7 @@ set(PPLAY_CFLAGS
         -D__VERSION_MAJOR__=${VERSION_MAJOR}
         -D__VERSION_MINOR__=${VERSION_MINOR})
 
-set(PPLAY_LDFLAGS swscale swresample avformat avcodec avutil ass fribidi curl png z m)
+set(PPLAY_LDFLAGS swscale swresample avformat avfilter avcodec avutil ass fribidi curl png z m)
 
 #####################
 # PLATORM SPECIFIC
