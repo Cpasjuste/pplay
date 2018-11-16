@@ -53,7 +53,8 @@ Main::Main() {
 
     // media info
     getIo()->create(getIo()->getHomePath() + "cache");
-    mediaInfo = new MediaThread();
+    mediaInfo = new MediaThread(renderer, getIo()->getHomePath() + "cache/");
+    mediaInfo->cacheDir(filer->getPath());
 
     // a messagebox
     float w = renderer->getSize().x / 2;
@@ -104,6 +105,7 @@ void Main::run() {
                 }
 
                 if (filerPaths->isVisible()) {
+                    // handle local/http file browser selection
                     if (filerPaths->step(keys)) {
                         Io::File *file = filerPaths->getSelection();
                         if (Utility::startWith(file->name, "http:")) {
@@ -127,21 +129,20 @@ void Main::run() {
                         if (player->load(filer->getSelection())) {
                             setPlayerSize(true);
                         }
+                    } else if (keys & c2d::Input::KEY_FIRE1) {
+                        // cache media info on enter dir
+                        printf("mediaInfo->cacheDir(%s)\n", filer->getPath().c_str());
+                        mediaInfo->cacheDir(filer->getPath());
                     }
-                    // TODO: extract media info
+
+                    // load media info
                     if (keys & c2d::Input::KEY_UP || keys & c2d::Input::KEY_DOWN
                         || keys & c2d::Input::KEY_LEFT || keys & c2d::Input::KEY_RIGHT) {
                         Io::File *file = filer->getSelection();
                         if (file && file->type == Io::Type::File) {
-                            MediaInfo *info = mediaInfo->getInfo(
-                                    getIo(), file->name, file->path,
-                                    getIo()->getHomePath() + "cache/" + file->name + ".txt");
+                            Media *info = mediaInfo->getMediaInfo(file->path);
                             if (info) {
-                                printf("MediaInfo: name: %s\n\tvideo streams: %i (%s)\n\taudio streams: %i (%s)\n\tsubtitles streams: %i (%s)\n",
-                                       info->name.c_str(),
-                                       info->videos.size(), info->videos[0].name.c_str(),
-                                       info->audios.size(), info->audios[0].name.c_str(),
-                                       info->subtitles.size(), info->subtitles[0].name.c_str());
+                                info->debut_print();
                                 delete (info);
                             }
                         }

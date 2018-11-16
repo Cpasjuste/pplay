@@ -16,5 +16,4 @@ public:
     static std::string formatTimeShort(double seconds);
 };
 
-
 #endif //PPLAY_UTILITY_H

@@ -5,9 +5,10 @@
 #include <fstream>
 #include <iostream>
 
-#include "media_info.h"
+#include "media.h"
+#include "utility.h"
 
-bool MediaInfo::serialize(const std::string &dst) {
+bool Media::serialize(const std::string &dst) {
 
     int count;
     size_t size;
@@ -18,27 +19,35 @@ bool MediaInfo::serialize(const std::string &dst) {
         return false;
     }
 
-    // name
-    size = name.size();
+    // title
+    size = title.size();
     fs.write((char *) &size, sizeof(size_t));
-    fs.write((char *) name.c_str(), size);
+    fs.write((char *) title.c_str(), size);
+    //printf("Media::serialize: title = %s\n", title.c_str());
 
     // path
     size = path.size();
     fs.write((char *) &size, sizeof(size_t));
     fs.write((char *) path.c_str(), size);
+    //printf("Media::serialize: path = %s\n", path.c_str());
 
     // duration
     fs.write((char *) &duration, sizeof(duration));
+    //printf("Media::serialize: duration = %li\n", duration);
 
     // video streams
     count = (int) videos.size();
     fs.write((char *) &count, sizeof(count));
+    //printf("Media::serialize: video streams = %i\n", count);
     for (auto &stream : videos) {
-        // name
-        size = stream.name.size();
+        // title
+        size = stream.title.size();
         fs.write((char *) &size, sizeof(size_t));
-        fs.write((char *) stream.name.c_str(), size);
+        fs.write((char *) stream.title.c_str(), size);
+        // language
+        size = stream.language.size();
+        fs.write((char *) &size, sizeof(size_t));
+        fs.write((char *) stream.language.c_str(), size);
         // codec
         size = stream.codec.size();
         fs.write((char *) &size, sizeof(size_t));
@@ -53,11 +62,16 @@ bool MediaInfo::serialize(const std::string &dst) {
     // audio streams
     count = (int) audios.size();
     fs.write((char *) &count, sizeof(count));
+    //printf("Media::serialize: audio streams = %i\n", count);
     for (auto &stream : audios) {
-        // name
-        size = stream.name.size();
+        // title
+        size = stream.title.size();
         fs.write((char *) &size, sizeof(size_t));
-        fs.write((char *) stream.name.c_str(), size);
+        fs.write((char *) stream.title.c_str(), size);
+        // language
+        size = stream.language.size();
+        fs.write((char *) &size, sizeof(size_t));
+        fs.write((char *) stream.language.c_str(), size);
         // codec
         size = stream.codec.size();
         fs.write((char *) &size, sizeof(size_t));
@@ -69,21 +83,28 @@ bool MediaInfo::serialize(const std::string &dst) {
     // subtitles streams
     count = (int) subtitles.size();
     fs.write((char *) &count, sizeof(count));
+    //printf("Media::serialize: subtitle streams = %i\n", count);
     for (auto &stream : subtitles) {
-        // name
-        size = stream.name.size();
+        // title
+        size = stream.title.size();
         fs.write((char *) &size, sizeof(size_t));
-        fs.write((char *) stream.name.c_str(), size);
+        fs.write((char *) stream.title.c_str(), size);
+        // language
+        size = stream.language.size();
+        fs.write((char *) &size, sizeof(size_t));
+        fs.write((char *) stream.language.c_str(), size);
         // codec
         size = stream.codec.size();
         fs.write((char *) &size, sizeof(size_t));
         fs.write((char *) stream.codec.c_str(), size);
     }
 
+    fs.close();
+
     return true;
 }
 
-bool MediaInfo::deserialize(const std::string &src) {
+bool Media::deserialize(const std::string &src) {
 
     int count;
     char *data;
@@ -95,13 +116,14 @@ bool MediaInfo::deserialize(const std::string &src) {
         return false;
     }
 
-    // name
+    // title
     fs.read((char *) &size, sizeof(size));
     data = new char[size + 1];
     fs.read(data, size);
     data[size] = '\0';
-    name = data;
+    title = data;
     delete data;
+    //printf("Media::deserialize: title = %s\n", title.c_str());
 
     // path
     fs.read((char *) &size, sizeof(size));
@@ -110,21 +132,31 @@ bool MediaInfo::deserialize(const std::string &src) {
     data[size] = '\0';
     path = data;
     delete data;
+    //printf("Media::deserialize: path = %s\n", path.c_str());
 
     // duration
     fs.read((char *) &duration, sizeof(duration));
+    //printf("Media::deserialize: duration = %li\n", duration);
 
     // video streams
     videos.clear();
     fs.read((char *) &count, sizeof(count));
+    //printf("Media::deserialize: video streams = %i\n", count);
     for (int i = 0; i < count; i++) {
-        StreamInfo stream;
-        // name
+        Stream stream;
+        // title
         fs.read((char *) &size, sizeof(size));
         data = new char[size + 1];
         fs.read(data, size);
         data[size] = '\0';
-        stream.name = data;
+        stream.title = data;
+        delete data;
+        // language
+        fs.read((char *) &size, sizeof(size));
+        data = new char[size + 1];
+        fs.read(data, size);
+        data[size] = '\0';
+        stream.language = data;
         delete data;
         // codec
         fs.read((char *) &size, sizeof(size));
@@ -145,14 +177,22 @@ bool MediaInfo::deserialize(const std::string &src) {
     // audio streams
     audios.clear();
     fs.read((char *) &count, sizeof(count));
+    //printf("Media::deserialize: audio streams = %i\n", count);
     for (int i = 0; i < count; i++) {
-        StreamInfo stream;
-        // name
+        Stream stream;
+        // title
         fs.read((char *) &size, sizeof(size));
         data = new char[size + 1];
         fs.read(data, size);
         data[size] = '\0';
-        stream.name = data;
+        stream.title = data;
+        delete data;
+        // language
+        fs.read((char *) &size, sizeof(size));
+        data = new char[size + 1];
+        fs.read(data, size);
+        data[size] = '\0';
+        stream.language = data;
         delete data;
         // codec
         fs.read((char *) &size, sizeof(size));
@@ -170,14 +210,22 @@ bool MediaInfo::deserialize(const std::string &src) {
     // subtitles streams
     subtitles.clear();
     fs.read((char *) &count, sizeof(count));
+    //printf("Media::deserialize: subtitle streams = %i\n", count);
     for (int i = 0; i < count; i++) {
-        StreamInfo stream;
-        // name
+        Stream stream;
+        // title
         fs.read((char *) &size, sizeof(size));
         data = new char[size + 1];
         fs.read(data, size);
         data[size] = '\0';
-        stream.name = data;
+        stream.title = data;
+        delete data;
+        // language
+        fs.read((char *) &size, sizeof(size));
+        data = new char[size + 1];
+        fs.read(data, size);
+        data[size] = '\0';
+        stream.language = data;
         delete data;
         // codec
         fs.read((char *) &size, sizeof(size));
@@ -190,5 +238,31 @@ bool MediaInfo::deserialize(const std::string &src) {
         subtitles.push_back(stream);
     }
 
+    fs.close();
+
     return true;
+}
+
+void Media::debut_print() {
+    printf("============= MEDIA ===============\n");
+    printf("title: %s, duration: %s\n", title.c_str(), Utils::formatTimeShort(duration).c_str());
+    printf("\tvideo streams: %i\n", (int) videos.size());
+    for (auto &stream : videos) {
+        printf("\t\tlanguage: %s, title: %s, resolution: %ix%i, codec: %s @ %i kb/s\n",
+               stream.language.c_str(), stream.title.c_str(),
+               stream.width, stream.height, stream.codec.c_str(), stream.rate / 1000);
+    }
+    printf("\taudio streams: %i\n", (int) audios.size());
+    for (auto &stream : audios) {
+        printf("\t\tlanguage: %s, title: %s, codec: %s @ %i hz\n",
+               stream.language.c_str(), stream.title.c_str(),
+               stream.codec.c_str(), stream.rate);
+    }
+    printf("\tsubtitle streams: %i\n", (int) subtitles.size());
+    for (auto &stream : subtitles) {
+        printf("\t\tlanguage: %s, title: %s, codec: %s\n",
+               stream.language.c_str(), stream.title.c_str(),
+               stream.codec.c_str());
+    }
+    printf("===================================\n");
 }

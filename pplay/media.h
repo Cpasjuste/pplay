@@ -8,30 +8,32 @@
 #include <string>
 #include <vector>
 
-class MediaInfo {
+class Media {
 
 public:
 
-    class StreamInfo {
+    class Stream {
     public:
-        std::string name;
+        std::string title;
+        std::string language;
         std::string codec;
         int rate;
         int width;
         int height;
     };
 
-    std::string name;
+    std::string title;
     std::string path;
     long duration;
-    std::vector<StreamInfo> videos;
-    std::vector<StreamInfo> audios;
-    std::vector<StreamInfo> subtitles;
+    std::vector<Stream> videos;
+    std::vector<Stream> audios;
+    std::vector<Stream> subtitles;
 
     bool serialize(const std::string &dst);
 
     bool deserialize(const std::string &src);
 
+    void debut_print();
 };
 
 #endif //PPLAY_MEDIA_INFO_H
