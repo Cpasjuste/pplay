@@ -27,15 +27,23 @@ project(pplay)
 ##############
 set(PPLAY_INC
         pplay
-        pplay/fftools
+        #pplay/fftools
         SDL_kitchensink/include
         SDL_kitchensink/include/kitchensink
         SDL_kitchensink/include/kitchensink/internal)
 
-file(GLOB_RECURSE PPLAY_SRC
+file(GLOB PPLAY_SRC
         pplay/*.c*
-        pplay/fftools/*.c*
-        SDL_kitchensink/src/*.c*)
+        pplay/Browser/*.c*
+        #pplay/fftools/*.c*
+        SDL_kitchensink/src/*.c*
+        SDL_kitchensink/src/internal/*.c*
+        SDL_kitchensink/src/internal/audio/*.c*
+        SDL_kitchensink/src/internal/subtitle/*.c*
+        SDL_kitchensink/src/internal/subtitle/renderers/*.c*
+        SDL_kitchensink/src/internal/utils/*.c*
+        SDL_kitchensink/src/internal/video/*.c*
+        )
 
 set(PPLAY_CFLAGS
         -D__PPLAY__

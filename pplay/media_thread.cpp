@@ -119,13 +119,14 @@ static int media_info_thread(void *ptr) {
         avformat_close_input(&ctx);
         avformat_network_deinit();
 
+#if 0
         // TODO: extract thumbnail
         std::string p = cachePath + ".png";
         const char *argv[] = {
                 "ffmpeg", "-i", mediaPath.c_str(), "-ss", "00:00:30", "-vframes", "1", p.c_str()
         };
         ffmpeg_main(8, argv);
-
+#endif
         printf("media_info_thread: process: OK\n");
     }
 
