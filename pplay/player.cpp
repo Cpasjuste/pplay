@@ -107,7 +107,7 @@ bool Player::load(c2d::Io::File *file) {
     if (video_streams.size > 0) {
         // init video texture
         texture = new C2DTexture(
-                {playerInfo.video.output.width, playerInfo.video.output.height}, Texture::Format::RGBA8);
+                {playerInfo.video.output.width, playerInfo.video.output.height}, Texture::Format::RGB565);
         texture->setFilter(Texture::Filter::Linear);
         add(texture);
     }

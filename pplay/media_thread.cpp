@@ -49,16 +49,22 @@ static int media_info_thread(void *ptr) {
         // open
         avformat_network_init();
         AVFormatContext *ctx = nullptr;
-        if (avformat_open_input(&ctx, mediaPath.c_str(), nullptr, nullptr) != 0) {
-            printf("media_info_thread: unable to open '%s'\n", mediaPath.c_str());
+        int res = avformat_open_input(&ctx, mediaPath.c_str(), nullptr, nullptr);
+        if (res != 0) {
+            char err_str[256];
+            av_strerror(res, err_str, 255);
+            printf("media_info_thread: unable to open '%s': %s\n", mediaPath.c_str(), err_str);
             avformat_network_deinit();
             continue;
         }
 
         av_opt_set_int(ctx, "probesize", INT_MAX, 0);
         av_opt_set_int(ctx, "analyzeduration", INT_MAX, 0);
-        if (avformat_find_stream_info(ctx, nullptr) < 0) {
-            printf("media_info_thread: unable to parse '%s'\n", mediaPath.c_str());
+        res = avformat_find_stream_info(ctx, nullptr);
+        if (res < 0) {
+            char err_str[256];
+            av_strerror(res, err_str, 255);
+            printf("media_info_thread: unable to parse '%s': %s\n", mediaPath.c_str(), err_str);
             avformat_close_input(&ctx);
             avformat_network_deinit();
             continue;
