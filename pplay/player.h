@@ -7,7 +7,7 @@
 
 #include "kitchensink/kitchensink.h"
 
-#define AUDIO_BUFFER_SIZE (1024 * 64)
+#define AUDIO_BUFFER_SIZE (1024 * 128)
 #define MAX_STREAM_LIST_SIZE 32
 
 class Main;
