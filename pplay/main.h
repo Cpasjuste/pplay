@@ -62,7 +62,7 @@ private:
     Filer *filerPaths = nullptr;
     Filer *filer = nullptr;
     Player *player = nullptr;
-    MediaThread *mediaInfo = nullptr;
+    MediaThread *mediaInfoThread = nullptr;
 };
 
 #endif //PPLAY_MAIN_H

@@ -53,10 +53,10 @@ Main::Main() {
 
     // media info
     getIo()->create(getIo()->getHomePath() + "cache");
-    mediaInfo = new MediaThread(renderer, getIo()->getHomePath() + "cache/");
-    mediaInfo->cacheDir(filer->getPath());
+    mediaInfoThread = new MediaThread(renderer, getIo()->getHomePath() + "cache/");
+    mediaInfoThread->cacheDir(filer->getPath());
 
-    // a messagebox
+    // a messagebox...
     float w = renderer->getSize().x / 2;
     float h = renderer->getSize().y / 2;
     messageBox = new MessageBox({w, h, w, h},
@@ -132,7 +132,7 @@ void Main::run() {
                     } else if (keys & c2d::Input::KEY_FIRE1) {
                         // cache media info on enter dir
                         printf("mediaInfo->cacheDir(%s)\n", filer->getPath().c_str());
-                        mediaInfo->cacheDir(filer->getPath());
+                        mediaInfoThread->cacheDir(filer->getPath());
                     }
 
                     // load media info
@@ -140,7 +140,7 @@ void Main::run() {
                         || keys & c2d::Input::KEY_LEFT || keys & c2d::Input::KEY_RIGHT) {
                         Io::File *file = filer->getSelection();
                         if (file && file->type == Io::Type::File) {
-                            Media *info = mediaInfo->getMediaInfo(file->path);
+                            Media *info = mediaInfoThread->getMediaInfo(file->path);
                             if (info) {
                                 info->debut_print();
                                 delete (info);
@@ -190,7 +190,7 @@ PPLAYConfig *Main::getConfig() {
 
 Main::~Main() {
 
-    delete (mediaInfo);
+    delete (mediaInfoThread);
     delete (config);
     delete (timer);
     // will delete widgets recursively

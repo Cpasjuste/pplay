@@ -12,6 +12,7 @@ int ffmpeg_main(int argc, const char **argv);
 #include "media_thread.h"
 #include "base64.h"
 
+#if 0
 static void dump_metadata(const std::string &desc, AVDictionary *dic) {
     AVDictionaryEntry *t = nullptr;
     printf("- %s\n", desc.c_str());
@@ -19,6 +20,7 @@ static void dump_metadata(const std::string &desc, AVDictionary *dic) {
         printf("\t%s -> %s\n", t->key, t->value);
     }
 }
+#endif
 
 static int media_info_thread(void *ptr) {
 
@@ -70,14 +72,13 @@ static int media_info_thread(void *ptr) {
             continue;
         }
 
-        dump_metadata("media", ctx->metadata);
-
         Media media;
         AVDictionaryEntry *language, *title = av_dict_get(ctx->metadata, "title", nullptr, 0);
         media.title = title ? title->value : "";
         media.path = mediaPath;
         media.duration = ctx->duration / AV_TIME_BASE;
         printf("media_info_thread: stream count: %i\n", ctx->nb_streams);
+        //dump_metadata("media", ctx->metadata);
 
         for (int i = 0; i < (int) ctx->nb_streams; i++) {
             const AVCodecParameters *codec = ctx->streams[i]->codecpar;
@@ -94,7 +95,7 @@ static int media_info_thread(void *ptr) {
                 stream.height = codec->height;
                 media.videos.push_back(stream);
                 printf("media_info_thread: found video stream: %s\n", stream.title.c_str());
-                dump_metadata("video stream", ctx->streams[i]->metadata);
+                //dump_metadata("video stream", ctx->streams[i]->metadata);
             } else if (type == AVMEDIA_TYPE_AUDIO) {
                 Media::Stream stream;
                 title = av_dict_get(ctx->streams[i]->metadata, "title", nullptr, 0);
@@ -105,7 +106,7 @@ static int media_info_thread(void *ptr) {
                 stream.rate = codec->sample_rate;
                 media.audios.push_back(stream);
                 printf("media_info_thread: found audio stream: %s\n", stream.title.c_str());
-                dump_metadata("audio stream", ctx->streams[i]->metadata);
+                //dump_metadata("audio stream", ctx->streams[i]->metadata);
             } else if (type == AVMEDIA_TYPE_SUBTITLE) {
                 Media::Stream stream;
                 title = av_dict_get(ctx->streams[i]->metadata, "title", nullptr, 0);
@@ -115,7 +116,7 @@ static int media_info_thread(void *ptr) {
                 stream.codec = avcodec_get_name(codec->codec_id);
                 media.subtitles.push_back(stream);
                 printf("media_info_thread: found subtitle stream: %s\n", stream.title.c_str());
-                dump_metadata("subtitle stream", ctx->streams[i]->metadata);
+                //dump_metadata("subtitle stream", ctx->streams[i]->metadata);
             }
         }
 
@@ -212,11 +213,9 @@ MediaThread::~MediaThread() {
     int ret;
 
     running = false;
-
     printf("~Media: wait thread...\n");
     SDL_WaitThread(thread, &ret);
     //SDL_DetachThread(thread);
-
     SDL_DestroyMutex(mutex);
     printf("~Media: done...\n");
 }
