@@ -107,7 +107,7 @@ bool Player::load(c2d::Io::File *file) {
     if (video_streams.size > 0) {
         // init video texture
         texture = new C2DTexture(
-                {playerInfo.video.output.width, playerInfo.video.output.height}, Texture::Format::RGB565);
+                {playerInfo.video.output.width, playerInfo.video.output.height}, Texture::Format::RGBA8);
         texture->setFilter(Texture::Filter::Linear);
         add(texture);
     }
@@ -182,9 +182,16 @@ void Player::step(unsigned int keys) {
     if (audio_streams.size > 0) {
         int queued = SDL_GetQueuedAudioSize(audioDeviceID);
         if (queued < AUDIO_BUFFER_SIZE) {
-            int ret = Kit_GetPlayerAudioData(player, (unsigned char *) audioBuffer, AUDIO_BUFFER_SIZE - queued);
-            if (ret > 0) {
-                SDL_QueueAudio(audioDeviceID, audioBuffer, (Uint32) ret);
+            int need = AUDIO_BUFFER_SIZE - queued;
+            while (need > 0) {
+                int ret = Kit_GetPlayerAudioData(
+                        player, (unsigned char *) audioBuffer, AUDIO_BUFFER_SIZE);
+                need -= ret;
+                if (ret > 0) {
+                    SDL_QueueAudio(audioDeviceID, audioBuffer, (Uint32) ret);
+                } else {
+                    break;
+                }
             }
         }
     }
