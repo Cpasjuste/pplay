@@ -25,6 +25,11 @@ public:
         int current = 0;
     };
 
+    enum class CpuClock {
+        Min = 0,
+        Max = 1
+    };
+
     explicit Player(Main *main);
 
     ~Player();
@@ -44,6 +49,8 @@ public:
     bool isFullscreen();
 
     void setFullscreen(bool maximize);
+
+    void setCpuClock(const CpuClock &clock);
 
     Main *getMain();
 

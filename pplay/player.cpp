@@ -118,6 +118,8 @@ bool Player::load(c2d::Io::File *file) {
     // start playback
     Kit_PlayerPlay(player);
 
+    setCpuClock(CpuClock::Max);
+
     return true;
 }
 
@@ -238,6 +240,8 @@ void Player::pause() {
         Kit_PlayerPause(player);
     }
 
+    setCpuClock(CpuClock::Min);
+
     paused = true;
 }
 
@@ -246,6 +250,8 @@ void Player::resume() {
     if (player && paused) {
         Kit_PlayerPlay(player);
     }
+
+    setCpuClock(CpuClock::Max);
 
     paused = false;
 }
@@ -287,6 +293,29 @@ void Player::stop() {
     osd->setVisibility(Visibility::Hidden);
     setVisibility(Visibility::Hidden);
     setFullscreen(false);
+
+    setCpuClock(CpuClock::Min);
+}
+
+void Player::setCpuClock(const CpuClock &clock) {
+#ifdef __SWITCH__
+    if (clock == CpuClock::Min) {
+        if (SwitchSys::getClock(SwitchSys::Module::Cpu) != SwitchSys::getClockStock(SwitchSys::Module::Cpu)) {
+            int clock_old = SwitchSys::getClock(SwitchSys::Module::Cpu);
+            SwitchSys::setClock(SwitchSys::Module::Cpu, (int) SwitchSys::CPUClock::Stock);
+            printf("restored cpu speed (old: %i, new: %i)\n",
+                   clock_old, SwitchSys::getClock(SwitchSys::Module::Cpu));
+        }
+    } else {
+        if (playerInfo.video.output.width > 1280
+            || playerInfo.video.output.height > 720) {
+            int clock_old = SwitchSys::getClock(SwitchSys::Module::Cpu);
+            SwitchSys::setClock(SwitchSys::Module::Cpu, (int) SwitchSys::CPUClock::Max);
+            printf("fhd video spotted, setting max cpu speed (old: %i, new: %i)\n",
+                   clock_old, SwitchSys::getClock(SwitchSys::Module::Cpu));
+        }
+    }
+#endif
 }
 
 Main *Player::getMain() {
