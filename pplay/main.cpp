@@ -2,6 +2,12 @@
 // Created by cpasjuste on 02/10/18.
 //
 
+#ifdef __SWITCH__
+extern "C" {
+//#include <pthread.h>
+}
+#endif
+
 #include "main.h"
 #include "filer_sdmc.h"
 #include "filer_paths.h"
@@ -201,6 +207,7 @@ int main() {
 
 #ifdef __SWITCH__
     socketInitializeDefault();
+    //pthread_init();
 #endif
 
     Main *main = new Main();
@@ -208,6 +215,7 @@ int main() {
     delete (main);
 
 #ifdef __SWITCH__
+    //pthread_terminate();
     socketExit();
 #endif
 

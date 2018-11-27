@@ -60,6 +60,7 @@ if (BUILD_SWITCH)
     # SWITCH PLATORM
     #####################
     list(APPEND PPLAY_INC ${DEVKITPRO}/portlibs/switch/include/SDL2)
+    #list(APPEND PPLAY_LDFLAGS pthread)
 elseif (BUILD_LINUX)
     #####################
     # LINUX PLATORM
