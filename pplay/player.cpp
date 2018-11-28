@@ -37,7 +37,7 @@ bool Player::load(c2d::Io::File *file) {
     }
 
     // init Kit library
-    int err = Kit_Init(KIT_INIT_NETWORK /*| KIT_INIT_ASS*/);
+    int err = Kit_Init(KIT_INIT_NETWORK | KIT_INIT_ASS);
     if (err != 0) {
         printf("unable to initialize Kitchensink: %s\n", Kit_GetError());
         stop();
@@ -73,7 +73,7 @@ bool Player::load(c2d::Io::File *file) {
             source,
             video_streams.size > 0 ? video_streams.streams[0] : -1,
             audio_streams.size > 0 ? audio_streams.streams[0] : -1,
-            -1, //Kit_GetBestSourceStream(src, KIT_STREAMTYPE_SUBTITLE), // TODO: subtitles
+            subtitles_streams.size > 0 ? subtitles_streams.streams[0] : -1,
             (int) getSize().x, (int) getSize().y);
     if (!player) {
         printf("unable to create player: %s\n", Kit_GetError());
@@ -90,7 +90,6 @@ bool Player::load(c2d::Io::File *file) {
            playerInfo.audio.codec.name,
            playerInfo.audio.output.samplerate);
 
-    // init audio
     if (audio_streams.size > 0) {
         if (!SDL_WasInit(SDL_INIT_AUDIO)) {
             SDL_InitSubSystem(SDL_INIT_AUDIO);
@@ -105,11 +104,16 @@ bool Player::load(c2d::Io::File *file) {
     }
 
     if (video_streams.size > 0) {
-        // init video texture
         texture = new C2DTexture(
                 {playerInfo.video.output.width, playerInfo.video.output.height}, Texture::Format::RGBA8);
         texture->setFilter(Texture::Filter::Linear);
         add(texture);
+    }
+
+    if (subtitles_streams.size > 0) {
+        textureSub = new C2DTexture({2048, 2048}, Texture::Format::RGBA8);
+        textureSub->setFilter(Texture::Filter::Point);
+        add(textureSub);
     }
 
     setVisibility(Visibility::Visible);
@@ -217,6 +221,18 @@ void Player::step(unsigned int keys) {
         texture->setPosition(getSize().x / 2.0f, getSize().y / 2.0f);
         texture->setScale(scale);
     }
+
+    /// Subtitles
+    if (subtitles_streams.size > 0) {
+        void *pixels;
+        textureSub->lock(nullptr, &pixels, nullptr);
+        int rects = Kit_GetPlayerSubtitleDataRaw(player, pixels, sources, targets, ATLAS_MAX);
+        textureSub->unlock();
+        printf("rects: %i\n", rects);
+        //for (int i = 0; i < rects; i++) {
+        //SDL_RenderCopy(renderer, subtitle_tex, &sources[i], &targets[i]);
+        //}
+    }
 }
 
 bool Player::isPlaying() {
@@ -280,6 +296,12 @@ void Player::stop() {
     if (texture) {
         delete (texture);
         texture = nullptr;
+    }
+
+    /// Subtitles
+    if (textureSub) {
+        delete (textureSub);
+        textureSub = nullptr;
     }
 
     video_streams.size = 0;

@@ -9,6 +9,7 @@
 
 #define AUDIO_BUFFER_SIZE (1024 * 64)
 #define MAX_STREAM_LIST_SIZE 32
+#define ATLAS_MAX 512
 
 class Main;
 
@@ -63,6 +64,7 @@ private:
     Main *main = nullptr;
     PlayerOSD *osd = nullptr;
     c2d::Texture *texture = nullptr;
+    c2d::Texture *textureSub = nullptr;
     c2d::TweenPosition *tweenPosition;
     c2d::TweenScale *tweenScale;
 
@@ -80,6 +82,10 @@ private:
 
     bool fullscreen = false;
     bool paused = false;
+
+    // subtitles
+    SDL_Rect sources[ATLAS_MAX];
+    SDL_Rect targets[ATLAS_MAX];
 };
 
 #endif //PPLAY_PLAYER_H
