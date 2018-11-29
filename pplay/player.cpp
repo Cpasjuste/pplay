@@ -10,7 +10,7 @@
 
 using namespace c2d;
 
-Player::Player(Main *_main) : OutlineRect(_main->getRenderer()->getSize(), 4) {
+Player::Player(Main *_main) : RectangleShape(_main->getRenderer()->getSize()) {
 
     main = _main;
     setFillColor(Color::Black);
@@ -111,7 +111,11 @@ bool Player::load(c2d::Io::File *file) {
     }
 
     if (subtitles_streams.size > 0) {
-        textureSub = new C2DTexture({2048, 2048}, Texture::Format::RGBA8);
+        textureSub = new SubtitlesTexture();
+        void *buf;
+        textureSub->lock(nullptr, &buf, nullptr);
+        memset(buf, 0, 1024 * 1024 * 4);
+        textureSub->unlock();
         textureSub->setFilter(Texture::Filter::Point);
         add(textureSub);
     }
@@ -224,14 +228,12 @@ void Player::step(unsigned int keys) {
 
     /// Subtitles
     if (subtitles_streams.size > 0) {
-        void *pixels;
-        textureSub->lock(nullptr, &pixels, nullptr);
-        int rects = Kit_GetPlayerSubtitleDataRaw(player, pixels, sources, targets, ATLAS_MAX);
-        textureSub->unlock();
-        printf("rects: %i\n", rects);
-        //for (int i = 0; i < rects; i++) {
-        //SDL_RenderCopy(renderer, subtitle_tex, &sources[i], &targets[i]);
-        //}
+        int count = Kit_GetPlayerSubtitleDataRaw(
+                player, textureSub->pixels, textureSub->getRectsSrc(), textureSub->getRectsDst(), ATLAS_MAX);
+        textureSub->setRectsCount(count);
+        if (count > 0) {
+            textureSub->unlock();
+        }
     }
 }
 

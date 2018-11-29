@@ -6,16 +6,16 @@
 #define PPLAY_PLAYER_H
 
 #include "kitchensink/kitchensink.h"
+#include "subtitles_texture.h"
 
 #define AUDIO_BUFFER_SIZE (1024 * 64)
 #define MAX_STREAM_LIST_SIZE 32
-#define ATLAS_MAX 512
 
 class Main;
 
 class PlayerOSD;
 
-class Player : public OutlineRect {
+class Player : public c2d::RectangleShape {
 
 public:
 
@@ -64,7 +64,7 @@ private:
     Main *main = nullptr;
     PlayerOSD *osd = nullptr;
     c2d::Texture *texture = nullptr;
-    c2d::Texture *textureSub = nullptr;
+    SubtitlesTexture *textureSub = nullptr;
     c2d::TweenPosition *tweenPosition;
     c2d::TweenScale *tweenScale;
 
@@ -82,10 +82,6 @@ private:
 
     bool fullscreen = false;
     bool paused = false;
-
-    // subtitles
-    SDL_Rect sources[ATLAS_MAX];
-    SDL_Rect targets[ATLAS_MAX];
 };
 
 #endif //PPLAY_PLAYER_H

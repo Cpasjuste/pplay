@@ -5,7 +5,7 @@
 #ifndef PPLAY_OUTLINE_RECT_H
 #define PPLAY_OUTLINE_RECT_H
 
-#include <cross2d/skeleton/sfml/Rect.hpp>
+#include "cross2d/skeleton/sfml/Rect.hpp"
 
 class OutlineRect : public c2d::C2DRectangle {
 
