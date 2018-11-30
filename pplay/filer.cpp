@@ -34,7 +34,7 @@ Filer::Filer(const std::string &path, Font *font,
     listBox->setOutlineColor(COLOR_BLUE);
     listBox->setOutlineThickness(2);
     listBox->setTextOutlineThickness(1);
-    listBox->getHighlight()->setFillColor(COLOR_GRAY_LIGHT);
+    listBox->getHighlight()->setFillColor(COLOR_ORANGE);
     listBox->getHighlight()->setOutlineColor(COLOR_BLUE);
     listBox->getHighlight()->setOutlineThickness(2);
     listBox->getHighlight()->add(new TweenAlpha(80, 150, 0.6f, TweenLoop::PingPong));

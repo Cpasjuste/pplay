@@ -76,9 +76,9 @@ bool Player::load(c2d::Io::File *file) {
     // create the player
     player = Kit_CreatePlayer(
             source,
-            video_streams.size > 0 ? video_streams.streams[0] : -1,
-            audio_streams.size > 0 ? audio_streams.streams[0] : -1,
-            subtitles_streams.size > 0 ? subtitles_streams.streams[0] : -1,
+            video_streams.getCurrentStream(),
+            audio_streams.getCurrentStream(),
+            -1,
             (int) getSize().x, (int) getSize().y);
     if (!player) {
         printf("unable to create player: %s\n", Kit_GetError());
@@ -311,12 +311,9 @@ void Player::stop() {
         textureSub = nullptr;
     }
 
-    video_streams.size = 0;
-    video_streams.current = 0;
-    audio_streams.size = 0;
-    audio_streams.current = 0;
-    subtitles_streams.size = 0;
-    subtitles_streams.current = 0;
+    video_streams.reset();
+    audio_streams.reset();
+    subtitles_streams.reset();
     paused = false;
 
     osd->setVisibility(Visibility::Hidden);

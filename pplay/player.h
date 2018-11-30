@@ -25,7 +25,34 @@ public:
 
     class Stream {
     public:
-        int streams[MAX_STREAM_LIST_SIZE]{};
+        void next() {
+            current++;
+            if (current >= size) {
+                current = 0;
+            }
+        }
+
+        void prev() {
+            current--;
+            if (current < 0) {
+                current = size - 1;
+            }
+        }
+
+        void reset() {
+            memset(streams, 0, MAX_STREAM_LIST_SIZE * sizeof(int));
+            size = 0;
+            current = 0;
+        }
+
+        int getCurrentStream() {
+            if (current < size) {
+                return streams[current];
+            }
+            return -1;
+        }
+
+        int streams[MAX_STREAM_LIST_SIZE];
         int size = 0;
         int current = 0;
     };
