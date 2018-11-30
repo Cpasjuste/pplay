@@ -68,6 +68,11 @@ bool Player::load(c2d::Io::File *file) {
         return false;
     }
 
+    // set default font
+    Kit_LibraryState *state = Kit_GetLibraryState();
+    snprintf(state->subtitle_font_path, 511, "%sLiberationSans-Regular.ttf",
+             getMain()->getIo()->getDataPath().c_str());
+
     // create the player
     player = Kit_CreatePlayer(
             source,

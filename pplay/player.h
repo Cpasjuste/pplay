@@ -5,7 +5,11 @@
 #ifndef PPLAY_PLAYER_H
 #define PPLAY_PLAYER_H
 
+extern "C" {
 #include "kitchensink/kitchensink.h"
+#include "kitchensink/internal/kitlibstate.h"
+}
+
 #include "subtitles_texture.h"
 
 #define AUDIO_BUFFER_SIZE (1024 * 64)
