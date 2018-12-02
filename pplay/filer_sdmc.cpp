@@ -26,7 +26,7 @@ bool FilerSdmc::getDir(const std::string &p) {
 
     printf("getDir(%s)\n", p.c_str());
 
-    path = p;
+    path = Utility::removeLastSlash(p);
     index = 0;
     files = io->getDirList(path, true);
     if (files.empty()) {

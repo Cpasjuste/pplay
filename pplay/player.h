@@ -92,6 +92,10 @@ public:
 
 private:
 
+    void onInput(c2d::Input::Player *players) override;
+
+    void onDraw(c2d::Transform &transform) override;
+
     Main *main = nullptr;
     PlayerOSD *osd = nullptr;
     c2d::Texture *texture = nullptr;

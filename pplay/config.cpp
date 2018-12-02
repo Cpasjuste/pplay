@@ -9,6 +9,9 @@ using namespace c2d;
 PPLAYConfig::PPLAYConfig(const std::string &name, const std::string &path, int version)
         : Config(name, path, version) {
 
+    addOption({"HOME_PATH", ""});
+    addOption({"LAST_PATH", ""});
+
     Group group("HTTP_SERVERS");
     group.addOption({"SERVER0", "http://samples.ffmpeg.org/"});
     group.addOption({"SERVER1", ""});

@@ -12,6 +12,7 @@
 #include "player_osd.h"
 #include "config.h"
 #include "media_thread.h"
+#include "options_menu.h"
 
 #define INPUT_DELAY 250
 #define FONT_SIZE 25
@@ -30,29 +31,31 @@
 #define COLOR_ORANGE_LIGHT  Color(0xe67e22ff)
 #define COLOR_RED           Color(0xff0000ff)
 
-class Main {
+class Main : public c2d::C2DRenderer {
 
 public:
-    Main();
+
+    Main(const c2d::Vector2f &size);
 
     ~Main();
 
-    void run();
+    void showHome();
 
     void setPlayerSize(bool fs);
 
-    c2d::Renderer *getRenderer();
-
-    c2d::Io *getIo();
-
-    c2d::Font *getFont();
-
-    c2d::Input *getInput();
+    bool isRunning();
 
     PPLAYConfig *getConfig();
 
+    c2d::Font *getFont() override;
+
+    void quit();
+
 private:
-    c2d::Renderer *renderer = nullptr;
+
+    void onInput(c2d::Input::Player *players) override;
+
+    c2d::Font *font = nullptr;
     c2d::RectangleShape *mainRect = nullptr;
     c2d::Clock *timer = nullptr;
     c2d::MessageBox *messageBox = nullptr;
@@ -62,7 +65,10 @@ private:
     Filer *filerPaths = nullptr;
     Filer *filer = nullptr;
     Player *player = nullptr;
+    OptionMenu *menu = nullptr;
     MediaThread *mediaInfoThread = nullptr;
+
+    bool running = true;
 };
 
 #endif //PPLAY_MAIN_H

@@ -10,7 +10,7 @@
 
 using namespace c2d;
 
-Player::Player(Main *_main) : RectangleShape(_main->getRenderer()->getSize()) {
+Player::Player(Main *_main) : RectangleShape(_main->getSize()) {
 
     main = _main;
     setFillColor(Color::Black);
@@ -18,7 +18,7 @@ Player::Player(Main *_main) : RectangleShape(_main->getRenderer()->getSize()) {
     setOutlineThickness(4);
 
     tweenPosition = new TweenPosition(
-            {main->getRenderer()->getSize().x * 0.55f, main->getRenderer()->getSize().y * 0.55f},
+            {main->getSize().x * 0.55f, main->getSize().y * 0.55f},
             {0, 0}, 0.5f);
     add(tweenPosition);
     tweenScale = new TweenScale({0.4f, 0.4f}, {1, 1}, 0.5f);
@@ -136,7 +136,7 @@ bool Player::load(c2d::Io::File *file) {
     return true;
 }
 
-void Player::step(unsigned int keys) {
+void Player::onInput(c2d::Input::Player *players) {
 
     double position, duration;
 
@@ -152,6 +152,7 @@ void Player::step(unsigned int keys) {
     //////////////////
     /// handle inputs
     //////////////////
+    unsigned int keys = isFullscreen() ? players[0].state : 0;
     if (keys & Input::Key::KEY_FIRE1) {
         if (osd->isVisible()) {
             if (paused) {
@@ -188,6 +189,16 @@ void Player::step(unsigned int keys) {
             osd->setVisibility(Visibility::Visible, true);
             Kit_PlayerSeek(player, position - (60.0 * 10.0));
         }
+    }
+
+    C2DObject::onInput(players);
+}
+
+void Player::onDraw(c2d::Transform &transform) {
+
+    if (!isVisible() || !isPlaying()) {
+        stop();
+        return;
     }
 
     //////////////////
@@ -240,6 +251,8 @@ void Player::step(unsigned int keys) {
             textureSub->unlock();
         }
     }
+
+    Shape::onDraw(transform);
 }
 
 bool Player::isPlaying() {
@@ -359,3 +372,4 @@ c2d::TweenScale *Player::getTweenScale() {
 Player::~Player() {
 
 }
+
