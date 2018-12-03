@@ -9,12 +9,13 @@
 #include "outline_rect.h"
 #include "config.h"
 
+class Main;
+
 class Filer : public c2d::C2DRectangle {
 
 public:
 
-    Filer(const std::string &path,
-          c2d::Font *font, int fontSize, const c2d::FloatRect &rect);
+    Filer(Main *main, const std::string &path, const c2d::FloatRect &rect);
 
     ~Filer();
 
@@ -34,7 +35,7 @@ private:
 
     friend class FilerHttp;
 
-    friend class FilerPaths;
+    //friend class FilerPaths;
 
     void down();
 
@@ -48,6 +49,7 @@ private:
 
     virtual void exit() {};
 
+    Main *main;
     std::string path;
     std::vector<c2d::Io::File> files;
     c2d::ListBox *listBox;

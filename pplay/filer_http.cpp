@@ -10,8 +10,7 @@
 
 using namespace c2d;
 
-FilerHttp::FilerHttp(Font *font, int fontSize, const FloatRect &rect)
-        : Filer("", font, fontSize, rect) {
+FilerHttp::FilerHttp(Main *main, const FloatRect &rect) : Filer(main, "", rect) {
 
     // http Browser
     browser = new Browser();

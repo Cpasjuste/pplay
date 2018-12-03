@@ -1,7 +1,7 @@
 //
 // Created by cpasjuste on 12/04/18.
 //
-
+#if 0
 #ifndef FILER_PATHS_H
 #define FILER_PATHS_H
 
@@ -20,3 +20,4 @@ private:
 };
 
 #endif //FILER_PATHS_H
+#endif

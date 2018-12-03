@@ -7,11 +7,8 @@
 
 using namespace c2d;
 
-FilerSdmc::FilerSdmc(Io *io, const std::string &path,
-                     Font *font, int fontSize, const FloatRect &rect)
-        : Filer(path, font, fontSize, rect) {
-
-    this->io = io;
+FilerSdmc::FilerSdmc(Main *main, const std::string &path, const FloatRect &rect)
+        : Filer(main, path, rect) {
 
     if (!getDir(path)) {
         getDir("/");
@@ -20,7 +17,7 @@ FilerSdmc::FilerSdmc(Io *io, const std::string &path,
 
 bool FilerSdmc::getDir(const std::string &p) {
 
-    if (io->getType(p) != Io::Type::Directory) {
+    if (main->getIo()->getType(p) != Io::Type::Directory) {
         return false;
     }
 
@@ -28,7 +25,7 @@ bool FilerSdmc::getDir(const std::string &p) {
 
     path = Utility::removeLastSlash(p);
     index = 0;
-    files = io->getDirList(path, true);
+    files = main->getIo()->getDirList(path, true);
     if (files.empty()) {
         // add up/back ("..")
         files.emplace_back("..", "..", Io::Type::Directory, COLOR_BLUE_LIGHT);

@@ -90,9 +90,9 @@ public:
 
     c2d::TweenScale *getTweenScale();
 
-private:
-
     void onInput(c2d::Input::Player *players) override;
+
+private:
 
     void onDraw(c2d::Transform &transform) override;
 

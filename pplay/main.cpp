@@ -32,7 +32,8 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     // font
     font = new C2DFont();
     font->loadFromFile(getIo()->getDataPath() + "skin/LiberationSans-Regular.ttf");
-    font->setOffset({0, -5});
+    font->setFilter(Texture::Filter::Point);
+    font->setOffset({0, -4});
 
     // create a rect
     mainRect = new C2DRectangle(getSize());
@@ -51,16 +52,16 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     // create filers
     FloatRect filerRect = {16, 16,
                            (mainRect->getSize().x / 2) - 16, mainRect->getSize().y - 32};
-    filerSdmc = new FilerSdmc(getIo(), "/", getFont(), FONT_SIZE, filerRect);
+    filerSdmc = new FilerSdmc(this, "/", filerRect);
     mainRect->add(filerSdmc);
-    filerHttp = new FilerHttp(getFont(), FONT_SIZE, filerRect);
+    filerHttp = new FilerHttp(this, filerRect);
     filerHttp->setVisibility(Visibility::Hidden);
     mainRect->add(filerHttp);
-    filerRect.top += FONT_SIZE + 16;
-    filerRect.height = FONT_SIZE * 5 + 16 * 5;
-    filerPaths = new FilerPaths(config, getFont(), FONT_SIZE, filerRect);
-    filerPaths->setVisibility(Visibility::Hidden);
-    mainRect->add(filerPaths);
+    //filerRect.top += FONT_SIZE + 16;
+    //filerRect.height = FONT_SIZE * 5 + 16 * 5;
+    //filerPaths = new FilerPaths(config, getFont(), FONT_SIZE, filerRect);
+    //filerPaths->setVisibility(Visibility::Hidden);
+    //mainRect->add(filerPaths);
     filer = filerSdmc;
     filer->getDir(config->getOption("LAST_PATH")->getString());
 
@@ -76,8 +77,8 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     mediaInfoThread = new MediaThread(this, getIo()->getHomePath() + "cache/");
     mediaInfoThread->cacheDir(filer->getPath());
 
-    // create menu
-    menu = new OptionMenu(this, {0, 0, mainRect->getSize().x / 4, mainRect->getSize().y});
+    // menu
+    menu = new OptionMenu(this, {0, 0, 250, mainRect->getSize().y});
     menu->setVisibility(Visibility::Hidden);
     menu->setLayer(100);
     add(menu);
@@ -96,14 +97,17 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
 
 void Main::onInput(c2d::Input::Player *players) {
 
-    unsigned int keys = players[0].state;
-
     if (menu->isVisible()) {
-        C2DObject::onInput(players);
+        menu->onInput(players);
+        return;
+    } else if (player->isFullscreen()) {
+        player->onInput(players);
         return;
     }
 
-    if (keys > 0) {
+    unsigned int keys = players[0].state;
+
+    if (keys > 0 && keys != EV_DELAY) {
 
         if (keys & EV_QUIT) {
             if (player->isPlaying()) {
@@ -113,14 +117,15 @@ void Main::onInput(c2d::Input::Player *players) {
             }
         }
 
-        if (keys & c2d::Input::KEY_START
-            || keys & c2d::Input::KEY_COIN) {
-            menu->setVisibility(Visibility::Visible, true);
+        if (keys & Input::KEY_TOUCH) {
+            if (menu->getMenuButton()->getGlobalBounds().contains(players[0].touch)) {
+                menu->setVisibility(Visibility::Visible, true);
+            }
         }
 
         if (keys & c2d::Input::KEY_FIRE3) {
             if (player->isPlaying()) {
-                setPlayerSize(!player->isFullscreen());
+                setPlayerFullscreen(!player->isFullscreen());
             }
         }
 
@@ -135,7 +140,7 @@ void Main::onInput(c2d::Input::Player *players) {
                     filerPaths->setVisibility(Visibility::Visible, true);
                 };
             }
-#endif
+
             if (filerPaths->isVisible()) {
                 // handle local/http file browser selection
                 if (filerPaths->step(keys)) {
@@ -157,37 +162,41 @@ void Main::onInput(c2d::Input::Player *players) {
                     }
                 }
             } else {
-                if (filer->step(keys)) {
-                    if (player->load(filer->getSelection())) {
-                        setPlayerSize(true);
-                    }
-                } else if (keys & c2d::Input::KEY_FIRE1) {
-                    // cache media info on enter dir
-                    printf("mediaInfo->cacheDir(%s)\n", filer->getPath().c_str());
-                    mediaInfoThread->cacheDir(filer->getPath());
+#endif
+            if (filer->step(keys)) {
+                if (player->load(filer->getSelection())) {
+                    setPlayerFullscreen(true);
                 }
+            } else if (keys & c2d::Input::KEY_FIRE1) {
+                // cache media info on enter dir
+                printf("mediaInfo->cacheDir(%s)\n", filer->getPath().c_str());
+                mediaInfoThread->cacheDir(filer->getPath());
+            }
 
-                // load media info
-                if (keys & c2d::Input::KEY_UP || keys & c2d::Input::KEY_DOWN
-                    || keys & c2d::Input::KEY_LEFT || keys & c2d::Input::KEY_RIGHT) {
-                    Io::File *file = filer->getSelection();
-                    if (file && file->type == Io::Type::File) {
-                        Media *info = mediaInfoThread->getMediaInfo(file->path);
-                        if (info) {
-                            info->debut_print();
-                            delete (info);
-                        }
+            // load media info
+            if (keys & c2d::Input::KEY_UP || keys & c2d::Input::KEY_DOWN
+                || keys & c2d::Input::KEY_LEFT || keys & c2d::Input::KEY_RIGHT) {
+                Io::File *file = filer->getSelection();
+                if (file && file->type == Io::Type::File) {
+                    Media *info = mediaInfoThread->getMediaInfo(file->path);
+                    if (info) {
+                        info->debut_print();
+                        delete (info);
                     }
                 }
             }
+            //}
         }
-    } else {
-        C2DObject::onInput(players);
     }
+
+    //C2DObject::onInput(players);
 }
 
 void Main::showHome() {
 
+    if (player->isPlaying() && player->isFullscreen()) {
+        setPlayerFullscreen(false);
+    }
     filerSdmc->setVisibility(Visibility::Visible);
     filerHttp->setVisibility(Visibility::Hidden);
     filer = filerSdmc;
@@ -196,7 +205,7 @@ void Main::showHome() {
     }
 }
 
-void Main::setPlayerSize(bool fs) {
+void Main::setPlayerFullscreen(bool fs) {
     if (fs) {
         mainRect->setVisibility(Visibility::Visible);
         player->getTweenPosition()->play(TweenDirection::Forward);
@@ -222,6 +231,18 @@ void Main::quit() {
     config->save();
 
     running = false;
+}
+
+Player *Main::getPlayer() {
+    return player;
+}
+
+OptionMenu *Main::getMenu() {
+    return menu;
+}
+
+c2d::RectangleShape *Main::getMainRect() {
+    return mainRect;
 }
 
 PPLAYConfig *Main::getConfig() {

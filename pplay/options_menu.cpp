@@ -8,7 +8,8 @@
 
 using namespace c2d;
 
-#define FONT_COLOR {200, 200, 200, 255}
+#define ICON_SIZE 24
+#define BUTTON_HEIGHT 64
 
 class Highlight : public RectangleShape {
 
@@ -17,7 +18,6 @@ public:
     Highlight(const Vector2f &size) : RectangleShape(size) {
 
         setFillColor({255, 255, 255, 80});
-        add(new TweenAlpha(40, 60, 1, TweenLoop::PingPong));
 
         RectangleShape *rect = new RectangleShape(Vector2f{6, size.y});
         rect->setFillColor(COLOR_BLUE);
@@ -27,56 +27,85 @@ public:
     }
 };
 
+class OptionButton : public RectangleShape {
+
+public:
+
+    OptionButton(Main *main, const std::string &str, const std::string &iconName, const FloatRect &rect)
+            : RectangleShape(rect) {
+
+        setFillColor(Color::Transparent);
+        setOrigin(Origin::Left);
+
+        if (!iconName.empty()) {
+            icon = new C2DTexture(main->getIo()->getDataPath() + "/skin/" + iconName);
+            icon->setOrigin(Origin::Left);
+            icon->setPosition(16, getSize().y / 2);
+            icon->setFillColor(COLOR_FONT);
+            add(icon);
+        }
+
+        text = new Text(str, 20, main->getFont());
+        text->setOrigin(Origin::Left);
+        text->setPosition(ICON_SIZE + 32, getSize().y / 2);
+        text->setFillColor(COLOR_FONT);
+        add(text);
+    }
+
+private:
+
+    C2DTexture *icon;
+    Text *text;
+};
+
 OptionMenu::OptionMenu(Main *m, const c2d::FloatRect &rect) : RectangleShape(rect) {
 
     main = m;
 
-    setFillColor(Color::GrayDark);
+    setFillColor(COLOR_BG);
     setAlpha(245);
     setOutlineColor(Color::GrayLight);
     setOutlineThickness(2);
 
-    title = new Text("PPLAY", 24, main->getFont());
+    // menu button
+    menuButton = new RectangleShape({16, 16, 40, 40});
+    menuButton->setFillColor(COLOR_BG);
+    menuButton->setAlpha(245);
+    menuButton->setOutlineColor(Color::GrayLight);
+    menuButton->setOutlineThickness(2);
+    auto *tex = new C2DTexture(main->getIo()->getDataPath() + "/skin/menu.png");
+    tex->setFillColor(COLOR_FONT);
+    tex->setOrigin(Origin::Center);
+    tex->setPosition(menuButton->getSize().x / 2, menuButton->getSize().y / 2);
+    menuButton->add(tex);
+    main->getMainRect()->add(menuButton);
+
+    // title
+    title = new Text("PPLAY______", 24, main->getFont());
+    title->setStyle(Text::Underlined);
     title->setPosition(32, 32);
-    title->setFillColor(FONT_COLOR);
-    title->setAlpha(245);
+    title->setFillColor(COLOR_FONT);
     add(title);
 
-    options[Home] = new Text("Home", 20, main->getFont());
-    options[Home]->setPosition(64, 200);
-    options[Home]->setFillColor(FONT_COLOR);
-    C2DTexture *icon = new C2DTexture(main->getIo()->getDataPath() + "/skin/home.png");
-    icon->setOrigin(Origin::Right);
-    icon->setPosition(options[Home]->getPosition().x - 16, options[Home]->getPosition().y);
-    icon->setFillColor(FONT_COLOR);
-    add(icon);
+    // options
+    FloatRect r = {0, 200, getSize().x, BUTTON_HEIGHT};
+    options[Home] = new OptionButton(main, "Home", "home.png", r);
+    add(options[Home]);
+    r.top += 64;
+    options[Network] = new OptionButton(main, "Network", "network.png", r);
+    add(options[Network]);
+    r.top = getSize().y - 32;
+    options[Exit] = new OptionButton(main, "Exit", "exit.png", r);
+    add(options[Exit]);
 
-    options[Network] = new Text("Network", 20, main->getFont());
-    options[Network]->setPosition(64, 200 + 64 * 1);
-    options[Network]->setFillColor(FONT_COLOR);
-    icon = new C2DTexture(main->getIo()->getDataPath() + "/skin/network.png");
-    icon->setOrigin(Origin::Right);
-    icon->setPosition(options[Network]->getPosition().x - 16, options[Network]->getPosition().y);
-    icon->setFillColor(FONT_COLOR);
-    add(icon);
-
-    options[Exit] = new Text("Exit", 20, main->getFont());
-    options[Exit]->setPosition(32, getSize().y - 32);
-    options[Exit]->setFillColor(FONT_COLOR);
-
-    for (auto &option : options) {
-        option->setOrigin(Origin::Left);
-        option->setAlpha(245);
-        add(option);
-    }
-
-    highlight = new Highlight({getSize().x, 64});
+    // highlight
+    highlight = new Highlight({getSize().x, BUTTON_HEIGHT});
     highlight->setOrigin(Origin::Left);
     highlight->setPosition(0, options[index]->getPosition().y);
     add(highlight);
 
-    tween = new TweenPosition({-rect.width, 0}, {0, 0}, 0.5f);
-    add(tween);
+    // tween!
+    add(new TweenPosition({-rect.width, 0}, {0, 0}, 0.5f));
 }
 
 void OptionMenu::onInput(c2d::Input::Player *players) {
@@ -89,11 +118,19 @@ void OptionMenu::onInput(c2d::Input::Player *players) {
 
     if (keys & Input::KEY_TOUCH) {
         if (options[Home]->getGlobalBounds().contains(players[0].touch)) {
+            printf("HOME: %i %i\n", (int) players[0].touch.x, (int) players[0].touch.y);
             index = Home;
             setVisibility(Visibility::Hidden, true);
             main->showHome();
-        } else if (options[(int) Index::Exit]->getGlobalBounds().contains(players[0].touch)) {
+        } else if (options[Network]->getGlobalBounds().contains(players[0].touch)) {
+            printf("NET: %i %i\n", (int) players[0].touch.x, (int) players[0].touch.y);
+            index = Network;
+            setVisibility(Visibility::Hidden, true);
+            // TODO
+        } else if (options[Exit]->getGlobalBounds().contains(players[0].touch)) {
             main->quit();
+        } else if (!getGlobalBounds().contains(players[0].touch)) {
+            setVisibility(Visibility::Hidden, true);
         }
     } else {
         if (keys & Input::KEY_UP) {
@@ -107,13 +144,17 @@ void OptionMenu::onInput(c2d::Input::Player *players) {
                 index = 0;
             }
         } else if (keys & Input::KEY_FIRE1) {
-            if (index == (int) Index::Home) {
+            if (index == Home) {
                 setVisibility(Visibility::Hidden, true);
                 main->showHome();
-            } else if (index == (int) Index::Exit) {
+            } else if (index == Network) {
+                setVisibility(Visibility::Hidden, true);
+                // TODO
+            } else if (index == Exit) {
                 main->quit();
             }
         } else if (keys & Input::KEY_FIRE2
+                   || keys & Input::KEY_RIGHT
                    || keys & c2d::Input::KEY_START
                    || keys & c2d::Input::KEY_COIN) {
             setVisibility(Visibility::Hidden, true);
@@ -121,4 +162,16 @@ void OptionMenu::onInput(c2d::Input::Player *players) {
     }
 
     highlight->setPosition(0, options[index]->getPosition().y);
+}
+
+void OptionMenu::setVisibility(c2d::Visibility visibility, bool tweenPlay) {
+
+    menuButton->setVisibility(
+            visibility == Visibility::Visible ? Visibility::Hidden : Visibility::Visible, false);
+
+    C2DObject::setVisibility(visibility, true);
+}
+
+c2d::RectangleShape *OptionMenu::getMenuButton() {
+    return menuButton;
 }

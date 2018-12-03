@@ -9,7 +9,11 @@
 
 #define OPT_COUNT 3
 
+class Main;
+
 class Highlight;
+
+class OptionButton;
 
 class OptionMenu : public c2d::RectangleShape {
 
@@ -23,16 +27,21 @@ public:
 
     explicit OptionMenu(Main *main, const c2d::FloatRect &rect);
 
+    c2d::RectangleShape *getMenuButton();
+
+    void setVisibility(c2d::Visibility visibility, bool tweenPlay = false) override;
+
+    void onInput(c2d::Input::Player *players) override;
+
 private:
 
     Main *main;
     c2d::Text *title;
-    c2d::Text *options[OPT_COUNT];
+    c2d::RectangleShape *menuButton;
+    OptionButton *options[OPT_COUNT];
     Highlight *highlight;
     c2d::TweenPosition *tween;
     int index = 0;
-
-    void onInput(c2d::Input::Player *players) override;
 };
 
 #endif //PPLAY_OPTION_MENU_H

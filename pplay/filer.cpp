@@ -7,18 +7,18 @@
 
 using namespace c2d;
 
-Filer::Filer(const std::string &path, Font *font,
-             int fontSize, const c2d::FloatRect &rect) : C2DRectangle(rect) {
+Filer::Filer(Main *main, const std::string &path, const c2d::FloatRect &rect) : C2DRectangle(rect) {
 
+    this->main = main;
     this->path = path;
     this->setFillColor(Color::Transparent);
 
     // create current path box
-    pathRect = new OutlineRect({rect.width, fontSize + 16});
+    pathRect = new OutlineRect({rect.width, FONT_SIZE + 16});
     pathRect->setFillColor(COLOR_GRAY_DARK);
     pathRect->setOutlineColor(COLOR_ORANGE);
     pathRect->setOutlineThickness(2);
-    pathText = new C2DText("CURRENT PATH: /", (unsigned int) fontSize, font);
+    pathText = new C2DText("CURRENT PATH: /", FONT_SIZE, main->getFont());
     pathText->setOutlineThickness(1);
     pathText->setOrigin(Origin::Left);
     pathText->setPosition(4, (pathRect->getSize().y / 2));
@@ -29,7 +29,7 @@ Filer::Filer(const std::string &path, Font *font,
     // add the filer listbox
     float y = pathRect->getGlobalBounds().top + pathRect->getGlobalBounds().height;
     FloatRect r = {0, y + 8, rect.width, rect.height - y - 8};
-    listBox = new ListBox(font, fontSize, r, std::vector<Io::File>());
+    listBox = new ListBox(main->getFont(), FONT_SIZE, r, std::vector<Io::File>());
     listBox->setFillColor(COLOR_GRAY_DARK);
     listBox->setOutlineColor(COLOR_BLUE);
     listBox->setOutlineThickness(2);
@@ -50,14 +50,18 @@ Filer::Filer(const std::string &path, Font *font,
 
 bool Filer::step(unsigned int keys) {
 
-    if (keys & Input::Key::KEY_UP) {
+    if (keys & c2d::Input::KEY_START || keys & c2d::Input::KEY_COIN) {
+        main->getMenu()->setVisibility(Visibility::Visible, true);
+    } else if (keys & Input::Key::KEY_UP) {
         up();
     } else if (keys & Input::Key::KEY_DOWN) {
         down();
-    } else if (keys & Input::Key::KEY_RIGHT) {
-        right();
     } else if (keys & Input::Key::KEY_LEFT) {
-        left();
+        main->getMenu()->setVisibility(Visibility::Visible, true);
+    } else if (keys & Input::Key::KEY_RIGHT) {
+        if (main->getPlayer()->isPlaying() && !main->getPlayer()->isFullscreen()) {
+            main->setPlayerFullscreen(true);
+        }
     } else if (keys & Input::Key::KEY_FIRE1) {
         if (getSelection()->type == Io::Type::File) {
             return true;

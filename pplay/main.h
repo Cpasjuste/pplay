@@ -17,6 +17,9 @@
 #define INPUT_DELAY 250
 #define FONT_SIZE 25
 
+#define COLOR_BG {50, 45, 45, 255}
+#define COLOR_FONT {170, 170, 170, 255}
+
 #define COLOR_CLOUD         Color(0xecf0f1ff)
 #define COLOR_GRAY          Color(0x636e72ff)
 #define COLOR_GRAY_LIGHT    Color(0xb2bec3ff)
@@ -41,9 +44,15 @@ public:
 
     void showHome();
 
-    void setPlayerSize(bool fs);
+    void setPlayerFullscreen(bool fs);
 
     bool isRunning();
+
+    OptionMenu *getMenu();
+
+    c2d::RectangleShape *getMainRect();
+
+    Player *getPlayer();
 
     PPLAYConfig *getConfig();
 
@@ -62,7 +71,7 @@ private:
     PPLAYConfig *config = nullptr;
     Filer *filerSdmc = nullptr;
     Filer *filerHttp = nullptr;
-    Filer *filerPaths = nullptr;
+    //Filer *filerPaths = nullptr;
     Filer *filer = nullptr;
     Player *player = nullptr;
     OptionMenu *menu = nullptr;

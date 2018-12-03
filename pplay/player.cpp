@@ -138,22 +138,23 @@ bool Player::load(c2d::Io::File *file) {
 
 void Player::onInput(c2d::Input::Player *players) {
 
-    double position, duration;
-
-    if (!isVisible() || !isPlaying()) {
+    if (!isVisible()) {
         stop();
         return;
     }
 
-    position = Kit_GetPlayerPosition(player);
-    duration = Kit_GetPlayerDuration(player);
-    osd->setProgress((float) duration, (float) position);
+    if (!isFullscreen()) {
+        return;
+    }
 
     //////////////////
     /// handle inputs
     //////////////////
-    unsigned int keys = isFullscreen() ? players[0].state : 0;
-    if (keys & Input::Key::KEY_FIRE1) {
+    unsigned int keys = players[0].state;
+
+    if (keys & c2d::Input::KEY_START || keys & c2d::Input::KEY_COIN) {
+        main->getMenu()->setVisibility(Visibility::Visible, true);
+    } else if (keys & Input::Key::KEY_FIRE1) {
         if (osd->isVisible()) {
             if (paused) {
                 resume();
@@ -172,6 +173,8 @@ void Player::onInput(c2d::Input::Player *players) {
             osd->setVisibility(Visibility::Visible, true);
         }
     } else if (!paused) {
+        double position = Kit_GetPlayerPosition(player);
+        double duration = Kit_GetPlayerDuration(player);
         if (keys & c2d::Input::Key::KEY_LEFT) {
             osd->setVisibility(Visibility::Visible, true);
             Kit_PlayerSeek(player, position - 60.0);
@@ -196,10 +199,15 @@ void Player::onInput(c2d::Input::Player *players) {
 
 void Player::onDraw(c2d::Transform &transform) {
 
-    if (!isVisible() || !isPlaying()) {
+    if (!isVisible()) {
         stop();
         return;
     }
+
+    /// OSD
+    double position = Kit_GetPlayerPosition(player);
+    double duration = Kit_GetPlayerDuration(player);
+    osd->setProgress((float) duration, (float) position);
 
     //////////////////
     /// step ffmpeg
