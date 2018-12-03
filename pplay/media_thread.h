@@ -23,7 +23,7 @@ public:
 
     const std::string getMediaCachePath(const std::string &mediaPath) const;
 
-    Media *getMediaInfo(const std::string &mediaPath);
+    const Media getMediaInfo(const c2d::Io::File &file);
 
     void cacheDir(const std::string &dir);
 

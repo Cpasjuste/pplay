@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include "cross2d/skeleton/io.h"
+
 class Media {
 
 public:

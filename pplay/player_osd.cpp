@@ -80,10 +80,10 @@ void PlayerOSD::setProgress(float duration, float position) {
     if (clock.getElapsedTime().asSeconds() >= OSD_HIDE_TIME) {
         setVisibility(Visibility::Hidden);
     } else {
-        std::string rem = Utils::formatTime(duration - position);
+        std::string rem = pplay::Utility::formatTime(duration - position);
         remaining->setString(rem);
 
-        std::string cur = Utils::formatTimeShort(position);
+        std::string cur = pplay::Utility::formatTimeShort(position);
         current->setString(cur);
         current->setPosition(
                 progress->getPosition().x + progress->getProgressWidth(),

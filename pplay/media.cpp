@@ -245,7 +245,7 @@ bool Media::deserialize(const std::string &src) {
 
 void Media::debut_print() {
     printf("============= MEDIA ===============\n");
-    printf("title: %s, duration: %s\n", title.c_str(), Utils::formatTimeShort(duration).c_str());
+    printf("title: %s, duration: %s\n", title.c_str(), pplay::Utility::formatTimeShort(duration).c_str());
     printf("\tvideo streams: %i\n", (int) videos.size());
     for (auto &stream : videos) {
         printf("\t\tlanguage: %s, title: %s, resolution: %ix%i, codec: %s @ %i kb/s\n",

@@ -150,24 +150,24 @@ MediaThread::MediaThread(c2d::Renderer *renderer, const std::string &cachePath) 
     thread = SDL_CreateThread(media_info_thread, "pplay_info", (void *) this);
 }
 
-Media *MediaThread::getMediaInfo(const std::string &mediaPath) {
+const Media MediaThread::getMediaInfo(const c2d::Io::File &file) {
 
-    std::string cachePath = getMediaCachePath(mediaPath);
+    Media media;
+    std::string cachePath = getMediaCachePath(file.path);
+
     if (renderer->getIo()->exist(cachePath)) {
         printf("MediaThread::getMediaInfo: media info already cached\n");
-        auto *mi = new Media();
-        mi->deserialize(cachePath);
-        return mi;
+        media.deserialize(cachePath);
+    } else {
+        // media info not yet available, cache for later use
+        SDL_LockMutex(mutex);
+        if (std::find(mediaList.begin(), mediaList.end(), file.path) == mediaList.end()) {
+            mediaList.emplace_back(file.path);
+        }
+        SDL_UnlockMutex(mutex);
     }
 
-    // media info not yet available, cache for later use
-    SDL_LockMutex(mutex);
-    if (std::find(mediaList.begin(), mediaList.end(), mediaPath) == mediaList.end()) {
-        mediaList.emplace_back(mediaPath);
-    }
-    SDL_UnlockMutex(mutex);
-
-    return nullptr;
+    return media;
 }
 
 void MediaThread::cacheDir(const std::string &dir) {

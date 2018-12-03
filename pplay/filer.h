@@ -8,6 +8,7 @@
 #include "cross2d/c2d.h"
 #include "outline_rect.h"
 #include "config.h"
+#include "filer_item.h"
 
 class Main;
 
@@ -25,9 +26,9 @@ public:
 
     virtual bool step(unsigned int keys);
 
-    virtual c2d::Io::File *getSelection();
+    virtual const FilerItem getSelection() const;
 
-    virtual c2d::ListBox *getListBox();
+    virtual void setSelection(int index);
 
 private:
 
@@ -35,15 +36,9 @@ private:
 
     friend class FilerHttp;
 
-    //friend class FilerPaths;
-
     void down();
 
     void up();
-
-    void left();
-
-    void right();
 
     virtual void enter() {};
 
@@ -51,11 +46,11 @@ private:
 
     Main *main;
     std::string path;
+    std::vector<FilerItem *> items;
     std::vector<c2d::Io::File> files;
-    c2d::ListBox *listBox;
-    OutlineRect *pathRect;
-    c2d::Text *pathText;
-    int index = 0;
+    float item_height;
+    int item_max;
+    int item_index;
 };
 
 #endif //NXFILER_FILER_H

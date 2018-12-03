@@ -15,10 +15,11 @@
 #include "options_menu.h"
 
 #define INPUT_DELAY 250
-#define FONT_SIZE 25
+#define FONT_SIZE 22
 
 #define COLOR_BG {50, 45, 45, 255}
 #define COLOR_FONT {170, 170, 170, 255}
+#define COLOR_HIGHLIGHT {255, 255, 255, 80}
 
 #define COLOR_CLOUD         Color(0xecf0f1ff)
 #define COLOR_GRAY          Color(0x636e72ff)
@@ -38,11 +39,16 @@ class Main : public c2d::C2DRenderer {
 
 public:
 
+    enum class MenuType {
+        Home,
+        Network
+    };
+
     Main(const c2d::Vector2f &size);
 
     ~Main();
 
-    void showHome();
+    void show(MenuType type);
 
     void setPlayerFullscreen(bool fs);
 
@@ -51,6 +57,8 @@ public:
     OptionMenu *getMenu();
 
     c2d::RectangleShape *getMainRect();
+
+    MediaThread *getMediaThread();
 
     Player *getPlayer();
 

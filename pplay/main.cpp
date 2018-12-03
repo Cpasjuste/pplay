@@ -10,7 +10,6 @@ extern "C" {
 
 #include "main.h"
 #include "filer_sdmc.h"
-#include "filer_paths.h"
 
 using namespace c2d;
 using namespace c2d::config;
@@ -50,18 +49,13 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     }
 
     // create filers
-    FloatRect filerRect = {16, 16,
-                           (mainRect->getSize().x / 2) - 16, mainRect->getSize().y - 32};
+    FloatRect filerRect = {16, 128,
+                           (mainRect->getSize().x / 2) - 16, mainRect->getSize().y - 32 - 128};
     filerSdmc = new FilerSdmc(this, "/", filerRect);
     mainRect->add(filerSdmc);
     filerHttp = new FilerHttp(this, filerRect);
     filerHttp->setVisibility(Visibility::Hidden);
     mainRect->add(filerHttp);
-    //filerRect.top += FONT_SIZE + 16;
-    //filerRect.height = FONT_SIZE * 5 + 16 * 5;
-    //filerPaths = new FilerPaths(config, getFont(), FONT_SIZE, filerRect);
-    //filerPaths->setVisibility(Visibility::Hidden);
-    //mainRect->add(filerPaths);
     filer = filerSdmc;
     filer->getDir(config->getOption("LAST_PATH")->getString());
 
@@ -131,38 +125,6 @@ void Main::onInput(c2d::Input::Player *players) {
 
         if (!player->isFullscreen()) {
 
-#if 0
-            if (keys & c2d::Input::KEY_FIRE5 || keys & c2d::Input::KEY_FIRE6) {
-                // handle local/http file browser selection
-                if (filerPaths->isVisible()) {
-                    filerPaths->setVisibility(Visibility::Hidden, true);
-                } else {
-                    filerPaths->setVisibility(Visibility::Visible, true);
-                };
-            }
-
-            if (filerPaths->isVisible()) {
-                // handle local/http file browser selection
-                if (filerPaths->step(keys)) {
-                    Io::File *file = filerPaths->getSelection();
-                    if (Utility::startWith(file->name, "http:")) {
-                        filerPaths->setVisibility(Visibility::Hidden, true);
-                        filerSdmc->setVisibility(Visibility::Hidden);
-                        filerHttp->setVisibility(Visibility::Visible);
-                        filer = filerHttp;
-                        filer->getDir(file->name);
-                    } else if (Utility::startWith(file->name, "sdmc:")) {
-                        filerPaths->setVisibility(Visibility::Hidden, true);
-                        filerHttp->setVisibility(Visibility::Hidden);
-                        filerSdmc->setVisibility(Visibility::Visible);
-                        filer = filerSdmc;
-                    } else {
-                        messageBox->show("Oups", "This doesn't look like a valid link...\n"
-                                                 "Maybe a bad config file ?", "OK");
-                    }
-                }
-            } else {
-#endif
             if (filer->step(keys)) {
                 if (player->load(filer->getSelection())) {
                     setPlayerFullscreen(true);
@@ -174,34 +136,39 @@ void Main::onInput(c2d::Input::Player *players) {
             }
 
             // load media info
-            if (keys & c2d::Input::KEY_UP || keys & c2d::Input::KEY_DOWN
-                || keys & c2d::Input::KEY_LEFT || keys & c2d::Input::KEY_RIGHT) {
+            if (keys & c2d::Input::KEY_UP || keys & c2d::Input::KEY_DOWN) {
                 Io::File *file = filer->getSelection();
                 if (file && file->type == Io::Type::File) {
-                    Media *info = mediaInfoThread->getMediaInfo(file->path);
-                    if (info) {
-                        info->debut_print();
-                        delete (info);
+                    Media media = mediaInfoThread->getMediaInfo(*file);
+                    if (!media.title.empty()) {
+                        media.debut_print();
                     }
                 }
             }
-            //}
         }
     }
 
     //C2DObject::onInput(players);
 }
 
-void Main::showHome() {
+void Main::show(MenuType type) {
 
     if (player->isPlaying() && player->isFullscreen()) {
         setPlayerFullscreen(false);
     }
-    filerSdmc->setVisibility(Visibility::Visible);
-    filerHttp->setVisibility(Visibility::Hidden);
-    filer = filerSdmc;
-    if (!filer->getDir(config->getOption("HOME_PATH")->getString())) {
-        filer->getDir("/");
+
+    filerSdmc->setVisibility(type == MenuType::Home ? Visibility::Visible : Visibility::Hidden);
+    filerHttp->setVisibility(type == MenuType::Home ? Visibility::Hidden : Visibility::Visible);
+    filer = type == MenuType::Home ? filerSdmc : filerHttp;
+    if (type == MenuType::Home) {
+        if (!filer->getDir(config->getOption("HOME_PATH")->getString())) {
+            filer->getDir("/");
+        }
+    } else {
+        if (!filer->getDir(config->getOption("NETWORK")->getString())) {
+            messageBox->show("OUPS", "Could not browse URL");
+            show(MenuType::Home);
+        }
     }
 }
 
@@ -231,6 +198,10 @@ void Main::quit() {
     config->save();
 
     running = false;
+}
+
+MediaThread *Main::getMediaThread() {
+    return mediaInfoThread;
 }
 
 Player *Main::getPlayer() {

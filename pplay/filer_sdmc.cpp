@@ -4,6 +4,8 @@
 
 #include "main.h"
 #include "filer_sdmc.h"
+#include "filer_item.h"
+#include "utility.h"
 
 using namespace c2d;
 
@@ -37,9 +39,10 @@ bool FilerSdmc::getDir(const std::string &p) {
                      COLOR_BLUE_LIGHT : Color::White;
     }
 
-    listBox->setFiles(files);
-    listBox->setSelection(0);
-    pathText->setString(this->path);
+    //TODO
+    //listBox->setFiles(files);
+    //listBox->setSelection(0);
+    //pathText->setString(this->path);
 
     return true;
 }

@@ -7,45 +7,77 @@
 
 using namespace c2d;
 
-Filer::Filer(Main *main, const std::string &path, const c2d::FloatRect &rect) : C2DRectangle(rect) {
+Filer::Filer(Main *main, const std::string &path, const c2d::FloatRect &rect) : RectangleShape(rect) {
 
-    this->main = main;
-    this->path = path;
-    this->setFillColor(Color::Transparent);
+    // set default bg colors
+    setFillColor(Color::GrayLight);
 
-    // create current path box
-    pathRect = new OutlineRect({rect.width, FONT_SIZE + 16});
-    pathRect->setFillColor(COLOR_GRAY_DARK);
-    pathRect->setOutlineColor(COLOR_ORANGE);
-    pathRect->setOutlineThickness(2);
-    pathText = new C2DText("CURRENT PATH: /", FONT_SIZE, main->getFont());
-    pathText->setOutlineThickness(1);
-    pathText->setOrigin(Origin::Left);
-    pathText->setPosition(4, (pathRect->getSize().y / 2));
-    pathText->setWidth(rect.width - 8);
-    pathRect->add(pathText);
-    add(pathRect);
+    item_height = 64;
 
-    // add the filer listbox
-    float y = pathRect->getGlobalBounds().top + pathRect->getGlobalBounds().height;
-    FloatRect r = {0, y + 8, rect.width, rect.height - y - 8};
-    listBox = new ListBox(main->getFont(), FONT_SIZE, r, std::vector<Io::File>());
-    listBox->setFillColor(COLOR_GRAY_DARK);
-    listBox->setOutlineColor(COLOR_BLUE);
-    listBox->setOutlineThickness(2);
-    listBox->setTextOutlineThickness(1);
-    listBox->getHighlight()->setFillColor(COLOR_ORANGE);
-    listBox->getHighlight()->setOutlineColor(COLOR_BLUE);
-    listBox->getHighlight()->setOutlineThickness(2);
-    listBox->getHighlight()->add(new TweenAlpha(80, 150, 0.6f, TweenLoop::PingPong));
-    auto *border = new RectangleShape(listBox->getLocalBounds());
-    border->setFillColor(Color::Transparent);
-    border->setOutlineColor(Color::Black);
-    border->setOutlineThickness(1);
-    border->setSize(r.width + 4, r.height + 4);
-    listBox->add(border);
+    item_max = (int) (getSize().y / item_height);
+    if ((item_max * item_height) < getSize().y) {
+        item_height = getSize().y / (float) item_max;
+    }
 
-    add(listBox);
+    // add lines of text
+    for (unsigned int i = 0; i < (unsigned int) item_max; i++) {
+        FloatRect r = {1, (item_height * i) + 1, getSize().x - 2, item_height - 2};
+        items.emplace_back(new FilerItem(main, r));
+        add(items[i]);
+    }
+
+    setSelection(0);
+};
+
+const FilerItem Filer::getSelection() const {
+
+    if (!files.empty() && files.size() > (unsigned int) item_index) {
+        return *items[item_index];
+    }
+
+    return FilerItem(main, {});
+}
+
+void Filer::setSelection(int index) {
+
+    item_index = index;
+    int page = item_index / item_max;
+    unsigned int index_start = (unsigned int) page * item_max;
+
+    for (unsigned int i = 0; i < (unsigned int) item_max; i++) {
+
+        if (index_start + i >= files.size()) {
+            items[i]->setVisibility(Visibility::Hidden);
+        } else {
+            // set file
+            Io::File *file = files[index_start + i];
+            items[i]->setVisibility(Visibility::Visible);
+            items[i]->setString(file->name);
+            // set text color based on file color
+            items[i]->setIcon(file->icon);
+            items[i]->setColor(file->color);
+            // set highlight position and color
+            if (index_start + i == (unsigned int) item_index) {
+                highlight->setPosition(items[i]->getPosition());
+                Color color = highlight_use_files_color ?
+                              file->color : highlight->getFillColor();
+                color.a = highlight->getAlpha();
+                highlight->setFillColor(color);
+                color = highlight_use_files_color ?
+                        file->color : highlight->getOutlineColor();
+                color.a = highlight->getAlpha();
+                highlight->setOutlineColor(color);
+            }
+        }
+    }
+
+    if (files.empty()) {
+        highlight->setVisibility(Visibility::Hidden, false);
+    } else {
+        if (use_highlight) {
+            highlight->setVisibility(Visibility::Visible, false);
+        }
+    }
 }
 
 bool Filer::step(unsigned int keys) {
@@ -63,7 +95,7 @@ bool Filer::step(unsigned int keys) {
             main->setPlayerFullscreen(true);
         }
     } else if (keys & Input::Key::KEY_FIRE1) {
-        if (getSelection()->type == Io::Type::File) {
+        if (getSelection().getFile().type == Io::Type::File) {
             return true;
         }
         enter();
@@ -74,48 +106,28 @@ bool Filer::step(unsigned int keys) {
     return false;
 }
 
-c2d::Io::File *Filer::getSelection() {
-    return listBox->getSelection();
-}
-
 void Filer::down() {
-    index++;
-    if (index >= (int) listBox->getFiles().size()) {
-        index = 0;
+
+    item_index++;
+    if (item_index >= (int) items.size()) {
+        item_index = 0;
     }
-    listBox->setSelection(index);
+
+    setSelection(item_index);
 }
 
 void Filer::up() {
-    index--;
-    if (index < 0)
-        index = (int) (listBox->getFiles().size() - 1);
-    listBox->setSelection(index);
-}
 
-void Filer::left() {
-    index -= listBox->getMaxLines();
-    if (index < 0)
-        index = 0;
-    listBox->setSelection(index);
-}
+    item_index--;
+    if (item_index < 0)
+        item_index = (int) (items.size() - 1);
 
-void Filer::right() {
-    index += listBox->getMaxLines();
-    if (index >= (int) listBox->getFiles().size())
-        index = (int) (listBox->getFiles().size() - 1);
-    listBox->setSelection(index);
+    setSelection(item_index);
 }
 
 std::string Filer::getPath() {
     return path;
 }
 
-c2d::ListBox *Filer::getListBox() {
-    return listBox;
-}
-
 Filer::~Filer() {
-    files.clear();
 }
-

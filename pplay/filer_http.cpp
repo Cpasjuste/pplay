@@ -25,7 +25,7 @@ bool FilerHttp::getDir(const std::string &p) {
     printf("getDir(%s)\n", p.c_str());
 
     if (p != browser->geturl()) {
-        browser->open(p, 5);
+        browser->open(p, 3);
         if (browser->error() || browser->links.size() < 1) {
             return false;
         }
@@ -67,7 +67,7 @@ bool FilerHttp::getDir(const std::string &p) {
 
     listBox->setFiles(files);
     listBox->setSelection(0);
-    pathText->setString(browser->unescape(browser->geturl()));
+    //pathText->setString(browser->unescape(browser->geturl()));
     path = browser->unescape(browser->geturl());
 
     return true;

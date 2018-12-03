@@ -4,10 +4,21 @@
 
 #include <sstream>
 #include <iomanip>
+#include "cross2d/skeleton/utility.h"
 
 #include "utility.h"
 
-std::string Utils::formatTime(double seconds) {
+using namespace pplay;
+
+bool Utility::isMedia(const std::string &name) {
+
+    return c2d::Utility::endsWith(name, ".avi")
+           || c2d::Utility::endsWith(name, ".mkv")
+           || c2d::Utility::endsWith(name, ".flv")
+           || c2d::Utility::endsWith(name, ".mp3");
+}
+
+std::string Utility::formatTime(double seconds) {
 
     int h((int) seconds / 3600);
     int min((int) seconds / 60 - h * 60);
@@ -21,7 +32,7 @@ std::string Utils::formatTime(double seconds) {
     return oss.str();
 }
 
-std::string Utils::formatTimeShort(double seconds) {
+std::string Utility::formatTimeShort(double seconds) {
 
     int h((int) seconds / 3600);
     int min((int) seconds / 60 - h * 60);

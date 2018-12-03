@@ -7,13 +7,18 @@
 
 #include <string>
 
-class Utils {
+namespace pplay {
 
-public:
+    class Utility {
 
-    static std::string formatTime(double seconds);
+    public:
 
-    static std::string formatTimeShort(double seconds);
-};
+        static bool isMedia(const std::string &name);
+
+        static std::string formatTime(double seconds);
+
+        static std::string formatTimeShort(double seconds);
+    };
+}
 
 #endif //PPLAY_UTILITY_H

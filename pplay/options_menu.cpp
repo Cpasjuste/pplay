@@ -17,7 +17,7 @@ public:
 
     Highlight(const Vector2f &size) : RectangleShape(size) {
 
-        setFillColor({255, 255, 255, 80});
+        setFillColor(COLOR_HIGHLIGHT);
 
         RectangleShape *rect = new RectangleShape(Vector2f{6, size.y});
         rect->setFillColor(COLOR_BLUE);
@@ -118,15 +118,13 @@ void OptionMenu::onInput(c2d::Input::Player *players) {
 
     if (keys & Input::KEY_TOUCH) {
         if (options[Home]->getGlobalBounds().contains(players[0].touch)) {
-            printf("HOME: %i %i\n", (int) players[0].touch.x, (int) players[0].touch.y);
             index = Home;
             setVisibility(Visibility::Hidden, true);
-            main->showHome();
+            main->show(Main::MenuType::Home);
         } else if (options[Network]->getGlobalBounds().contains(players[0].touch)) {
-            printf("NET: %i %i\n", (int) players[0].touch.x, (int) players[0].touch.y);
             index = Network;
             setVisibility(Visibility::Hidden, true);
-            // TODO
+            main->show(Main::MenuType::Network);
         } else if (options[Exit]->getGlobalBounds().contains(players[0].touch)) {
             main->quit();
         } else if (!getGlobalBounds().contains(players[0].touch)) {
@@ -146,10 +144,10 @@ void OptionMenu::onInput(c2d::Input::Player *players) {
         } else if (keys & Input::KEY_FIRE1) {
             if (index == Home) {
                 setVisibility(Visibility::Hidden, true);
-                main->showHome();
+                main->show(Main::MenuType::Home);
             } else if (index == Network) {
                 setVisibility(Visibility::Hidden, true);
-                // TODO
+                main->show(Main::MenuType::Network);
             } else if (index == Exit) {
                 main->quit();
             }
