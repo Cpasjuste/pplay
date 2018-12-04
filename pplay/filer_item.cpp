@@ -8,25 +8,29 @@
 
 using namespace c2d;
 
-FilerItem::FilerItem(Main *ma, const FloatRect &rect, const Io::File &fi, const Media &me) : RectangleShape(rect) {
+FilerItem::FilerItem(Main *main, const c2d::FloatRect &rect, const MediaFile &file) : RectangleShape(rect) {
 
-    main = ma;
-    file = fi;
-    media = me;
+    this->main = main;
+    this->file = file;
 
     setFillColor(Color::Transparent);
-    setOutlineThickness(2);
-    setOutlineColor(COLOR_FONT);
 
     textTitle = new Text(file.name, FONT_SIZE, main->getFont());
-    textTitle->setWidth(getSize().x - 4);
+    textTitle->setPosition(16, 4);
+    textTitle->setWidth(getSize().x - 64);
     add(textTitle);
 }
 
-const Media FilerItem::getMedia() const {
-    return media;
+c2d::Text *FilerItem::getTitle() {
+    return textTitle;
 }
 
-const c2d::Io::File FilerItem::getFile() const {
+const MediaFile FilerItem::getFile() const {
     return file;
+}
+
+void FilerItem::setFile(const MediaFile &file) {
+    this->file = file;
+    textTitle->setString(file.name);
+    textTitle->setFillColor(file.color);
 }

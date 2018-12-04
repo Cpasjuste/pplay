@@ -66,9 +66,7 @@ public:
 
     ~Player();
 
-    bool load(c2d::Io::File *file);
-
-    void step(unsigned int keys);
+    bool load(const c2d::Io::File &file);
 
     void pause();
 

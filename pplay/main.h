@@ -17,9 +17,9 @@
 #define INPUT_DELAY 250
 #define FONT_SIZE 22
 
-#define COLOR_BG {50, 45, 45, 255}
-#define COLOR_FONT {170, 170, 170, 255}
-#define COLOR_HIGHLIGHT {255, 255, 255, 80}
+#define COLOR_BG Color(50, 45, 45, 255)
+#define COLOR_FONT Color(170, 170, 170, 255)
+#define COLOR_HIGHLIGHT Color(255, 255, 255, 80)
 
 #define COLOR_CLOUD         Color(0xecf0f1ff)
 #define COLOR_GRAY          Color(0x636e72ff)

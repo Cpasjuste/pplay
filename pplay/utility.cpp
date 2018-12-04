@@ -4,18 +4,22 @@
 
 #include <sstream>
 #include <iomanip>
+#include "cross2d/skeleton/io.h"
 #include "cross2d/skeleton/utility.h"
 
 #include "utility.h"
 
 using namespace pplay;
 
-bool Utility::isMedia(const std::string &name) {
+bool Utility::isMedia(const c2d::Io::File &file) {
 
-    return c2d::Utility::endsWith(name, ".avi")
-           || c2d::Utility::endsWith(name, ".mkv")
-           || c2d::Utility::endsWith(name, ".flv")
-           || c2d::Utility::endsWith(name, ".mp3");
+    return file.type == c2d::Io::Type::File &&
+           (c2d::Utility::endsWith(file.name, ".avi")
+            || c2d::Utility::endsWith(file.name, ".mkv")
+            || c2d::Utility::endsWith(file.name, ".flv")
+            || c2d::Utility::endsWith(file.name, ".mp3")
+            || c2d::Utility::endsWith(file.name, ".wav")
+            || c2d::Utility::endsWith(file.name, ".ogg"));
 }
 
 std::string Utility::formatTime(double seconds) {

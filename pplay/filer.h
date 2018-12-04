@@ -6,9 +6,12 @@
 #define NXFILER_FILER_H
 
 #include "cross2d/c2d.h"
+
 #include "outline_rect.h"
 #include "config.h"
 #include "filer_item.h"
+#include "media_file.h"
+#include "highlight.h"
 
 class Main;
 
@@ -24,21 +27,17 @@ public:
 
     virtual std::string getPath();
 
-    virtual bool step(unsigned int keys);
-
-    virtual const FilerItem getSelection() const;
+    virtual const MediaFile getSelection() const;
 
     virtual void setSelection(int index);
+
+    void onInput(c2d::Input::Player *players) override;
 
 private:
 
     friend class FilerSdmc;
 
     friend class FilerHttp;
-
-    void down();
-
-    void up();
 
     virtual void enter() {};
 
@@ -47,7 +46,8 @@ private:
     Main *main;
     std::string path;
     std::vector<FilerItem *> items;
-    std::vector<c2d::Io::File> files;
+    std::vector<MediaFile> files;
+    Highlight *highlight;
     float item_height;
     int item_max;
     int item_index;

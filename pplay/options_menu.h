@@ -6,12 +6,11 @@
 #define PPLAY_OPTION_MENU_H
 
 #include "cross2d/skeleton/sfml/RectangleShape.hpp"
+#include "highlight.h"
 
 #define OPT_COUNT 3
 
 class Main;
-
-class Highlight;
 
 class OptionButton;
 

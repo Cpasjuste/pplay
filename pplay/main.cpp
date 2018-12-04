@@ -48,9 +48,12 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
         config->save();
     }
 
+    // media info
+    getIo()->create(getIo()->getHomePath() + "cache");
+    mediaInfoThread = new MediaThread(this, getIo()->getHomePath() + "cache/");
+
     // create filers
-    FloatRect filerRect = {16, 128,
-                           (mainRect->getSize().x / 2) - 16, mainRect->getSize().y - 32 - 128};
+    FloatRect filerRect = {0, 128, (mainRect->getSize().x / 2) - 16, mainRect->getSize().y - 32 - 128};
     filerSdmc = new FilerSdmc(this, "/", filerRect);
     mainRect->add(filerSdmc);
     filerHttp = new FilerHttp(this, filerRect);
@@ -65,11 +68,6 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     // ffmpeg player
     player = new Player(this);
     add(player);
-
-    // media info
-    getIo()->create(getIo()->getHomePath() + "cache");
-    mediaInfoThread = new MediaThread(this, getIo()->getHomePath() + "cache/");
-    mediaInfoThread->cacheDir(filer->getPath());
 
     // menu
     menu = new OptionMenu(this, {0, 0, 250, mainRect->getSize().y});
@@ -91,64 +89,31 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
 
 void Main::onInput(c2d::Input::Player *players) {
 
-    if (menu->isVisible()) {
-        menu->onInput(players);
-        return;
-    } else if (player->isFullscreen()) {
-        player->onInput(players);
-        return;
-    }
-
     unsigned int keys = players[0].state;
 
-    if (keys > 0 && keys != EV_DELAY) {
-
+    if (keys > 0) {
         if (keys & EV_QUIT) {
             if (player->isPlaying()) {
                 player->stop();
             } else {
                 running = false;
             }
+            return;
         }
-
-        if (keys & Input::KEY_TOUCH) {
+        if (keys & Input::Touch) {
             if (menu->getMenuButton()->getGlobalBounds().contains(players[0].touch)) {
                 menu->setVisibility(Visibility::Visible, true);
-            }
-        }
-
-        if (keys & c2d::Input::KEY_FIRE3) {
-            if (player->isPlaying()) {
-                setPlayerFullscreen(!player->isFullscreen());
-            }
-        }
-
-        if (!player->isFullscreen()) {
-
-            if (filer->step(keys)) {
-                if (player->load(filer->getSelection())) {
+                return;
+            } else if (player->getGlobalBounds().contains(players[0].touch)) {
+                if (player->isPlaying() && !player->isFullscreen()) {
                     setPlayerFullscreen(true);
                 }
-            } else if (keys & c2d::Input::KEY_FIRE1) {
-                // cache media info on enter dir
-                printf("mediaInfo->cacheDir(%s)\n", filer->getPath().c_str());
-                mediaInfoThread->cacheDir(filer->getPath());
-            }
-
-            // load media info
-            if (keys & c2d::Input::KEY_UP || keys & c2d::Input::KEY_DOWN) {
-                Io::File *file = filer->getSelection();
-                if (file && file->type == Io::Type::File) {
-                    Media media = mediaInfoThread->getMediaInfo(*file);
-                    if (!media.title.empty()) {
-                        media.debut_print();
-                    }
-                }
+                return;
             }
         }
     }
 
-    //C2DObject::onInput(players);
+    C2DObject::onInput(players);
 }
 
 void Main::show(MenuType type) {
@@ -194,7 +159,10 @@ void Main::quit() {
         player->stop();
     }
 
-    config->getOption("LAST_PATH")->setString(filer->getPath());
+    // TODO: save network path
+    if (filerSdmc->isVisible()) {
+        config->getOption("LAST_PATH")->setString(filer->getPath());
+    }
     config->save();
 
     running = false;

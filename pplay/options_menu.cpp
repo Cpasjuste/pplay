@@ -11,22 +11,6 @@ using namespace c2d;
 #define ICON_SIZE 24
 #define BUTTON_HEIGHT 64
 
-class Highlight : public RectangleShape {
-
-public:
-
-    Highlight(const Vector2f &size) : RectangleShape(size) {
-
-        setFillColor(COLOR_HIGHLIGHT);
-
-        RectangleShape *rect = new RectangleShape(Vector2f{6, size.y});
-        rect->setFillColor(COLOR_BLUE);
-        rect->setAlpha(200);
-        rect->move(size.x - 4, 0);
-        add(rect);
-    }
-};
-
 class OptionButton : public RectangleShape {
 
 public:
@@ -80,6 +64,12 @@ OptionMenu::OptionMenu(Main *m, const c2d::FloatRect &rect) : RectangleShape(rec
     menuButton->add(tex);
     main->getMainRect()->add(menuButton);
 
+    // highlight
+    highlight = new Highlight({getSize().x, BUTTON_HEIGHT});
+    highlight->setOrigin(Origin::Left);
+    highlight->setPosition(0, 200);
+    add(highlight);
+
     // title
     title = new Text("PPLAY______", 24, main->getFont());
     title->setStyle(Text::Underlined);
@@ -98,12 +88,6 @@ OptionMenu::OptionMenu(Main *m, const c2d::FloatRect &rect) : RectangleShape(rec
     options[Exit] = new OptionButton(main, "Exit", "exit.png", r);
     add(options[Exit]);
 
-    // highlight
-    highlight = new Highlight({getSize().x, BUTTON_HEIGHT});
-    highlight->setOrigin(Origin::Left);
-    highlight->setPosition(0, options[index]->getPosition().y);
-    add(highlight);
-
     // tween!
     add(new TweenPosition({-rect.width, 0}, {0, 0}, 0.5f));
 }
@@ -116,7 +100,7 @@ void OptionMenu::onInput(c2d::Input::Player *players) {
 
     int keys = players[0].state;
 
-    if (keys & Input::KEY_TOUCH) {
+    if (keys & Input::Touch) {
         if (options[Home]->getGlobalBounds().contains(players[0].touch)) {
             index = Home;
             setVisibility(Visibility::Hidden, true);
@@ -131,17 +115,17 @@ void OptionMenu::onInput(c2d::Input::Player *players) {
             setVisibility(Visibility::Hidden, true);
         }
     } else {
-        if (keys & Input::KEY_UP) {
+        if (keys & Input::Up) {
             index--;
             if (index < 0) {
                 index = OPT_COUNT - 1;
             }
-        } else if (keys & Input::KEY_DOWN) {
+        } else if (keys & Input::Down) {
             index++;
             if (index == OPT_COUNT) {
                 index = 0;
             }
-        } else if (keys & Input::KEY_FIRE1) {
+        } else if (keys & Input::Fire1) {
             if (index == Home) {
                 setVisibility(Visibility::Hidden, true);
                 main->show(Main::MenuType::Home);
@@ -151,10 +135,10 @@ void OptionMenu::onInput(c2d::Input::Player *players) {
             } else if (index == Exit) {
                 main->quit();
             }
-        } else if (keys & Input::KEY_FIRE2
-                   || keys & Input::KEY_RIGHT
-                   || keys & c2d::Input::KEY_START
-                   || keys & c2d::Input::KEY_COIN) {
+        } else if (keys & Input::Fire2
+                   || keys & Input::Right
+                   || keys & c2d::Input::Start
+                   || keys & c2d::Input::Select) {
             setVisibility(Visibility::Hidden, true);
         }
     }

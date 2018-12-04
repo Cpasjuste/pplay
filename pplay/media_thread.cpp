@@ -11,6 +11,7 @@ int ffmpeg_main(int argc, const char **argv);
 
 #include "media_thread.h"
 #include "base64.h"
+#include "utility.h"
 
 #if 0
 static void dump_metadata(const std::string &desc, AVDictionary *dic) {
@@ -153,18 +154,19 @@ MediaThread::MediaThread(c2d::Renderer *renderer, const std::string &cachePath) 
 const Media MediaThread::getMediaInfo(const c2d::Io::File &file) {
 
     Media media;
-    std::string cachePath = getMediaCachePath(file.path);
 
-    if (renderer->getIo()->exist(cachePath)) {
-        printf("MediaThread::getMediaInfo: media info already cached\n");
-        media.deserialize(cachePath);
-    } else {
-        // media info not yet available, cache for later use
-        SDL_LockMutex(mutex);
-        if (std::find(mediaList.begin(), mediaList.end(), file.path) == mediaList.end()) {
-            mediaList.emplace_back(file.path);
+    if (pplay::Utility::isMedia(file)) {
+        std::string cachePath = getMediaCachePath(file.path);
+        if (renderer->getIo()->exist(cachePath)) {
+            media.deserialize(cachePath);
+        } else {
+            // media info not yet available, cache for later use
+            SDL_LockMutex(mutex);
+            if (std::find(mediaList.begin(), mediaList.end(), file.path) == mediaList.end()) {
+                mediaList.emplace_back(file.path);
+            }
+            SDL_UnlockMutex(mutex);
         }
-        SDL_UnlockMutex(mutex);
     }
 
     return media;
@@ -176,7 +178,7 @@ void MediaThread::cacheDir(const std::string &dir) {
 
     std::vector<c2d::Io::File> files = renderer->getIo()->getDirList(dir);
     for (c2d::Io::File &file : files) {
-        if (file.type == c2d::Io::Type::File) {
+        if (pplay::Utility::isMedia(file)) {
             std::string cachePath = getMediaCachePath(file.path);
             if (!renderer->getIo()->exist(cachePath)) {
                 if (std::find(mediaList.begin(), mediaList.end(), file.path) == mediaList.end()) {

@@ -29,7 +29,7 @@ Player::Player(Main *_main) : RectangleShape(_main->getSize()) {
     setVisibility(Visibility::Hidden);
 }
 
-bool Player::load(c2d::Io::File *file) {
+bool Player::load(const c2d::Io::File &file) {
 
     if (isPlaying()) {
         stop();
@@ -44,10 +44,10 @@ bool Player::load(c2d::Io::File *file) {
     }
 
     // open source file
-    printf("Player::load: %s\n", file->path.c_str());
-    source = Kit_CreateSourceFromUrl(file->path.c_str());
+    printf("Player::load: %s\n", file.path.c_str());
+    source = Kit_CreateSourceFromUrl(file.path.c_str());
     if (!source) {
-        printf("unable to load '%s': %s\n", file->path.c_str(), Kit_GetError());
+        printf("unable to load '%s': %s\n", file.path.c_str(), Kit_GetError());
         stop();
         return false;
     }
@@ -151,9 +151,9 @@ void Player::onInput(c2d::Input::Player *players) {
     //////////////////
     unsigned int keys = players[0].state;
 
-    if (keys & c2d::Input::KEY_START || keys & c2d::Input::KEY_COIN) {
+    if (keys & c2d::Input::Start || keys & c2d::Input::Select) {
         main->getMenu()->setVisibility(Visibility::Visible, true);
-    } else if (keys & Input::Key::KEY_FIRE1) {
+    } else if (keys & Input::Key::Fire1) {
         if (osd->isVisible()) {
             if (paused) {
                 resume();
@@ -165,7 +165,7 @@ void Player::onInput(c2d::Input::Player *players) {
         } else {
             osd->setVisibility(Visibility::Visible, true);
         }
-    } else if (keys & Input::Key::KEY_FIRE2) {
+    } else if (keys & Input::Key::Fire2) {
         if (osd->isVisible()) {
             osd->setVisibility(Visibility::Hidden, true);
         } else {
@@ -176,23 +176,23 @@ void Player::onInput(c2d::Input::Player *players) {
         double position = Kit_GetPlayerPosition(player);
         double duration = Kit_GetPlayerDuration(player);
 
-        if (keys & c2d::Input::Key::KEY_LEFT) {
+        if (keys & c2d::Input::Key::Left) {
             // TODO: seek
             //osd->setVisibility(Visibility::Visible, true);
             //Kit_PlayerSeek(player, position - 60.0);
             main->setPlayerFullscreen(false);
-        } else if (keys & c2d::Input::Key::KEY_RIGHT) {
+        } else if (keys & c2d::Input::Key::Right) {
             // TODO: seek
             //osd->setVisibility(Visibility::Visible, true);
             //if (position + 60 < duration) {
             //    Kit_PlayerSeek(player, position + 60.0);
             //}
-        } else if (keys & c2d::Input::Key::KEY_UP) {
+        } else if (keys & c2d::Input::Key::Up) {
             osd->setVisibility(Visibility::Visible, true);
             if (position + (60.0 * 10.0) < duration) {
                 Kit_PlayerSeek(player, position + (60.0 * 10.0));
             }
-        } else if (keys & c2d::Input::Key::KEY_DOWN) {
+        } else if (keys & c2d::Input::Key::Down) {
             osd->setVisibility(Visibility::Visible, true);
             Kit_PlayerSeek(player, position - (60.0 * 10.0));
         }

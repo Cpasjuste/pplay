@@ -13,7 +13,7 @@ namespace pplay {
 
     public:
 
-        static bool isMedia(const std::string &name);
+        static bool isMedia(const c2d::Io::File &file);
 
         static std::string formatTime(double seconds);
 

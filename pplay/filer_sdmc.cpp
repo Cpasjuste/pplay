@@ -9,12 +9,7 @@
 
 using namespace c2d;
 
-FilerSdmc::FilerSdmc(Main *main, const std::string &path, const FloatRect &rect)
-        : Filer(main, path, rect) {
-
-    if (!getDir(path)) {
-        getDir("/");
-    }
+FilerSdmc::FilerSdmc(Main *main, const std::string &path, const FloatRect &rect) : Filer(main, path, rect) {
 }
 
 bool FilerSdmc::getDir(const std::string &p) {
@@ -25,44 +20,50 @@ bool FilerSdmc::getDir(const std::string &p) {
 
     printf("getDir(%s)\n", p.c_str());
 
-    path = Utility::removeLastSlash(p);
-    index = 0;
-    files = main->getIo()->getDirList(path, true);
-    if (files.empty()) {
+    // cache media infos
+    main->getMediaThread()->cacheDir(p);
+
+    item_index = 0;
+    files.clear();
+    path = p;
+    if (path.size() > 1) {
+        path = Utility::removeLastSlash(path);
+    }
+
+    std::vector<Io::File> _files = main->getIo()->getDirList(path, true);
+    if (_files.empty()) {
         // add up/back ("..")
-        files.emplace_back("..", "..", Io::Type::Directory, COLOR_BLUE_LIGHT);
+        _files.emplace_back("..", "..", Io::Type::Directory, 0, COLOR_BLUE);
         return false;
     }
 
-    for (auto &file : files) {
-        file.color = file.type == Io::Type::Directory ?
-                     COLOR_BLUE_LIGHT : Color::White;
+    _files.erase(std::remove_if(_files.begin(), _files.end(), [](Io::File file) {
+        return file.type == Io::Type::File && !pplay::Utility::isMedia(file);
+    }), _files.end());
+
+    for (auto &file : _files) {
+        file.color = file.type == Io::Type::Directory ? COLOR_BLUE : COLOR_FONT;
+        files.emplace_back(file, main->getMediaThread()->getMediaInfo(file));
     }
 
-    //TODO
-    //listBox->setFiles(files);
-    //listBox->setSelection(0);
-    //pathText->setString(this->path);
+    setSelection(0);
 
     return true;
 }
 
 void FilerSdmc::enter() {
 
-    Io::File *file = listBox->getSelection();
-    if (!file) {
-        return;
-    }
+    MediaFile file = getSelection();
 
-    if (file->name == "..") {
+    if (file.name == "..") {
         exit();
         return;
     }
 
     if (path == "/") {
-        getDir(path + file->name);
+        getDir(path + file.name);
     } else {
-        getDir(path + "/" + file->name);
+        getDir(path + "/" + file.name);
     }
 }
 

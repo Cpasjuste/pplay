@@ -4,24 +4,33 @@
 
 #include "main.h"
 #include "filer.h"
+#include "utility.h"
+
+#define ITEM_HEIGHT 64
 
 using namespace c2d;
 
-Filer::Filer(Main *main, const std::string &path, const c2d::FloatRect &rect) : RectangleShape(rect) {
+Filer::Filer(Main *m, const std::string &path, const c2d::FloatRect &rect) : RectangleShape(rect) {
+
+    main = m;
 
     // set default bg colors
-    setFillColor(Color::GrayLight);
+    setFillColor(Color::Transparent);
 
-    item_height = 64;
+    // highlight
+    highlight = new Highlight({getSize().x, ITEM_HEIGHT}, Highlight::CursorPosition::Left);
+    highlight->setFillColor({255, 255, 255, 40});
+    add(highlight);
 
+    // items
+    item_height = ITEM_HEIGHT;
     item_max = (int) (getSize().y / item_height);
     if ((item_max * item_height) < getSize().y) {
         item_height = getSize().y / (float) item_max;
     }
 
-    // add lines of text
     for (unsigned int i = 0; i < (unsigned int) item_max; i++) {
-        FloatRect r = {1, (item_height * i) + 1, getSize().x - 2, item_height - 2};
+        FloatRect r = {0, (item_height * i) + 1, getSize().x - 2, item_height - 2};
         items.emplace_back(new FilerItem(main, r));
         add(items[i]);
     }
@@ -29,13 +38,13 @@ Filer::Filer(Main *main, const std::string &path, const c2d::FloatRect &rect) : 
     setSelection(0);
 };
 
-const FilerItem Filer::getSelection() const {
+const MediaFile Filer::getSelection() const {
 
     if (!files.empty() && files.size() > (unsigned int) item_index) {
-        return *items[item_index];
+        return files[item_index];
     }
 
-    return FilerItem(main, {});
+    return MediaFile();
 }
 
 void Filer::setSelection(int index) {
@@ -45,84 +54,67 @@ void Filer::setSelection(int index) {
     unsigned int index_start = (unsigned int) page * item_max;
 
     for (unsigned int i = 0; i < (unsigned int) item_max; i++) {
-
         if (index_start + i >= files.size()) {
             items[i]->setVisibility(Visibility::Hidden);
         } else {
             // set file
-            Io::File *file = files[index_start + i];
+            items[i]->setFile(files[index_start + i]);
             items[i]->setVisibility(Visibility::Visible);
-            items[i]->setString(file->name);
-            // set text color based on file color
-            items[i]->setIcon(file->icon);
-            items[i]->setColor(file->color);
-            // set highlight position and color
             if (index_start + i == (unsigned int) item_index) {
                 highlight->setPosition(items[i]->getPosition());
-                Color color = highlight_use_files_color ?
-                              file->color : highlight->getFillColor();
-                color.a = highlight->getAlpha();
-                highlight->setFillColor(color);
-                color = highlight_use_files_color ?
-                        file->color : highlight->getOutlineColor();
-                color.a = highlight->getAlpha();
-                highlight->setOutlineColor(color);
             }
         }
     }
 
     if (files.empty()) {
-        highlight->setVisibility(Visibility::Hidden, false);
+        highlight->setVisibility(Visibility::Hidden);
     } else {
-        if (use_highlight) {
-            highlight->setVisibility(Visibility::Visible, false);
-        }
+        highlight->setVisibility(Visibility::Visible);
     }
 }
 
-bool Filer::step(unsigned int keys) {
+void Filer::onInput(c2d::Input::Player *players) {
 
-    if (keys & c2d::Input::KEY_START || keys & c2d::Input::KEY_COIN) {
+    if (!isVisible()
+        || main->getMenu()->isVisible()
+        || main->getPlayer()->isFullscreen()) {
+        return;
+    }
+
+    unsigned int keys = players[0].state;
+
+    if (keys & c2d::Input::Start || keys & c2d::Input::Select) {
         main->getMenu()->setVisibility(Visibility::Visible, true);
-    } else if (keys & Input::Key::KEY_UP) {
-        up();
-    } else if (keys & Input::Key::KEY_DOWN) {
-        down();
-    } else if (keys & Input::Key::KEY_LEFT) {
+    } else if (keys & Input::Key::Up) {
+        item_index--;
+        if (item_index < 0)
+            item_index = (int) (files.size() - 1);
+        setSelection(item_index);
+    } else if (keys & Input::Key::Down) {
+        item_index++;
+        if (item_index >= (int) files.size()) {
+            item_index = 0;
+        }
+        setSelection(item_index);
+    } else if (keys & Input::Key::Left) {
         main->getMenu()->setVisibility(Visibility::Visible, true);
-    } else if (keys & Input::Key::KEY_RIGHT) {
+    } else if (keys & Input::Key::Right) {
         if (main->getPlayer()->isPlaying() && !main->getPlayer()->isFullscreen()) {
             main->setPlayerFullscreen(true);
         }
-    } else if (keys & Input::Key::KEY_FIRE1) {
-        if (getSelection().getFile().type == Io::Type::File) {
-            return true;
+    } else if (keys & Input::Key::Fire1) {
+        if (getSelection().type == Io::Type::Directory) {
+            enter();
+        } else if (pplay::Utility::isMedia(getSelection())) {
+            if (main->getPlayer()->load(getSelection())) {
+                main->setPlayerFullscreen(true);
+            }
         }
-        enter();
-    } else if (keys & Input::Key::KEY_FIRE2) {
+    } else if (keys & Input::Key::Fire2) {
         exit();
     }
 
-    return false;
-}
-
-void Filer::down() {
-
-    item_index++;
-    if (item_index >= (int) items.size()) {
-        item_index = 0;
-    }
-
-    setSelection(item_index);
-}
-
-void Filer::up() {
-
-    item_index--;
-    if (item_index < 0)
-        item_index = (int) (items.size() - 1);
-
-    setSelection(item_index);
+    C2DObject::onInput(players);
 }
 
 std::string Filer::getPath() {

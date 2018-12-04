@@ -7,6 +7,7 @@
 #include "main.h"
 #include "filer_http.h"
 #include "Browser/Browser.hpp"
+#include "utility.h"
 
 using namespace c2d;
 
@@ -31,11 +32,12 @@ bool FilerHttp::getDir(const std::string &p) {
         }
     }
 
-    index = 0;
+    item_index = 0;
     files.clear();
+    path = browser->unescape(browser->geturl());
 
     // add up/back ("..")
-    files.emplace_back("..", "..", Io::Type::Directory, COLOR_BLUE_LIGHT);
+    files.emplace_back(Io::File("..", "..", Io::Type::Directory, 0, COLOR_BLUE_LIGHT));
 
     for (int i = 0; i < browser->links.size(); i++) {
 
@@ -55,37 +57,33 @@ bool FilerHttp::getDir(const std::string &p) {
 
         if (type == Io::Type::File) {
             Color color = Color::White;
-            std::string s = browser->geturl() + browser->links[i].url();
-            files.emplace_back(Utility::removeLastSlash(browser->links[i].name()),
-                               s, type, color);
+            std::string str = browser->geturl() + browser->links[i].url();
+            Io::File file(Utility::removeLastSlash(browser->links[i].name()), str, type, 0, color);
+            if (pplay::Utility::isMedia(file)) {
+                files.emplace_back(file);
+            }
         } else {
             Color color = COLOR_BLUE_LIGHT;
-            files.emplace_back(Utility::removeLastSlash(browser->links[i].name()),
-                               browser->links[i].url(), type, color);
+            files.emplace_back(Io::File(Utility::removeLastSlash(browser->links[i].name()),
+                                        browser->links[i].url(), type, 0, color));
         }
     }
 
-    listBox->setFiles(files);
-    listBox->setSelection(0);
-    //pathText->setString(browser->unescape(browser->geturl()));
-    path = browser->unescape(browser->geturl());
+    setSelection(0);
 
     return true;
 }
 
 void FilerHttp::enter() {
 
-    Io::File *file = listBox->getSelection();
-    if (!file) {
-        return;
-    }
+    MediaFile file = getSelection();
 
-    if (file->name == "..") {
+    if (file.name == "..") {
         exit();
         return;
     }
 
-    browser->follow_link(browser->unescape(file->path));
+    browser->follow_link(browser->unescape(file.path));
     getDir(browser->geturl());
 }
 
@@ -95,10 +93,6 @@ void FilerHttp::exit() {
         browser->back(10);
         getDir(browser->geturl());
     }
-}
-
-Browser *FilerHttp::getBrowser() {
-    return browser;
 }
 
 FilerHttp::~FilerHttp() {
