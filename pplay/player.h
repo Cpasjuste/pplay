@@ -76,6 +76,8 @@ public:
 
     bool isPlaying();
 
+    bool isPaused();
+
     bool isFullscreen();
 
     void setFullscreen(bool maximize);
@@ -114,7 +116,6 @@ private:
     char audioBuffer[AUDIO_BUFFER_SIZE];
 
     bool fullscreen = false;
-    bool paused = false;
 };
 
 #endif //PPLAY_PLAYER_H

@@ -20,6 +20,9 @@ public:
 
     void setCursorColor(const c2d::Color &color);
 
+    c2d::TweenPosition *tweenPosition;
+    c2d::TweenScale *tweenScale;
+
 private:
 
     c2d::Texture *texture;

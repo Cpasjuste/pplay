@@ -65,10 +65,13 @@ OptionMenu::OptionMenu(Main *m, const c2d::FloatRect &rect) : RectangleShape(rec
     main->getMainRect()->add(menuButton);
 
     // highlight
+    /*
     highlight = new Highlight({getSize().x, BUTTON_HEIGHT});
     highlight->setOrigin(Origin::Left);
     highlight->setPosition(0, 200);
     add(highlight);
+    */
+    highlight = main->getHighlight();
 
     // title
     title = new Text("PPLAY______", 24, main->getFont());
@@ -90,6 +93,19 @@ OptionMenu::OptionMenu(Main *m, const c2d::FloatRect &rect) : RectangleShape(rec
 
     // tween!
     add(new TweenPosition({-rect.width, 0}, {0, 0}, 0.5f));
+}
+
+void OptionMenu::tweenHighlight() {
+
+#error TODO
+
+    highlight->tweenPosition->setFromTo(
+            highlight->getPosition(),
+            options[index]->getPosition());
+    highlight->tweenPosition->play(TweenDirection::Forward, true);
+
+    highlight->tweenScale->setFromTo({1, 1}, {1, 1});
+    highlight->tweenScale->play(TweenDirection::Forward, true);
 }
 
 void OptionMenu::onInput(c2d::Input::Player *players) {
@@ -120,11 +136,13 @@ void OptionMenu::onInput(c2d::Input::Player *players) {
             if (index < 0) {
                 index = OPT_COUNT - 1;
             }
+            highlight->setPosition(0, options[index]->getPosition().y);
         } else if (keys & Input::Down) {
             index++;
             if (index == OPT_COUNT) {
                 index = 0;
             }
+            highlight->setPosition(0, options[index]->getPosition().y);
         } else if (keys & Input::Fire1) {
             if (index == Home) {
                 setVisibility(Visibility::Hidden, true);
@@ -135,15 +153,11 @@ void OptionMenu::onInput(c2d::Input::Player *players) {
             } else if (index == Exit) {
                 main->quit();
             }
-        } else if (keys & Input::Fire2
-                   || keys & Input::Right
-                   || keys & c2d::Input::Start
-                   || keys & c2d::Input::Select) {
+        } else if (keys & Input::Right) {
             setVisibility(Visibility::Hidden, true);
+            main->getFiler()->tweenHighlight();
         }
     }
-
-    highlight->setPosition(0, options[index]->getPosition().y);
 }
 
 void OptionMenu::setVisibility(c2d::Visibility visibility, bool tweenPlay) {

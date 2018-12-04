@@ -9,6 +9,7 @@ extern "C" {
 int ffmpeg_main(int argc, const char **argv);
 }
 
+#include "main.h"
 #include "media_thread.h"
 #include "base64.h"
 #include "utility.h"
@@ -35,8 +36,14 @@ static int media_info_thread(void *ptr) {
             break;
         }
 
+        if (mediaThread->getMain()->getPlayer()
+            && mediaThread->getMain()->getPlayer()->isPlaying()) {
+            mediaThread->getMain()->delay(100);
+            continue;
+        }
+
         if (mediaThread->mediaList.empty()) {
-            mediaThread->getRenderer()->delay(100);
+            mediaThread->getMain()->delay(100);
             continue;
         }
 
@@ -143,9 +150,9 @@ static int media_info_thread(void *ptr) {
     return 0;
 }
 
-MediaThread::MediaThread(c2d::Renderer *renderer, const std::string &cachePath) {
+MediaThread::MediaThread(Main *main, const std::string &cachePath) {
 
-    this->renderer = renderer;
+    this->main = main;
     this->cache = cachePath;
     mutex = SDL_CreateMutex();
     thread = SDL_CreateThread(media_info_thread, "pplay_info", (void *) this);
@@ -157,7 +164,7 @@ const Media MediaThread::getMediaInfo(const c2d::Io::File &file) {
 
     if (pplay::Utility::isMedia(file)) {
         std::string cachePath = getMediaCachePath(file.path);
-        if (renderer->getIo()->exist(cachePath)) {
+        if (main->getIo()->exist(cachePath)) {
             media.deserialize(cachePath);
         } else {
             // media info not yet available, cache for later use
@@ -176,11 +183,11 @@ void MediaThread::cacheDir(const std::string &dir) {
 
     SDL_LockMutex(mutex);
 
-    std::vector<c2d::Io::File> files = renderer->getIo()->getDirList(dir);
+    std::vector<c2d::Io::File> files = main->getIo()->getDirList(dir);
     for (c2d::Io::File &file : files) {
         if (pplay::Utility::isMedia(file)) {
             std::string cachePath = getMediaCachePath(file.path);
-            if (!renderer->getIo()->exist(cachePath)) {
+            if (!main->getIo()->exist(cachePath)) {
                 if (std::find(mediaList.begin(), mediaList.end(), file.path) == mediaList.end()) {
                     mediaList.emplace_back(file.path);
                 }
@@ -191,8 +198,8 @@ void MediaThread::cacheDir(const std::string &dir) {
     SDL_UnlockMutex(mutex);
 }
 
-c2d::Renderer *MediaThread::getRenderer() {
-    return renderer;
+Main *MediaThread::getMain() {
+    return main;
 }
 
 const std::string MediaThread::getMediaCachePath(const std::string &mediaPath) const {

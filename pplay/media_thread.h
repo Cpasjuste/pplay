@@ -7,19 +7,21 @@
 
 #include <string>
 #include <SDL_thread.h>
+#include "cross2d/skeleton/io.h"
 
-#include "cross2d/skeleton/renderer.h"
-#include "media.h"
+class Main;
+
+class Media;
 
 class MediaThread {
 
 public:
 
-    explicit MediaThread(c2d::Renderer *renderer, const std::string &cachePath);
+    explicit MediaThread(Main *main, const std::string &cachePath);
 
     ~MediaThread();
 
-    c2d::Renderer *getRenderer();
+    Main *getMain();
 
     const std::string getMediaCachePath(const std::string &mediaPath) const;
 
@@ -35,12 +37,11 @@ public:
 
 private:
 
-    c2d::Renderer *renderer;
+    Main *main;
     std::string cache;
     SDL_Thread *thread;
     SDL_mutex *mutex;
     bool running = true;
-
 };
 
 #endif //PPLAY_MEDIA_INFO_H

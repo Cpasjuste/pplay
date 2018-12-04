@@ -52,6 +52,11 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     getIo()->create(getIo()->getHomePath() + "cache");
     mediaInfoThread = new MediaThread(this, getIo()->getHomePath() + "cache/");
 
+    highlight = new Highlight({64, 64});
+    highlight->setOrigin(Origin::Left);
+    highlight->setPosition(0, 0);
+    add(highlight);
+
     // create filers
     FloatRect filerRect = {0, 128, (mainRect->getSize().x / 2) - 16, mainRect->getSize().y - 32 - 128};
     filerSdmc = new FilerSdmc(this, "/", filerRect);
@@ -81,10 +86,12 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     messageBox = new MessageBox({w, h, w, h}, getInput(), getFont(), FONT_SIZE);
     messageBox->setOrigin(Origin::Center);
     messageBox->setFillColor(COLOR_GRAY_DARK);
-    messageBox->setOutlineColor(COLOR_ORANGE);
+    messageBox->setOutlineColor(COLOR_BLUE);
     messageBox->setOutlineThickness(2);
     messageBox->setLayer(101);
     add(messageBox);
+
+    highlight->setLayer(102);
 }
 
 void Main::onInput(c2d::Input::Player *players) {
@@ -174,6 +181,14 @@ MediaThread *Main::getMediaThread() {
 
 Player *Main::getPlayer() {
     return player;
+}
+
+Filer *Main::getFiler() {
+    return filer;
+}
+
+Highlight *Main::getHighlight() {
+    return highlight;
 }
 
 OptionMenu *Main::getMenu() {

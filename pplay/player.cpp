@@ -31,6 +31,7 @@ Player::Player(Main *_main) : RectangleShape(_main->getSize()) {
 
 bool Player::load(const c2d::Io::File &file) {
 
+    // TODO: always stop?
     if (isPlaying()) {
         stop();
     }
@@ -155,7 +156,7 @@ void Player::onInput(c2d::Input::Player *players) {
         main->getMenu()->setVisibility(Visibility::Visible, true);
     } else if (keys & Input::Key::Fire1) {
         if (osd->isVisible()) {
-            if (paused) {
+            if (isPaused()) {
                 resume();
                 osd->resume();
             } else {
@@ -171,7 +172,7 @@ void Player::onInput(c2d::Input::Player *players) {
         } else {
             osd->setVisibility(Visibility::Visible, true);
         }
-    } else if (!paused) {
+    } else if (!isPaused()) {
 
         double position = Kit_GetPlayerPosition(player);
         double duration = Kit_GetPlayerDuration(player);
@@ -203,7 +204,7 @@ void Player::onInput(c2d::Input::Player *players) {
 
 void Player::onDraw(c2d::Transform &transform) {
 
-    if (!isVisible()) {
+    if (!isPlaying() && !isPaused()) {
         stop();
         return;
     }
@@ -274,6 +275,12 @@ bool Player::isPlaying() {
                || Kit_GetPlayerState(player) == KIT_PAUSED);
 }
 
+bool Player::isPaused() {
+
+    return player != nullptr
+           && Kit_GetPlayerState(player) == KIT_PAUSED;
+}
+
 bool Player::isFullscreen() {
     return fullscreen;
 }
@@ -284,24 +291,20 @@ void Player::setFullscreen(bool fs) {
 
 void Player::pause() {
 
-    if (player && !paused) {
+    if (!isPaused()) {
         Kit_PlayerPause(player);
     }
 
     setCpuClock(CpuClock::Min);
-
-    paused = true;
 }
 
 void Player::resume() {
 
-    if (player && paused) {
+    if (isPaused()) {
         Kit_PlayerPlay(player);
     }
 
     setCpuClock(CpuClock::Max);
-
-    paused = false;
 }
 
 void Player::stop() {
@@ -339,7 +342,6 @@ void Player::stop() {
     video_streams.reset();
     audio_streams.reset();
     subtitles_streams.reset();
-    paused = false;
 
     osd->setVisibility(Visibility::Hidden);
     setVisibility(Visibility::Hidden);

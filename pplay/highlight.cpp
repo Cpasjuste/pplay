@@ -28,6 +28,12 @@ Highlight::Highlight(const c2d::Vector2f &size, const CursorPosition &pos) : Rec
         cursor->move(size.x - 4, 0);
     }
     add(cursor);
+
+    tweenPosition = new TweenPosition({0, 0}, {0, 0}, 0.5f);
+    add(tweenPosition);
+
+    tweenScale = new TweenScale({1, 1}, {1, 1}, 0.5f);
+    add(tweenScale);
 }
 
 void Highlight::setFillColor(const c2d::Color &color) {
