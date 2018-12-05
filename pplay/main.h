@@ -64,8 +64,6 @@ public:
 
     Filer *getFiler();
 
-    Highlight *getHighlight();
-
     PPLAYConfig *getConfig();
 
     c2d::Font *getFont() override;
@@ -87,7 +85,6 @@ private:
     Player *player = nullptr;
     OptionMenu *menu = nullptr;
     MediaThread *mediaInfoThread = nullptr;
-    Highlight *highlight;
 
     bool running = true;
 };

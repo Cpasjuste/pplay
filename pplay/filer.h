@@ -31,8 +31,6 @@ public:
 
     virtual void setSelection(int index);
 
-    void tweenHighlight();
-
     void onInput(c2d::Input::Player *players) override;
 
 private:

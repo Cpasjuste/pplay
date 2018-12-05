@@ -152,9 +152,7 @@ void Player::onInput(c2d::Input::Player *players) {
     //////////////////
     unsigned int keys = players[0].state;
 
-    if (keys & c2d::Input::Start || keys & c2d::Input::Select) {
-        main->getMenu()->setVisibility(Visibility::Visible, true);
-    } else if (keys & Input::Key::Fire1) {
+    if (keys & Input::Key::Fire1) {
         if (osd->isVisible()) {
             if (isPaused()) {
                 resume();

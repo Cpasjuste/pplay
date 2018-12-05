@@ -18,12 +18,9 @@ Filer::Filer(Main *m, const std::string &path, const c2d::FloatRect &rect) : Rec
     setFillColor(Color::Transparent);
 
     // highlight
-    /*
     highlight = new Highlight({getSize().x, ITEM_HEIGHT}, Highlight::CursorPosition::Left);
     highlight->setFillColor({255, 255, 255, 40});
     add(highlight);
-    */
-    highlight = main->getHighlight();
 
     // items
     item_height = ITEM_HEIGHT;
@@ -64,9 +61,7 @@ void Filer::setSelection(int index) {
             items[i]->setFile(files[index_start + i]);
             items[i]->setVisibility(Visibility::Visible);
             if (index_start + i == (unsigned int) item_index) {
-                highlight->setPosition(
-                        items[i]->getGlobalBounds().left,
-                        items[i]->getGlobalBounds().top);
+                highlight->setPosition(items[i]->getPosition());
             }
         }
     }
@@ -76,15 +71,6 @@ void Filer::setSelection(int index) {
     } else {
         highlight->setVisibility(Visibility::Visible);
     }
-}
-
-void Filer::tweenHighlight() {
-
-    highlight->tweenPosition->setFromTo(
-            highlight->getPosition(),
-            {items[0]->getGlobalBounds().left, items[0]->getGlobalBounds().top});
-
-    highlight->tweenPosition->play(TweenDirection::Forward, true);
 }
 
 void Filer::onInput(c2d::Input::Player *players) {
@@ -111,7 +97,6 @@ void Filer::onInput(c2d::Input::Player *players) {
         }
         setSelection(item_index);
     } else if (keys & Input::Key::Left) {
-        main->getMenu()->tweenHighlight();
         main->getMenu()->setVisibility(Visibility::Visible, true);
     } else if (keys & Input::Key::Right) {
         if (main->getPlayer()->isPlaying() && !main->getPlayer()->isFullscreen()) {
