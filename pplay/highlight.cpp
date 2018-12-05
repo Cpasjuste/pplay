@@ -13,7 +13,7 @@ Highlight::Highlight(const c2d::Vector2f &size, const CursorPosition &pos) : Rec
 
     Shape::setFillColor(Color::Transparent);
 
-    texture = new C2DTexture(c2d_renderer->getIo()->getDataPath() + "/skin/gradient_white.png");
+    texture = new C2DTexture(c2d_renderer->getIo()->getDataPath() + "skin/gradient_white.png");
     texture->setSize(size);
     texture->setFillColor(COLOR_HIGHLIGHT);
     if (pos == CursorPosition::Right) {

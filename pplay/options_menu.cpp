@@ -22,7 +22,7 @@ public:
         setOrigin(Origin::Left);
 
         if (!iconName.empty()) {
-            icon = new C2DTexture(main->getIo()->getDataPath() + "/skin/" + iconName);
+            icon = new C2DTexture(main->getIo()->getDataPath() + "skin/" + iconName);
             icon->setOrigin(Origin::Left);
             icon->setPosition(16, getSize().y / 2);
             icon->setFillColor(COLOR_FONT);
@@ -57,7 +57,7 @@ OptionMenu::OptionMenu(Main *m, const c2d::FloatRect &rect) : RectangleShape(rec
     menuButton->setAlpha(245);
     menuButton->setOutlineColor(Color::GrayLight);
     menuButton->setOutlineThickness(2);
-    auto *tex = new C2DTexture(main->getIo()->getDataPath() + "/skin/menu.png");
+    auto *tex = new C2DTexture(main->getIo()->getDataPath() + "skin/menu.png");
     tex->setFillColor(COLOR_FONT);
     tex->setOrigin(Origin::Center);
     tex->setPosition(menuButton->getSize().x / 2, menuButton->getSize().y / 2);
