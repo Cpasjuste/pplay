@@ -36,8 +36,8 @@ bool Player::load(const c2d::Io::File &file) {
         stop();
     }
 
-    // init Kit library
-    int err = Kit_Init(KIT_INIT_NETWORK | KIT_INIT_ASS);
+    // avformat_network_init/deinit handled in media info thread
+    int err = Kit_Init(KIT_INIT_ASS);
     if (err != 0) {
         printf("unable to initialize Kitchensink: %s\n", Kit_GetError());
         stop();

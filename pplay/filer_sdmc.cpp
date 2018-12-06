@@ -42,7 +42,6 @@ bool FilerSdmc::getDir(const std::string &p) {
     }), _files.end());
 
     for (auto &file : _files) {
-        file.color = file.type == Io::Type::Directory ? COLOR_BLUE : COLOR_FONT;
         files.emplace_back(file, main->getMediaThread()->getMediaInfo(file));
     }
 

@@ -35,7 +35,8 @@ Filer::Filer(Main *m, const std::string &path, const c2d::FloatRect &rect) : Rec
         add(items[i]);
     }
 
-    setSelection(0);
+    // tween
+    add(new TweenAlpha(0, 255, 1));
 };
 
 const MediaFile Filer::getSelection() const {
@@ -57,9 +58,15 @@ void Filer::setSelection(int index) {
         if (index_start + i >= files.size()) {
             items[i]->setVisibility(Visibility::Hidden);
         } else {
-            // set file
-            items[i]->setFile(files[index_start + i]);
+            // load media info, set file
+            int idx = index_start + i;
+            if (files[idx].type == Io::Type::File && !files[idx].getMedia().isLoaded()) {
+                //printf("Filer: getting media info for %s\n", files[idx].name.c_str());
+                files[idx].media = main->getMediaThread()->getMediaInfo(files[idx]);
+            }
+            items[i]->setFile(files[idx]);
             items[i]->setVisibility(Visibility::Visible);
+            // set highlight position
             if (index_start + i == (unsigned int) item_index) {
                 highlight->setPosition(items[i]->getPosition());
             }
@@ -71,6 +78,12 @@ void Filer::setSelection(int index) {
     } else {
         highlight->setVisibility(Visibility::Visible);
     }
+}
+
+void Filer::onDraw(c2d::Transform &transform) {
+
+    setSelection(item_index);
+    Shape::onDraw(transform);
 }
 
 void Filer::onInput(c2d::Input::Player *players) {
@@ -89,13 +102,11 @@ void Filer::onInput(c2d::Input::Player *players) {
         item_index--;
         if (item_index < 0)
             item_index = (int) (files.size() - 1);
-        setSelection(item_index);
     } else if (keys & Input::Key::Down) {
         item_index++;
         if (item_index >= (int) files.size()) {
             item_index = 0;
         }
-        setSelection(item_index);
     } else if (keys & Input::Key::Left) {
         main->getMenu()->setVisibility(Visibility::Visible, true);
     } else if (keys & Input::Key::Right) {
@@ -123,3 +134,4 @@ std::string Filer::getPath() {
 
 Filer::~Filer() {
 }
+

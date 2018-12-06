@@ -16,11 +16,15 @@ public:
 
     explicit Highlight(const c2d::Vector2f &size, const CursorPosition &cursor = CursorPosition::Right);
 
+    void setAlpha(uint8_t alpha, bool recursive) override;
+
     void setFillColor(const c2d::Color &color) override;
 
     void setCursorColor(const c2d::Color &color);
 
 private:
+
+    //void onDraw(c2d::Transform &transform) override;
 
     c2d::Texture *texture;
     c2d::RectangleShape *cursor;

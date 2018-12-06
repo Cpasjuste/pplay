@@ -16,6 +16,8 @@ bool Utility::isMedia(const c2d::Io::File &file) {
     return file.type == c2d::Io::Type::File &&
            (c2d::Utility::endsWith(file.name, ".avi", false)
             || c2d::Utility::endsWith(file.name, ".mkv", false)
+            || c2d::Utility::endsWith(file.name, ".mp4", false)
+            || c2d::Utility::endsWith(file.name, ".mov", false)
             || c2d::Utility::endsWith(file.name, ".flv", false)
             || c2d::Utility::endsWith(file.name, ".mp3", false)
             || c2d::Utility::endsWith(file.name, ".wav", false)

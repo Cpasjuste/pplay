@@ -14,7 +14,7 @@ public:
 
     MediaFile() = default;
 
-    MediaFile(const c2d::Io::File &file, const Media &media = {}) {
+    explicit MediaFile(const c2d::Io::File &file, const MediaInfo &media = {}) {
         name = file.name;
         path = file.path;
         type = file.type;
@@ -23,7 +23,15 @@ public:
         this->media = media;
     }
 
-    Media media;
+    const MediaInfo getMedia() const {
+        return media;
+    }
+
+    void setMedia(const MediaInfo &media) {
+        this->media = media;
+    }
+
+    MediaInfo media;
 };
 
 #endif //PPLAY_MEDIAFILE_H

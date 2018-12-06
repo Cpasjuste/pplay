@@ -56,16 +56,14 @@ bool FilerHttp::getDir(const std::string &p) {
                         Io::Type::Directory : Io::Type::File;
 
         if (type == Io::Type::File) {
-            Color color = Color::White;
             std::string str = browser->geturl() + browser->links[i].url();
-            Io::File file(Utility::removeLastSlash(browser->links[i].name()), str, type, 0, color);
+            Io::File file(Utility::removeLastSlash(browser->links[i].name()), str, type);
             if (pplay::Utility::isMedia(file)) {
                 files.emplace_back(file);
             }
         } else {
-            Color color = COLOR_BLUE_LIGHT;
             files.emplace_back(Io::File(Utility::removeLastSlash(browser->links[i].name()),
-                                        browser->links[i].url(), type, 0, color));
+                                        browser->links[i].url(), type));
         }
     }
 

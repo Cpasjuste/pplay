@@ -35,6 +35,8 @@ public:
 
 private:
 
+    void onDraw(c2d::Transform &transform) override;
+
     friend class FilerSdmc;
 
     friend class FilerHttp;

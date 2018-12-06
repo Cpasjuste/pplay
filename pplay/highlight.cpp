@@ -30,6 +30,12 @@ Highlight::Highlight(const c2d::Vector2f &size, const CursorPosition &pos) : Rec
     add(cursor);
 }
 
+void Highlight::setAlpha(uint8_t alpha, bool recursive) {
+    if (alpha <= COLOR_HIGHLIGHT.a) {
+        texture->setAlpha(alpha, recursive);
+    }
+}
+
 void Highlight::setFillColor(const c2d::Color &color) {
     texture->setFillColor(color);
 }

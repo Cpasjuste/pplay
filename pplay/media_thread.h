@@ -11,7 +11,7 @@
 
 class Main;
 
-class Media;
+class MediaInfo;
 
 class MediaThread {
 
@@ -25,7 +25,7 @@ public:
 
     const std::string getMediaCachePath(const std::string &mediaPath) const;
 
-    const Media getMediaInfo(const c2d::Io::File &file);
+    const MediaInfo getMediaInfo(const c2d::Io::File &file);
 
     void cacheDir(const std::string &dir);
 

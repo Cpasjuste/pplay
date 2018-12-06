@@ -8,7 +8,7 @@
 #include "media.h"
 #include "utility.h"
 
-bool Media::serialize(const std::string &dst) {
+bool MediaInfo::serialize(const std::string &dst) {
 
     int count;
     size_t size;
@@ -104,12 +104,16 @@ bool Media::serialize(const std::string &dst) {
     return true;
 }
 
-bool Media::deserialize(const std::string &src) {
+bool MediaInfo::deserialize(const std::string &src) {
 
     int count;
     char *data;
     size_t size;
     std::fstream fs;
+
+    // from here, assume the file (media information) is loaded
+    // to prevent endless loading on fail
+    loaded = 1;
 
     fs.open(src, std::ios::binary | std::ios::in);
     if (!fs.is_open()) {
@@ -243,7 +247,7 @@ bool Media::deserialize(const std::string &src) {
     return true;
 }
 
-void Media::debut_print() {
+void MediaInfo::debut_print() {
     printf("============= MEDIA ===============\n");
     printf("title: %s, duration: %s\n", title.c_str(), pplay::Utility::formatTimeShort(duration).c_str());
     printf("\tvideo streams: %i\n", (int) videos.size());
@@ -265,4 +269,8 @@ void Media::debut_print() {
                stream.codec.c_str());
     }
     printf("===================================\n");
+}
+
+bool MediaInfo::isLoaded() const {
+    return loaded == 1;
 }

@@ -24,6 +24,8 @@ public:
 
 private:
 
+    void onDraw(c2d::Transform &transform) override;
+
     Main *main;
     MediaFile file;
 

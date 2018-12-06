@@ -131,20 +131,22 @@ void Main::show(MenuType type) {
         }
     } else {
         if (!filer->getDir(config->getOption("NETWORK")->getString())) {
-            messageBox->show("OUPS", "Could not browse URL");
+            messageBox->show("Oups", "Could not open url\n\n(see config file?)");
             show(MenuType::Home);
         }
     }
 }
 
 void Main::setPlayerFullscreen(bool fs) {
+
     if (fs) {
-        mainRect->setVisibility(Visibility::Visible);
+        filer->setVisibility(Visibility::Hidden, true);
         player->getTweenPosition()->play(TweenDirection::Forward);
         player->getTweenScale()->play(TweenDirection::Forward);
     } else {
         player->getTweenPosition()->play(TweenDirection::Backward);
         player->getTweenScale()->play(TweenDirection::Backward);
+        filer->setVisibility(Visibility::Visible, true);
     }
     player->setFullscreen(fs);
 }

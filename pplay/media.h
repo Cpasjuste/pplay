@@ -10,7 +10,7 @@
 
 #include "cross2d/skeleton/io.h"
 
-class Media {
+class MediaInfo {
 
 public:
 
@@ -30,6 +30,9 @@ public:
     std::vector<Stream> videos;
     std::vector<Stream> audios;
     std::vector<Stream> subtitles;
+    int loaded = 0;
+
+    bool isLoaded() const;
 
     bool serialize(const std::string &dst);
 
