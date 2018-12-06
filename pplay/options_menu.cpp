@@ -52,7 +52,7 @@ OptionMenu::OptionMenu(Main *m, const c2d::FloatRect &rect) : RectangleShape(rec
     setOutlineThickness(2);
 
     // menu button
-    menuButton = new RectangleShape({16, 16, 40, 40});
+    menuButton = new RectangleShape({0, 0, 40, 40});
     menuButton->setFillColor(COLOR_BG);
     menuButton->setAlpha(245);
     menuButton->setOutlineColor(Color::GrayLight);
@@ -120,13 +120,11 @@ void OptionMenu::onInput(c2d::Input::Player *players) {
             if (index < 0) {
                 index = OPT_COUNT - 1;
             }
-            highlight->setPosition(0, options[index]->getPosition().y);
         } else if (keys & Input::Down) {
             index++;
             if (index == OPT_COUNT) {
                 index = 0;
             }
-            highlight->setPosition(0, options[index]->getPosition().y);
         } else if (keys & Input::Fire1) {
             if (index == Home) {
                 setVisibility(Visibility::Hidden, true);
@@ -141,6 +139,8 @@ void OptionMenu::onInput(c2d::Input::Player *players) {
             setVisibility(Visibility::Hidden, true);
         }
     }
+
+    highlight->setPosition(0, options[index]->getPosition().y);
 }
 
 void OptionMenu::setVisibility(c2d::Visibility visibility, bool tweenPlay) {

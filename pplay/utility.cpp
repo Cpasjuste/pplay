@@ -4,9 +4,9 @@
 
 #include <sstream>
 #include <iomanip>
+
 #include "cross2d/skeleton/io.h"
 #include "cross2d/skeleton/utility.h"
-
 #include "utility.h"
 
 using namespace pplay;
@@ -14,12 +14,12 @@ using namespace pplay;
 bool Utility::isMedia(const c2d::Io::File &file) {
 
     return file.type == c2d::Io::Type::File &&
-           (c2d::Utility::endsWith(file.name, ".avi")
-            || c2d::Utility::endsWith(file.name, ".mkv")
-            || c2d::Utility::endsWith(file.name, ".flv")
-            || c2d::Utility::endsWith(file.name, ".mp3")
-            || c2d::Utility::endsWith(file.name, ".wav")
-            || c2d::Utility::endsWith(file.name, ".ogg"));
+           (c2d::Utility::endsWith(file.name, ".avi", false)
+            || c2d::Utility::endsWith(file.name, ".mkv", false)
+            || c2d::Utility::endsWith(file.name, ".flv", false)
+            || c2d::Utility::endsWith(file.name, ".mp3", false)
+            || c2d::Utility::endsWith(file.name, ".wav", false)
+            || c2d::Utility::endsWith(file.name, ".ogg", false));
 }
 
 std::string Utility::formatTime(double seconds) {

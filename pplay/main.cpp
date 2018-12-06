@@ -41,11 +41,13 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     if (!getIo()->exist(config->getOption("HOME_PATH")->getString())) {
         config->getOption("HOME_PATH")->setString(getIo()->getHomePath());
         config->save();
+        printf("HOME_PATH: %s\n", config->getOption("HOME_PATH")->getString().c_str());
     }
 
     if (!getIo()->exist(config->getOption("LAST_PATH")->getString())) {
         config->getOption("LAST_PATH")->setString(getIo()->getHomePath());
         config->save();
+        printf("LAST_PATH: %s\n", config->getOption("LAST_PATH")->getString().c_str());
     }
 
     // media info
@@ -96,24 +98,22 @@ void Main::onInput(c2d::Input::Player *players) {
             if (player->isPlaying()) {
                 player->stop();
             } else {
-                running = false;
+                quit();
             }
-            return;
-        }
-        if (keys & Input::Touch) {
+        } else if (keys & Input::Touch) {
             if (menu->getMenuButton()->getGlobalBounds().contains(players[0].touch)) {
                 menu->setVisibility(Visibility::Visible, true);
                 return;
             } else if (player->getGlobalBounds().contains(players[0].touch)) {
                 if (player->isPlaying() && !player->isFullscreen()) {
                     setPlayerFullscreen(true);
+                    return;
                 }
-                return;
             }
         }
     }
 
-    C2DObject::onInput(players);
+    Renderer::onInput(players);
 }
 
 void Main::show(MenuType type) {
@@ -162,8 +162,8 @@ void Main::quit() {
     // TODO: save network path
     if (filerSdmc->isVisible()) {
         config->getOption("LAST_PATH")->setString(filer->getPath());
+        config->save();
     }
-    config->save();
 
     running = false;
 }
