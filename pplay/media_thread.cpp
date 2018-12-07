@@ -36,10 +36,10 @@ static int media_info_thread(void *ptr) {
             break;
         }
 
-        if (mediaThread->getMain()->getPlayer() && mediaThread->getMain()->getPlayer()->isPlaying()) {
-            mediaThread->getMain()->delay(100);
-            continue;
-        }
+        //if (mediaThread->getMain()->getPlayer() && mediaThread->getMain()->getPlayer()->isPlaying()) {
+        //    mediaThread->getMain()->delay(100);
+        //    continue;
+        //}
 
         if (mediaThread->mediaList.empty()) {
             mediaThread->getMain()->delay(100);
@@ -89,7 +89,7 @@ static int media_info_thread(void *ptr) {
             const AVCodecParameters *codec = ctx->streams[i]->codecpar;
             int type = codec->codec_type;
             if (type == AVMEDIA_TYPE_VIDEO) {
-                MediaInfo::Stream stream;
+                MediaInfo::Stream stream{};
                 title = av_dict_get(ctx->streams[i]->metadata, "title", nullptr, 0);
                 language = av_dict_get(ctx->streams[i]->metadata, "language", nullptr, 0);
                 stream.title = title ? title->value : "Unknown";
@@ -102,7 +102,7 @@ static int media_info_thread(void *ptr) {
                 printf("media_info_thread: found video stream: %s\n", stream.title.c_str());
                 //dump_metadata("video stream", ctx->streams[i]->metadata);
             } else if (type == AVMEDIA_TYPE_AUDIO) {
-                MediaInfo::Stream stream;
+                MediaInfo::Stream stream{};
                 title = av_dict_get(ctx->streams[i]->metadata, "title", nullptr, 0);
                 language = av_dict_get(ctx->streams[i]->metadata, "language", nullptr, 0);
                 stream.title = title ? title->value : "Unknown";
@@ -113,7 +113,7 @@ static int media_info_thread(void *ptr) {
                 printf("media_info_thread: found audio stream: %s\n", stream.title.c_str());
                 //dump_metadata("audio stream", ctx->streams[i]->metadata);
             } else if (type == AVMEDIA_TYPE_SUBTITLE) {
-                MediaInfo::Stream stream;
+                MediaInfo::Stream stream{};
                 title = av_dict_get(ctx->streams[i]->metadata, "title", nullptr, 0);
                 language = av_dict_get(ctx->streams[i]->metadata, "language", nullptr, 0);
                 stream.title = title ? title->value : "Unknown";
@@ -139,7 +139,7 @@ static int media_info_thread(void *ptr) {
         // TODO: extract thumbnail
         std::string p = cachePath + ".png";
         const char *argv[] = {
-                "ffmpeg", "-i", mediaPath.c_str(), "-ss", "00:00:30", "-vframes", "1", p.c_str()
+                "ffmpeg", "-i", mediaPath.c_str(), "-ss", "00:00:02", "-vframes", "1", p.c_str()
         };
         ffmpeg_main(8, argv);
 #endif
@@ -190,7 +190,7 @@ void MediaThread::cacheDir(const std::string &dir) {
 
     SDL_LockMutex(mutex);
 
-    std::vector<c2d::Io::File> files = main->getIo()->getDirList(dir);
+    std::vector<c2d::Io::File> files = main->getIo()->getDirList(dir, true);
     for (c2d::Io::File &file : files) {
         if (pplay::Utility::isMedia(file)) {
             std::string cachePath = getMediaCachePath(file.path);

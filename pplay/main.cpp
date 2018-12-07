@@ -26,11 +26,11 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     timer = new C2DClock();
 
     // init/load config file
-    config = new PPLAYConfig("PPLAY", getIo()->getHomePath() + "pplay.cfg");
+    config = new PPLAYConfig(this);
 
     // font
     font = new C2DFont();
-    font->loadFromFile(getIo()->getDataPath() + "skin/LiberationSans-Regular.ttf");
+    font->loadFromFile(getIo()->getDataReadPath() + "skin/font.ttf");
     font->setFilter(Texture::Filter::Point);
     font->setOffset({0, -4});
 
@@ -38,24 +38,12 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     mainRect = new C2DRectangle(getSize());
     mainRect->setFillColor(Color::Transparent);
 
-    if (!getIo()->exist(config->getOption("HOME_PATH")->getString())) {
-        config->getOption("HOME_PATH")->setString(getIo()->getHomePath());
-        config->save();
-        printf("HOME_PATH: %s\n", config->getOption("HOME_PATH")->getString().c_str());
-    }
-
-    if (!getIo()->exist(config->getOption("LAST_PATH")->getString())) {
-        config->getOption("LAST_PATH")->setString(getIo()->getHomePath());
-        config->save();
-        printf("LAST_PATH: %s\n", config->getOption("LAST_PATH")->getString().c_str());
-    }
-
     // media info
-    getIo()->create(getIo()->getHomePath() + "cache");
-    mediaInfoThread = new MediaThread(this, getIo()->getHomePath() + "cache/");
+    getIo()->create(getIo()->getDataWritePath() + "cache");
+    mediaInfoThread = new MediaThread(this, getIo()->getDataWritePath() + "cache/");
 
     // create filers
-    FloatRect filerRect = {0, 128, (mainRect->getSize().x / 2) - 16, mainRect->getSize().y - 32 - 128};
+    FloatRect filerRect = {0, 150, (mainRect->getSize().x / 2) - 16, mainRect->getSize().y - 32 - 128};
     filerSdmc = new FilerSdmc(this, "/", filerRect);
     mainRect->add(filerSdmc);
     filerHttp = new FilerHttp(this, filerRect);
@@ -82,10 +70,12 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     float h = getSize().y / 2;
     messageBox = new MessageBox({w, h, w, h}, getInput(), getFont(), FONT_SIZE);
     messageBox->setOrigin(Origin::Center);
-    messageBox->setFillColor(COLOR_GRAY_DARK);
-    messageBox->setOutlineColor(COLOR_BLUE);
+    messageBox->setFillColor(COLOR_BG);
+    messageBox->setAlpha(200);
+    messageBox->setOutlineColor(COLOR_RED);
     messageBox->setOutlineThickness(2);
-    messageBox->setLayer(101);
+    messageBox->getTitleText()->setOutlineThickness(0);
+    messageBox->getMessageText()->setOutlineThickness(0);
     add(messageBox);
 }
 
@@ -93,10 +83,16 @@ void Main::onInput(c2d::Input::Player *players) {
 
     unsigned int keys = players[0].state;
 
+    if (messageBox->isVisible()) {
+        // don't handle input if message box is visible
+        return;
+    }
+
     if (keys > 0) {
         if (keys & EV_QUIT) {
-            if (player->isPlaying()) {
-                player->stop();
+            if (player->isFullscreen()) {
+                setPlayerFullscreen(false);
+                filer->setVisibility(Visibility::Visible, true);
             } else {
                 quit();
             }
@@ -131,7 +127,7 @@ void Main::show(MenuType type) {
         }
     } else {
         if (!filer->getDir(config->getOption("NETWORK")->getString())) {
-            messageBox->show("Oups", "Could not open url\n\n(see config file?)");
+            messageBox->show("Oups", "Could not open url (see config file?)", "OK");
             show(MenuType::Home);
         }
     }
@@ -156,10 +152,6 @@ bool Main::isRunning() {
 }
 
 void Main::quit() {
-
-    if (player->isPlaying()) {
-        player->stop();
-    }
 
     // TODO: save network path
     if (filerSdmc->isVisible()) {
@@ -198,8 +190,11 @@ c2d::Font *Main::getFont() {
     return font;
 }
 
-Main::~Main() {
+c2d::MessageBox *Main::getMessageBox() {
+    return messageBox;
+}
 
+Main::~Main() {
     delete (mediaInfoThread);
     delete (config);
     delete (timer);

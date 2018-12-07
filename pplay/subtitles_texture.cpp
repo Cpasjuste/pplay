@@ -20,7 +20,7 @@ void SubtitlesTexture::onDraw(c2d::Transform &transform) {
     for (int i = 0; i < rects_count; i++) {
         sprite->setPosition(rects_dst[i].x, rects_dst[i].y);
         sprite->setTextureRect({rects_src[i].x, rects_src[i].y, rects_src[i].w, rects_src[i].h});
-        c2d_renderer->draw(sprite->getVertexArray(), sprite->getTransform(), this);
+        c2d_renderer->draw(sprite->getVertexArray(), transform * sprite->getTransform(), this);
     }
 }
 

@@ -24,7 +24,11 @@
 
 #include <stdint.h>
 
-#include "ffmpeg_config.h"
+#ifdef __SWITCH__
+#include "ffmpeg_switch_config.h"
+#else
+#include "ffmpeg_linux_config.h"
+#endif
 #include "libavcodec/avcodec.h"
 #include "libavfilter/avfilter.h"
 #include "libavformat/avformat.h"

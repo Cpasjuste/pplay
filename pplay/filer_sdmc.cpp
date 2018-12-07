@@ -41,6 +41,10 @@ bool FilerSdmc::getDir(const std::string &p) {
         return file.type == Io::Type::File && !pplay::Utility::isMedia(file);
     }), _files.end());
 
+#ifdef __SWITCH__
+    files.emplace_back(Io::File{"..", "..", Io::Type::Directory, 0, COLOR_BLUE});
+#endif
+
     for (auto &file : _files) {
         files.emplace_back(file, main->getMediaThread()->getMediaInfo(file));
     }

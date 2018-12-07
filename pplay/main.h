@@ -41,7 +41,8 @@ public:
 
     enum class MenuType {
         Home,
-        Network
+        Network,
+        Current
     };
 
     Main(const c2d::Vector2f &size);
@@ -67,6 +68,8 @@ public:
     PPLAYConfig *getConfig();
 
     c2d::Font *getFont() override;
+
+    c2d::MessageBox *getMessageBox();
 
     void quit();
 

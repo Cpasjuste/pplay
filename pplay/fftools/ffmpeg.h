@@ -19,11 +19,11 @@
 #ifndef FFTOOLS_FFMPEG_H
 #define FFTOOLS_FFMPEG_H
 
-#ifdef __cplusplus
-extern "C" {
+#ifdef __SWITCH__
+#include "ffmpeg_switch_config.h"
+#else
+#include "ffmpeg_linux_config.h"
 #endif
-
-#include "ffmpeg_config.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -667,11 +667,5 @@ int hw_device_setup_for_decode(InputStream *ist);
 int hw_device_setup_for_encode(OutputStream *ost);
 
 int hwaccel_decode_init(AVCodecContext *avctx);
-
-int ffmpeg_main(int argc, const char **argv);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* FFTOOLS_FFMPEG_H */

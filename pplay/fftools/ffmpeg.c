@@ -23,7 +23,11 @@
  * multimedia converter based on the FFmpeg libraries
  */
 
-#include "ffmpeg_config.h"
+#ifdef __SWITCH__
+#include "ffmpeg_switch_config.h"
+#else
+#include "ffmpeg_linux_config.h"
+#endif
 #include <ctype.h>
 #include <string.h>
 #include <math.h>
@@ -106,11 +110,6 @@
 
 #include "libavutil/avassert.h"
 
-const char program_name[] = "ffmpeg";
-const int program_birth_year = 2000;
-
-static FILE *vstats_file;
-
 static inline av_const int mid_pred(int a, int b, int c)
 {
     if(a>b){
@@ -126,6 +125,11 @@ static inline av_const int mid_pred(int a, int b, int c)
     }
     return b;
 }
+
+const char program_name[] = "ffmpeg";
+const int program_birth_year = 2000;
+
+static FILE *vstats_file;
 
 const char *const forced_keyframes_const_names[] = {
     "n",
@@ -499,7 +503,6 @@ static void ffmpeg_cleanup(int ret)
         av_log(NULL, AV_LOG_INFO, "bench: maxrss=%ikB\n", maxrss);
     }
 
-    printf("ffmpeg_cleanup: filtergraphs\n");
     for (i = 0; i < nb_filtergraphs; i++) {
         FilterGraph *fg = filtergraphs[i];
         avfilter_graph_free(&fg->graph);
@@ -540,10 +543,8 @@ static void ffmpeg_cleanup(int ret)
     av_freep(&filtergraphs);
 
     av_freep(&subtitle_out);
-    printf("ffmpeg_cleanup: filtergraphs\n");
 
     /* close files */
-    printf("ffmpeg_cleanup: output_files\n");
     for (i = 0; i < nb_output_files; i++) {
         OutputFile *of = output_files[i];
         AVFormatContext *s;
@@ -595,17 +596,13 @@ static void ffmpeg_cleanup(int ret)
 
         av_freep(&output_streams[i]);
     }
-    printf("ffmpeg_cleanup: output_files\n");
 #if HAVE_THREADS
     free_input_threads();
 #endif
-    printf("ffmpeg_cleanup: nb_input_files\n");
     for (i = 0; i < nb_input_files; i++) {
         avformat_close_input(&input_files[i]->ctx);
         av_freep(&input_files[i]);
     }
-    printf("ffmpeg_cleanup: nb_input_files\n");
-    printf("ffmpeg_cleanup: nb_input_streams\n");
     for (i = 0; i < nb_input_streams; i++) {
         InputStream *ist = input_streams[i];
 
@@ -622,9 +619,7 @@ static void ffmpeg_cleanup(int ret)
 
         av_freep(&input_streams[i]);
     }
-    printf("ffmpeg_cleanup: nb_input_streams\n");
 
-    printf("ffmpeg_cleanup: vstats_file\n");
     if (vstats_file) {
         if (fclose(vstats_file))
             av_log(NULL, AV_LOG_ERROR,
@@ -632,36 +627,24 @@ static void ffmpeg_cleanup(int ret)
                    av_err2str(AVERROR(errno)));
     }
     av_freep(&vstats_filename);
-    printf("ffmpeg_cleanup: vstats_file\n");
 
-    printf("ffmpeg_cleanup: av_freep\n");
     av_freep(&input_streams);
     av_freep(&input_files);
     av_freep(&output_streams);
     av_freep(&output_files);
-    printf("ffmpeg_cleanup: av_freep\n");
 
-    printf("ffmpeg_cleanup: uninit_opts\n");
     uninit_opts();
-    printf("ffmpeg_cleanup: uninit_opts\n");
 
-    printf("ffmpeg_cleanup: avformat_network_deinit\n");
     avformat_network_deinit();
-    printf("ffmpeg_cleanup: avformat_network_deinit\n");
 
-    printf("ffmpeg_cleanup: received_sigterm\n");
     if (received_sigterm) {
         av_log(NULL, AV_LOG_INFO, "Exiting normally, received signal %d.\n",
                (int) received_sigterm);
     } else if (ret && atomic_load(&transcode_init_done)) {
         av_log(NULL, AV_LOG_INFO, "Conversion failed!\n");
     }
-    printf("ffmpeg_cleanup: received_sigterm\n");
-
-    printf("ffmpeg_cleanup: ffmpeg_exited\n");
     term_exit();
     ffmpeg_exited = 1;
-    printf("ffmpeg_cleanup: ffmpeg_exited\n");
 }
 
 void remove_avoptions(AVDictionary **a, AVDictionary *b)
@@ -4821,7 +4804,7 @@ static void log_callback_null(void *ptr, int level, const char *fmt, va_list vl)
 {
 }
 
-int ffmpeg_main(int argc, const char **argv)
+int ffmpeg_main(int argc, char **argv)
 {
     int i, ret;
     int64_t ti;
@@ -4851,23 +4834,19 @@ int ffmpeg_main(int argc, const char **argv)
 
     /* parse options and open all input/output files */
     ret = ffmpeg_parse_options(argc, argv);
-    if (ret < 0) {
+    if (ret < 0)
         exit_program(1);
-        return main_return_code;
-    }
 
     if (nb_output_files <= 0 && nb_input_files == 0) {
         show_usage();
         av_log(NULL, AV_LOG_WARNING, "Use -h to get full help or, even better, run 'man %s'\n", program_name);
         exit_program(1);
-        return main_return_code;
     }
 
     /* file converter / grab */
     if (nb_output_files <= 0) {
         av_log(NULL, AV_LOG_FATAL, "At least one output file must be specified\n");
         exit_program(1);
-        return main_return_code;
     }
 
 //     if (nb_input_files == 0) {
@@ -4881,28 +4860,17 @@ int ffmpeg_main(int argc, const char **argv)
     }
 
     current_time = ti = getutime();
-    printf("transcode\n");
-    if (transcode() < 0) {
-        printf("transcode < 0!\n");
+    if (transcode() < 0)
         exit_program(1);
-        return main_return_code;
-    }
-    printf("transcode OK\n");
-
     ti = getutime() - ti;
     if (do_benchmark) {
         av_log(NULL, AV_LOG_INFO, "bench: utime=%0.3fs\n", ti / 1000000.0);
     }
     av_log(NULL, AV_LOG_DEBUG, "%"PRIu64" frames successfully decoded, %"PRIu64" decoding errors\n",
            decode_error_stat[0], decode_error_stat[1]);
-    if ((decode_error_stat[0] + decode_error_stat[1]) * max_error_rate < decode_error_stat[1]) {
-        printf("exit_program 69\n");
+    if ((decode_error_stat[0] + decode_error_stat[1]) * max_error_rate < decode_error_stat[1])
         exit_program(69);
-        printf("exit_program 69\n");
-        return main_return_code;
-    }
-    printf("exit_program main_return_code\n");
+
     exit_program(received_nb_signals ? 255 : main_return_code);
-    printf("exit_program main_return_code\n");
     return main_return_code;
 }

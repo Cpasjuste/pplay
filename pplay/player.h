@@ -112,7 +112,7 @@ private:
     Stream subtitles_streams;
 
     // audio
-    SDL_AudioDeviceID audioDeviceID;
+    SDL_AudioDeviceID audioDeviceID = 0;
     char audioBuffer[AUDIO_BUFFER_SIZE];
 
     bool fullscreen = false;

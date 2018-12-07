@@ -7,11 +7,13 @@
 
 #include "cross2d/skeleton/config.h"
 
+class Main;
+
 class PPLAYConfig : public c2d::config::Config {
 
 public:
 
-    PPLAYConfig(const std::string &name, const std::string &path, int version = 1);
+    PPLAYConfig(Main *main, int version = 1);
 };
 
 #endif //PPLAY_CONFIG_H

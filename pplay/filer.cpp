@@ -117,9 +117,11 @@ void Filer::onInput(c2d::Input::Player *players) {
         if (getSelection().type == Io::Type::Directory) {
             enter();
         } else if (pplay::Utility::isMedia(getSelection())) {
+            main->getMessageBox()->show("Please Wait", "Media is loading...");
             if (main->getPlayer()->load(getSelection())) {
                 main->setPlayerFullscreen(true);
             }
+            main->getMessageBox()->hide();
         }
     } else if (keys & Input::Key::Fire2) {
         exit();
@@ -134,4 +136,3 @@ std::string Filer::getPath() {
 
 Filer::~Filer() {
 }
-

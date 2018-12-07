@@ -31,10 +31,7 @@ Player::Player(Main *_main) : RectangleShape(_main->getSize()) {
 
 bool Player::load(const c2d::Io::File &file) {
 
-    // TODO: always stop?
-    if (isPlaying()) {
-        stop();
-    }
+    stop();
 
     // avformat_network_init/deinit handled in media info thread
     int err = Kit_Init(KIT_INIT_ASS);
@@ -70,15 +67,15 @@ bool Player::load(const c2d::Io::File &file) {
 
     // set default font
     Kit_LibraryState *state = Kit_GetLibraryState();
-    snprintf(state->subtitle_font_path, 511, "%sLiberationSans-Regular.ttf",
-             getMain()->getIo()->getDataPath().c_str());
+    snprintf(state->subtitle_font_path, 511, "%sskin/font.ttf",
+             getMain()->getIo()->getDataReadPath().c_str());
 
     // create the player
     player = Kit_CreatePlayer(
             source,
             video_streams.getCurrentStream(),
             audio_streams.getCurrentStream(),
-            -1,
+            subtitles_streams.getCurrentStream(),
             (int) getSize().x, (int) getSize().y);
     if (!player) {
         printf("unable to create player: %s\n", Kit_GetError());
@@ -86,7 +83,7 @@ bool Player::load(const c2d::Io::File &file) {
         return false;
     }
 
-    // get some information;
+    // get some information
     Kit_GetPlayerInfo(player, &playerInfo);
     printf("Video(%s, %s): %i x %i , Audio(%s): %i hz\n",
            playerInfo.video.codec.name,
@@ -111,12 +108,14 @@ bool Player::load(const c2d::Io::File &file) {
     if (video_streams.size > 0) {
         texture = new C2DTexture(
                 {playerInfo.video.output.width, playerInfo.video.output.height}, Texture::Format::RGBA8);
+        texture->setDeleteMode(DeleteMode::Manual);
         texture->setFilter(Texture::Filter::Linear);
         add(texture);
     }
 
     if (subtitles_streams.size > 0) {
         textureSub = new SubtitlesTexture();
+        textureSub->setDeleteMode(DeleteMode::Manual);
         void *buf;
         textureSub->lock(nullptr, &buf, nullptr);
         memset(buf, 0, 1024 * 1024 * 4);
@@ -138,12 +137,7 @@ bool Player::load(const c2d::Io::File &file) {
 
 void Player::onInput(c2d::Input::Player *players) {
 
-    if (!isVisible()) {
-        stop();
-        return;
-    }
-
-    if (!isFullscreen()) {
+    if (!isVisible() || !isFullscreen() || !isPlaying()) {
         return;
     }
 
@@ -202,8 +196,11 @@ void Player::onInput(c2d::Input::Player *players) {
 
 void Player::onDraw(c2d::Transform &transform) {
 
-    if (!isPlaying() && !isPaused()) {
-        stop();
+    if (!isPlaying()) {
+        if (isFullscreen()) {
+            main->setPlayerFullscreen(false);
+        }
+        Shape::onDraw(transform);
         return;
     }
 
@@ -320,7 +317,7 @@ void Player::stop() {
     Kit_Quit();
 
     /// Audio
-    if (audioDeviceID) {
+    if (audioDeviceID > 0) {
         SDL_CloseAudioDevice(audioDeviceID);
         audioDeviceID = 0;
     }
@@ -340,10 +337,6 @@ void Player::stop() {
     video_streams.reset();
     audio_streams.reset();
     subtitles_streams.reset();
-
-    osd->setVisibility(Visibility::Hidden);
-    setVisibility(Visibility::Hidden);
-    setFullscreen(false);
 
     setCpuClock(CpuClock::Min);
 }
@@ -382,6 +375,5 @@ c2d::TweenScale *Player::getTweenScale() {
 }
 
 Player::~Player() {
-
+    stop();
 }
-

@@ -49,7 +49,11 @@ void FilerItem::setFile(const MediaFile &file) {
 
     textTitle->setString(file.name);
     uint8_t alpha = textTitle->getAlpha();
-    textTitle->setFillColor(COLOR_BLUE);
+    if (file.type == Io::Type::Directory) {
+        textTitle->setFillColor(COLOR_BLUE);
+    } else {
+        textTitle->setFillColor(COLOR_RED);
+    }
     textTitle->setAlpha(alpha);
 
     if (!file.getMedia().videos.empty()) {
