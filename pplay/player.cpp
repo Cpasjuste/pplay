@@ -137,7 +137,7 @@ bool Player::load(const c2d::Io::File &file) {
 
 void Player::onInput(c2d::Input::Player *players) {
 
-    if (!isVisible() || !isFullscreen() || !isPlaying()) {
+    if (!isVisible() || !isFullscreen()) {
         return;
     }
 
@@ -164,7 +164,7 @@ void Player::onInput(c2d::Input::Player *players) {
         } else {
             osd->setVisibility(Visibility::Visible, true);
         }
-    } else if (!isPaused()) {
+    } else {
 
         double position = Kit_GetPlayerPosition(player);
         double duration = Kit_GetPlayerDuration(player);
@@ -175,7 +175,7 @@ void Player::onInput(c2d::Input::Player *players) {
             //Kit_PlayerSeek(player, position - 60.0);
             main->setPlayerFullscreen(false);
         } else if (keys & c2d::Input::Key::Right) {
-            // TODO: seek
+            // TODO: video menu
             //osd->setVisibility(Visibility::Visible, true);
             //if (position + 60 < duration) {
             //    Kit_PlayerSeek(player, position + 60.0);

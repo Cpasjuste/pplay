@@ -4,7 +4,7 @@
 
 #include "cross2d/c2d.h"
 #include "main.h"
-#include "options_menu.h"
+#include "menu.h"
 
 using namespace c2d;
 

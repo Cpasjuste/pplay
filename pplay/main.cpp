@@ -203,7 +203,7 @@ Main::~Main() {
 
 int main() {
 
-#ifdef __SWITCH__
+#if defined(__SWITCH__) && !defined(__NET_DEBUG__)
     socketInitializeDefault();
     //pthread_init();
 #endif
@@ -216,7 +216,7 @@ int main() {
 
     delete (main);
 
-#ifdef __SWITCH__
+#if defined(__SWITCH__) && !defined(__NET_DEBUG__)
     //pthread_terminate();
     socketExit();
 #endif

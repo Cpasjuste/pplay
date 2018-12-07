@@ -12,7 +12,7 @@
 #include "player_osd.h"
 #include "config.h"
 #include "media_thread.h"
-#include "options_menu.h"
+#include "menu.h"
 
 #define INPUT_DELAY 250
 #define FONT_SIZE 22
