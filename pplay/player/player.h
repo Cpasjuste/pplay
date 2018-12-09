@@ -12,6 +12,7 @@ extern "C" {
 
 #include "subtitles_texture.h"
 #include "menus/menu_video_submenu.h"
+#include "video_texture.h"
 
 #define AUDIO_BUFFER_SIZE (1024 * 64)
 #define MAX_STREAM_LIST_SIZE 32
@@ -111,7 +112,7 @@ private:
 
     Main *main = nullptr;
     PlayerOSD *osd = nullptr;
-    c2d::Texture *texture = nullptr;
+    VideoTexture *texture = nullptr;
     SubtitlesTexture *textureSub = nullptr;
     c2d::TweenPosition *tweenPosition = nullptr;
     c2d::TweenScale *tweenScale = nullptr;

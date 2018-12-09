@@ -7,6 +7,7 @@
 
 #include "main.h"
 #include "player.h"
+#include "gradient_rectangle.h"
 
 using namespace c2d;
 
@@ -121,8 +122,8 @@ bool Player::load(const MediaFile &file) {
     }
 
     if (video_streams.size > 0) {
-        texture = new C2DTexture(
-                {playerInfo.video.output.width, playerInfo.video.output.height}, Texture::Format::RGBA8);
+        texture = new VideoTexture(
+                {playerInfo.video.output.width, playerInfo.video.output.height});
         texture->setDeleteMode(DeleteMode::Manual);
         texture->setFilter(Texture::Filter::Linear);
         //setSize(texture->getSize());
