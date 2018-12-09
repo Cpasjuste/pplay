@@ -5,7 +5,7 @@
 #ifndef PPLAY_PLAYER_OSD_H
 #define PPLAY_PLAYER_OSD_H
 
-class PlayerOSD : public c2d::C2DRectangle {
+class PlayerOSD : public c2d::Rectangle {
 
 public:
     PlayerOSD(Player *player);

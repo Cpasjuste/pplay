@@ -18,7 +18,7 @@ public:
 
 private:
 
-    void enter() override;
+    void enter(int index) override;
 
     void exit() override;
 };

@@ -27,6 +27,9 @@ project(pplay)
 ##############
 set(PPLAY_INC
         pplay
+        pplay/filers
+        pplay/menus
+        pplay/player
         #pplay/fftools
         SDL_kitchensink/include
         SDL_kitchensink/include/kitchensink
@@ -34,6 +37,9 @@ set(PPLAY_INC
 
 file(GLOB PPLAY_SRC
         pplay/*.c*
+        pplay/filers/*.c*
+        pplay/menus/*.c*
+        pplay/player/*.c*
         pplay/Browser/*.c*
         #pplay/fftools/*.c*
         SDL_kitchensink/src/*.c*

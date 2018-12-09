@@ -15,7 +15,7 @@
 
 class Main;
 
-class Filer : public c2d::C2DRectangle {
+class Filer : public c2d::Rectangle {
 
 public:
 
@@ -31,7 +31,9 @@ public:
 
     virtual void setSelection(int index);
 
-    void onInput(c2d::Input::Player *players) override;
+    void clearHistory();
+
+    bool onInput(c2d::Input::Player *players) override;
 
 private:
 
@@ -41,9 +43,9 @@ private:
 
     friend class FilerHttp;
 
-    virtual void enter() {};
+    virtual void enter(int index);
 
-    virtual void exit() {};
+    virtual void exit();
 
     Main *main;
     std::string path;
@@ -53,6 +55,7 @@ private:
     float item_height;
     int item_max;
     int item_index;
+    std::vector<int> item_index_prev;
 };
 
 #endif //NXFILER_FILER_H

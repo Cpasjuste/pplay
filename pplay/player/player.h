@@ -11,6 +11,7 @@ extern "C" {
 }
 
 #include "subtitles_texture.h"
+#include "menus/menu_video_submenu.h"
 
 #define AUDIO_BUFFER_SIZE (1024 * 64)
 #define MAX_STREAM_LIST_SIZE 32
@@ -19,7 +20,7 @@ class Main;
 
 class PlayerOSD;
 
-class Player : public c2d::RectangleShape {
+class Player : public c2d::Rectangle {
 
 public:
 
@@ -66,7 +67,7 @@ public:
 
     ~Player();
 
-    bool load(const c2d::Io::File &file);
+    bool load(const MediaFile &file);
 
     void pause();
 
@@ -82,6 +83,12 @@ public:
 
     void setFullscreen(bool maximize);
 
+    void setVideoStream(int index);
+
+    void setAudioStream(int index);
+
+    void setSubtitleStream(int index);
+
     void setCpuClock(const CpuClock &clock);
 
     Main *getMain();
@@ -90,7 +97,13 @@ public:
 
     c2d::TweenScale *getTweenScale();
 
-    void onInput(c2d::Input::Player *players) override;
+    MenuVideoSubmenu *getMenuVideoStreams();
+
+    MenuVideoSubmenu *getMenuAudioStreams();
+
+    MenuVideoSubmenu *getMenuSubtitlesStreams();
+
+    bool onInput(c2d::Input::Player *players) override;
 
 private:
 
@@ -100,8 +113,11 @@ private:
     PlayerOSD *osd = nullptr;
     c2d::Texture *texture = nullptr;
     SubtitlesTexture *textureSub = nullptr;
-    c2d::TweenPosition *tweenPosition;
-    c2d::TweenScale *tweenScale;
+    c2d::TweenPosition *tweenPosition = nullptr;
+    c2d::TweenScale *tweenScale = nullptr;
+    MenuVideoSubmenu *menuVideoStreams = nullptr;
+    MenuVideoSubmenu *menuAudioStreams = nullptr;
+    MenuVideoSubmenu *menuSubtitlesStreams = nullptr;
 
     // kit player
     Kit_Source *source = nullptr;
@@ -115,6 +131,7 @@ private:
     SDL_AudioDeviceID audioDeviceID = 0;
     char audioBuffer[AUDIO_BUFFER_SIZE];
 
+    bool show_subtitles = false;
     bool fullscreen = false;
 };
 

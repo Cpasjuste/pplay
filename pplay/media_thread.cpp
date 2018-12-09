@@ -9,6 +9,7 @@ extern "C" {
 int ffmpeg_main(int argc, const char **argv);
 }
 
+#include <algorithm>
 #include "main.h"
 #include "media_thread.h"
 #include "base64.h"
@@ -28,7 +29,7 @@ static int media_info_thread(void *ptr) {
 
     auto *mediaThread = (MediaThread *) ptr;
 
-    printf("media_info_thread: start\n");
+    printf("media_thread: start\n");
 
     while (mediaThread->isRunning()) {
 
@@ -36,53 +37,64 @@ static int media_info_thread(void *ptr) {
             break;
         }
 
-        //if (mediaThread->getMain()->getPlayer() && mediaThread->getMain()->getPlayer()->isPlaying()) {
-        //    mediaThread->getMain()->delay(100);
-        //    continue;
-        //}
+        if (mediaThread->getMain()->getPlayer() && mediaThread->getMain()->getPlayer()->isFullscreen()) {
+            mediaThread->getMain()->delay(100);
+            continue;
+        }
 
         if (mediaThread->mediaList.empty()) {
             mediaThread->getMain()->delay(100);
             continue;
         }
 
-        std::string mediaPath = mediaThread->mediaList[0];
+        std::string mediaPath = mediaThread->mediaList[0].path;
         std::string cachePath = mediaThread->getMediaCachePath(mediaPath);
-        printf("media_info_thread: process: %s => %s\n", mediaPath.c_str(), cachePath.c_str());
+        printf("media_thread: process: %s => %s\n", mediaPath.c_str(), cachePath.c_str());
+        mediaThread->getMain()->getStatus()->show("Scanning...", mediaThread->mediaList[0].name, true);
 
         // open
         AVFormatContext *ctx = nullptr;
+        printf("media_thread: avformat_open_input\n");
         int res = avformat_open_input(&ctx, mediaPath.c_str(), nullptr, nullptr);
         if (res != 0) {
             char err_str[256];
             av_strerror(res, err_str, 255);
             printf("media_info_thread: unable to open '%s': %s\n", mediaPath.c_str(), err_str);
+            mediaThread->getMain()->getStatus()->show("Error...", err_str, false, false);
             // cache an "unknow" media file so we don't try that file again
             MediaInfo media;
             media.serialize(cachePath);
+            // remove from list
+            SDL_LockMutex(mediaThread->getMutex());
+            mediaThread->mediaList.erase(mediaThread->mediaList.begin());
+            SDL_UnlockMutex(mediaThread->getMutex());
             continue;
         }
 
-        av_opt_set_int(ctx, "probesize", INT_MAX, 0);
-        av_opt_set_int(ctx, "analyzeduration", INT_MAX, 0);
+        printf("media_thread: avformat_find_stream_info\n");
         res = avformat_find_stream_info(ctx, nullptr);
         if (res < 0) {
             char err_str[256];
             av_strerror(res, err_str, 255);
-            printf("media_info_thread: unable to parse '%s': %s\n", mediaPath.c_str(), err_str);
+            printf("media_thread: unable to parse '%s': %s\n", mediaPath.c_str(), err_str);
+            mediaThread->getMain()->getStatus()->show("Error...", err_str, false, false);
             avformat_close_input(&ctx);
             // cache an "unknow" media file so we don't try that file again
             MediaInfo media;
             media.serialize(cachePath);
+            // remove from list
+            SDL_LockMutex(mediaThread->getMutex());
+            mediaThread->mediaList.erase(mediaThread->mediaList.begin());
+            SDL_UnlockMutex(mediaThread->getMutex());
             continue;
         }
 
         MediaInfo media;
         AVDictionaryEntry *language, *title = av_dict_get(ctx->metadata, "title", nullptr, 0);
-        media.title = title ? title->value : "Unknown";
+        media.title = title ? title->value : "N/A";
         media.path = mediaPath;
         media.duration = ctx->duration / AV_TIME_BASE;
-        printf("media_info_thread: stream count: %i\n", ctx->nb_streams);
+        printf("media_thread: stream count: %i\n", ctx->nb_streams);
         //dump_metadata("media", ctx->metadata);
 
         for (int i = 0; i < (int) ctx->nb_streams; i++) {
@@ -92,35 +104,38 @@ static int media_info_thread(void *ptr) {
                 MediaInfo::Stream stream{};
                 title = av_dict_get(ctx->streams[i]->metadata, "title", nullptr, 0);
                 language = av_dict_get(ctx->streams[i]->metadata, "language", nullptr, 0);
-                stream.title = title ? title->value : "Unknown";
-                stream.language = language ? language->value : "";
+                stream.id = i;
+                stream.title = title ? title->value : "N/A";
+                stream.language = language ? language->value : "N/A";
                 stream.codec = avcodec_get_name(codec->codec_id);
                 stream.rate = (int) ctx->bit_rate;
                 stream.width = codec->width;
                 stream.height = codec->height;
                 media.videos.push_back(stream);
-                printf("media_info_thread: found video stream: %s\n", stream.title.c_str());
+                printf("media_thread: found video stream: %s\n", stream.title.c_str());
                 //dump_metadata("video stream", ctx->streams[i]->metadata);
             } else if (type == AVMEDIA_TYPE_AUDIO) {
                 MediaInfo::Stream stream{};
                 title = av_dict_get(ctx->streams[i]->metadata, "title", nullptr, 0);
                 language = av_dict_get(ctx->streams[i]->metadata, "language", nullptr, 0);
-                stream.title = title ? title->value : "Unknown";
-                stream.language = language ? language->value : "";
+                stream.id = i;
+                stream.title = title ? title->value : "N/A";
+                stream.language = language ? language->value : "N/A";
                 stream.codec = avcodec_get_name(codec->codec_id);
                 stream.rate = codec->sample_rate;
                 media.audios.push_back(stream);
-                printf("media_info_thread: found audio stream: %s\n", stream.title.c_str());
+                printf("media_thread: found audio stream: %s\n", stream.title.c_str());
                 //dump_metadata("audio stream", ctx->streams[i]->metadata);
             } else if (type == AVMEDIA_TYPE_SUBTITLE) {
                 MediaInfo::Stream stream{};
                 title = av_dict_get(ctx->streams[i]->metadata, "title", nullptr, 0);
                 language = av_dict_get(ctx->streams[i]->metadata, "language", nullptr, 0);
-                stream.title = title ? title->value : "Unknown";
-                stream.language = language ? language->value : "";
+                stream.id = i;
+                stream.title = title ? title->value : "N/A";
+                stream.language = language ? language->value : "N/A";
                 stream.codec = avcodec_get_name(codec->codec_id);
                 media.subtitles.push_back(stream);
-                printf("media_info_thread: found subtitle stream: %s\n", stream.title.c_str());
+                printf("media_thread: found subtitle stream: %s\n", stream.title.c_str());
                 //dump_metadata("subtitle stream", ctx->streams[i]->metadata);
             }
         }
@@ -135,6 +150,8 @@ static int media_info_thread(void *ptr) {
         mediaThread->mediaList.erase(mediaThread->mediaList.begin());
         SDL_UnlockMutex(mediaThread->getMutex());
 
+        mediaThread->getMain()->getStatus()->hide();
+
 #if 0
         // TODO: extract thumbnail
         std::string p = cachePath + ".png";
@@ -143,10 +160,10 @@ static int media_info_thread(void *ptr) {
         };
         ffmpeg_main(8, argv);
 #endif
-        printf("media_info_thread: process: OK\n");
+        printf("media_thread: process: OK\n");
     }
 
-    printf("media_info_thread: end\n");
+    printf("media_thread: end\n");
 
     return 0;
 }
@@ -174,10 +191,11 @@ const MediaInfo MediaThread::getMediaInfo(const c2d::Io::File &file) {
         } else {
             // media info not yet available, cache for later use
             SDL_LockMutex(mutex);
-            if (std::find(mediaList.begin(), mediaList.end(), file.path) == mediaList.end()) {
-                mediaList.emplace_back(file.path);
-            } else {
-                //printf("getMediaInfo: media info in process: %s\n", file.name.c_str());
+            auto f = find_if(mediaList.begin(), mediaList.end(), [&file](const c2d::Io::File &obj) {
+                return obj.path == file.path;
+            });
+            if (f == mediaList.end()) {
+                mediaList.emplace_back(file);
             }
             SDL_UnlockMutex(mutex);
         }
@@ -195,8 +213,11 @@ void MediaThread::cacheDir(const std::string &dir) {
         if (pplay::Utility::isMedia(file)) {
             std::string cachePath = getMediaCachePath(file.path);
             if (!main->getIo()->exist(cachePath)) {
-                if (std::find(mediaList.begin(), mediaList.end(), file.path) == mediaList.end()) {
-                    mediaList.emplace_back(file.path);
+                auto f = find_if(mediaList.begin(), mediaList.end(), [&file](const c2d::Io::File &obj) {
+                    return obj.path == file.path;
+                });
+                if (f == mediaList.end()) {
+                    mediaList.emplace_back(file);
                 }
             }
         }

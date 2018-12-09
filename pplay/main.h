@@ -6,13 +6,14 @@
 #define PPLAY_MAIN_H
 
 #include "cross2d/c2d.h"
-#include "filer.h"
-#include "filer_http.h"
-#include "player.h"
-#include "player_osd.h"
+#include "filers/filer.h"
+#include "filers/filer_http.h"
+#include "player/player.h"
+#include "player/player_osd.h"
 #include "config.h"
 #include "media_thread.h"
-#include "menu.h"
+#include "menus/menu.h"
+#include "status_box.h"
 
 #define INPUT_DELAY 250
 #define FONT_SIZE 22
@@ -55,9 +56,9 @@ public:
 
     bool isRunning();
 
-    OptionMenu *getMenu();
+    Menu *getMenuMain();
 
-    c2d::RectangleShape *getMainRect();
+    Menu *getMenuVideo();
 
     MediaThread *getMediaThread();
 
@@ -71,22 +72,25 @@ public:
 
     c2d::MessageBox *getMessageBox();
 
+    StatusBox *getStatus();
+
     void quit();
 
 private:
 
-    void onInput(c2d::Input::Player *players) override;
+    bool onInput(c2d::Input::Player *players) override;
 
     c2d::Font *font = nullptr;
-    c2d::RectangleShape *mainRect = nullptr;
     c2d::Clock *timer = nullptr;
     c2d::MessageBox *messageBox = nullptr;
+    StatusBox *statusBox = nullptr;
     PPLAYConfig *config = nullptr;
     Filer *filerSdmc = nullptr;
     Filer *filerHttp = nullptr;
     Filer *filer = nullptr;
     Player *player = nullptr;
-    OptionMenu *menu = nullptr;
+    Menu *menu_main = nullptr;
+    Menu *menu_video = nullptr;
     MediaThread *mediaInfoThread = nullptr;
 
     bool running = true;

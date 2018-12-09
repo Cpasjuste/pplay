@@ -9,7 +9,9 @@ extern "C" {
 #endif
 
 #include "main.h"
-#include "filer_sdmc.h"
+#include "filers/filer_sdmc.h"
+#include "menus/menu_main.h"
+#include "menus/menu_video.h"
 
 using namespace c2d;
 using namespace c2d::config;
@@ -34,36 +36,51 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     font->setFilter(Texture::Filter::Point);
     font->setOffset({0, -4});
 
-    // create a rect
-    mainRect = new C2DRectangle(getSize());
-    mainRect->setFillColor(Color::Transparent);
+    statusBox = new StatusBox(this, {10, getSize().y - 16});
+    statusBox->setOrigin(Origin::BottomLeft);
+    statusBox->setLayer(10);
+    add(statusBox);
 
     // media info
     getIo()->create(getIo()->getDataWritePath() + "cache");
     mediaInfoThread = new MediaThread(this, getIo()->getDataWritePath() + "cache/");
 
     // create filers
-    FloatRect filerRect = {0, 150, (mainRect->getSize().x / 2) - 16, mainRect->getSize().y - 32 - 128};
+    FloatRect filerRect = {0, 0, (getSize().x / 2) - 16, getSize().y - 32 - 64};
     filerSdmc = new FilerSdmc(this, "/", filerRect);
-    mainRect->add(filerSdmc);
+    filerSdmc->setLayer(1);
+    add(filerSdmc);
     filerHttp = new FilerHttp(this, filerRect);
+    filerHttp->setLayer(1);
     filerHttp->setVisibility(Visibility::Hidden);
-    mainRect->add(filerHttp);
+    add(filerHttp);
     filer = filerSdmc;
     filer->getDir(config->getOption("LAST_PATH")->getString());
-
-    // add all this crap
-    add(mainRect);
 
     // ffmpeg player
     player = new Player(this);
     add(player);
 
-    // menu
-    menu = new OptionMenu(this, {0, 0, 250, mainRect->getSize().y});
-    menu->setVisibility(Visibility::Hidden);
-    menu->setLayer(100);
-    add(menu);
+    // main menu
+    std::vector<MenuItem> items;
+    items.emplace_back("Home", "home.png", MenuItem::Position::Top);
+    items.emplace_back("Network", "network.png", MenuItem::Position::Top);
+    items.emplace_back("Exit", "exit.png", MenuItem::Position::Bottom);
+    menu_main = new MenuMain(this, {-250, 0, 250, getSize().y}, items);
+    menu_main->setVisibility(Visibility::Hidden, false);
+    menu_main->setLayer(2);
+    add(menu_main);
+
+    // video menu
+    items.clear();
+    items.emplace_back("Video", "", MenuItem::Position::Top);
+    items.emplace_back("Audio", "", MenuItem::Position::Top);
+    items.emplace_back("Subtitles", "", MenuItem::Position::Top);
+    items.emplace_back("Stop", "", MenuItem::Position::Bottom);
+    menu_video = new MenuVideo(this, {getSize().x, 0, 250, getSize().y}, items);
+    menu_video->setVisibility(Visibility::Hidden, false);
+    menu_video->setLayer(2);
+    add(menu_video);
 
     // a messagebox...
     float w = getSize().x / 2;
@@ -79,39 +96,41 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     add(messageBox);
 }
 
-void Main::onInput(c2d::Input::Player *players) {
+bool Main::onInput(c2d::Input::Player *players) {
 
-    unsigned int keys = players[0].state;
+    unsigned int keys = players[0].keys;
 
     if (messageBox->isVisible()) {
         // don't handle input if message box is visible
-        return;
+        return false;
     }
 
-    if (keys > 0) {
-        if (keys & EV_QUIT) {
-            if (player->isFullscreen()) {
-                setPlayerFullscreen(false);
-                filer->setVisibility(Visibility::Visible, true);
-            } else {
-                quit();
-            }
-        } else if (keys & Input::Touch) {
-            if (menu->getMenuButton()->getGlobalBounds().contains(players[0].touch)) {
-                menu->setVisibility(Visibility::Visible, true);
-                return;
-            } else if (player->getGlobalBounds().contains(players[0].touch)) {
-                if (player->isPlaying() && !player->isFullscreen()) {
-                    setPlayerFullscreen(true);
-                    return;
-                }
+    if (keys & EV_QUIT) {
+        if (player->isFullscreen()) {
+            setPlayerFullscreen(false);
+            filer->setVisibility(Visibility::Visible, true);
+        } else {
+            quit();
+        }
+    } else if (keys & Input::Touch) {
+        if (player->getGlobalBounds().contains(players[0].touch)) {
+            if (player->isPlaying() && !player->isFullscreen()) {
+                setPlayerFullscreen(true);
+                return true;
             }
         }
+#if 0
+        if (menu_main->getMenuButton()->getGlobalBounds().contains(players[0].touch)) {
+            menu_main->setVisibility(Visibility::Visible, true);
+            return;
+        }
+#endif
     }
 
-    Renderer::onInput(players);
+    return Renderer::onInput(players);
 }
 
+// TODO: move this in menu_main
 void Main::show(MenuType type) {
 
     if (player->isPlaying() && player->isFullscreen()) {
@@ -123,12 +142,16 @@ void Main::show(MenuType type) {
     filer = type == MenuType::Home ? filerSdmc : filerHttp;
     if (type == MenuType::Home) {
         if (!filer->getDir(config->getOption("HOME_PATH")->getString())) {
-            filer->getDir("/");
+            if (filer->getDir("/")) {
+                filer->clearHistory();
+            }
         }
     } else {
         if (!filer->getDir(config->getOption("NETWORK")->getString())) {
             messageBox->show("Oups", "Could not open url (see config file?)", "OK");
             show(MenuType::Home);
+        } else {
+            filer->clearHistory();
         }
     }
 }
@@ -174,12 +197,12 @@ Filer *Main::getFiler() {
     return filer;
 }
 
-OptionMenu *Main::getMenu() {
-    return menu;
+Menu *Main::getMenuMain() {
+    return menu_main;
 }
 
-c2d::RectangleShape *Main::getMainRect() {
-    return mainRect;
+Menu *Main::getMenuVideo() {
+    return menu_video;
 }
 
 PPLAYConfig *Main::getConfig() {
@@ -199,6 +222,10 @@ Main::~Main() {
     delete (config);
     delete (timer);
     delete (font);
+}
+
+StatusBox *Main::getStatus() {
+    return statusBox;
 }
 
 int main() {

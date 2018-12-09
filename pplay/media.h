@@ -16,6 +16,7 @@ public:
 
     class Stream {
     public:
+        int id;
         std::string title;
         std::string language;
         std::string codec;

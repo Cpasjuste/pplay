@@ -40,6 +40,8 @@ bool MediaInfo::serialize(const std::string &dst) {
     fs.write((char *) &count, sizeof(count));
     //printf("Media::serialize: video streams = %i\n", count);
     for (auto &stream : videos) {
+        // id
+        fs.write((char *) &stream.id, sizeof(stream.id));
         // title
         size = stream.title.size();
         fs.write((char *) &size, sizeof(size_t));
@@ -64,6 +66,8 @@ bool MediaInfo::serialize(const std::string &dst) {
     fs.write((char *) &count, sizeof(count));
     //printf("Media::serialize: audio streams = %i\n", count);
     for (auto &stream : audios) {
+        // id
+        fs.write((char *) &stream.id, sizeof(stream.id));
         // title
         size = stream.title.size();
         fs.write((char *) &size, sizeof(size_t));
@@ -85,6 +89,8 @@ bool MediaInfo::serialize(const std::string &dst) {
     fs.write((char *) &count, sizeof(count));
     //printf("Media::serialize: subtitle streams = %i\n", count);
     for (auto &stream : subtitles) {
+        // id
+        fs.write((char *) &stream.id, sizeof(stream.id));
         // title
         size = stream.title.size();
         fs.write((char *) &size, sizeof(size_t));
@@ -148,6 +154,8 @@ bool MediaInfo::deserialize(const std::string &src) {
     //printf("Media::deserialize: video streams = %i\n", count);
     for (int i = 0; i < count; i++) {
         Stream stream{};
+        // id
+        fs.read((char *) &stream.id, sizeof(stream.id));
         // title
         fs.read((char *) &size, sizeof(size));
         data = new char[size + 1];
@@ -184,6 +192,8 @@ bool MediaInfo::deserialize(const std::string &src) {
     //printf("Media::deserialize: audio streams = %i\n", count);
     for (int i = 0; i < count; i++) {
         Stream stream{};
+        // id
+        fs.read((char *) &stream.id, sizeof(stream.id));
         // title
         fs.read((char *) &size, sizeof(size));
         data = new char[size + 1];
@@ -217,6 +227,8 @@ bool MediaInfo::deserialize(const std::string &src) {
     //printf("Media::deserialize: subtitle streams = %i\n", count);
     for (int i = 0; i < count; i++) {
         Stream stream{};
+        // id
+        fs.read((char *) &stream.id, sizeof(stream.id));
         // title
         fs.read((char *) &size, sizeof(size));
         data = new char[size + 1];

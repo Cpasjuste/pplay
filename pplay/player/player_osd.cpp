@@ -11,10 +11,10 @@
 
 using namespace c2d;
 
-PlayerOSD::PlayerOSD(Player *p) : C2DRectangle(p->getSize()) {
+PlayerOSD::PlayerOSD(Player *p) : Rectangle(p->getSize()) {
 
     player = p;
-    setFillColor(Color::Transparent);
+    //setFillColor(Color::Transparent);
 
     std::string path = p->getMain()->getIo()->getDataReadPath() + "skin/play-button.png";
     button_play = new C2DTexture(path);

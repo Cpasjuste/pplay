@@ -10,17 +10,17 @@
 
 using namespace c2d;
 
-Player::Player(Main *_main) : RectangleShape(_main->getSize()) {
+Player::Player(Main *_main) : Rectangle(_main->getSize()) {
 
     main = _main;
-    setFillColor(Color::Black);
-    setOrigin(Origin::Center);
+
+    setOrigin(Origin::TopRight);
 
     tweenPosition = new TweenPosition(
-            {(main->getSize().x / 4) * 3, main->getSize().y / 4},
-            {main->getSize().x / 2, main->getSize().y / 2}, 0.5f);
+            {main->getSize().x - 32, 32},
+            {main->getSize().x, 0}, 0.5f);
     add(tweenPosition);
-    tweenScale = new TweenScale({0.4f, 0.4f}, {1.0f, 1.0f}, 0.5f);
+    tweenScale = new TweenScale({0.6f, 0.6f}, {1.0f, 1.0f}, 0.5f);
     add(tweenScale);
 
     osd = new PlayerOSD(this);
@@ -29,7 +29,11 @@ Player::Player(Main *_main) : RectangleShape(_main->getSize()) {
     setVisibility(Visibility::Hidden);
 }
 
-bool Player::load(const c2d::Io::File &file) {
+Player::~Player() {
+    stop();
+}
+
+bool Player::load(const MediaFile &file) {
 
     stop();
 
@@ -103,6 +107,17 @@ bool Player::load(const c2d::Io::File &file) {
         wanted_spec.channels = (Uint8) playerInfo.audio.output.channels;
         audioDeviceID = SDL_OpenAudioDevice(nullptr, 0, &wanted_spec, &audio_spec, 0);
         SDL_PauseAudioDevice(audioDeviceID, 0);
+
+        // audios menu options
+        std::vector<MenuItem> items;
+        for (auto &stream : file.media.audios) {
+            items.emplace_back("Lang: " + stream.language, "", MenuItem::Position::Top, stream.id);
+        }
+        menuAudioStreams = new MenuVideoSubmenu(
+                main, main->getMenuVideo()->getGlobalBounds(), items, MENU_VIDEO_TYPE_AUD);
+        menuAudioStreams->setVisibility(Visibility::Hidden, false);
+        menuAudioStreams->setLayer(3);
+        add(menuAudioStreams);
     }
 
     if (video_streams.size > 0) {
@@ -110,7 +125,20 @@ bool Player::load(const c2d::Io::File &file) {
                 {playerInfo.video.output.width, playerInfo.video.output.height}, Texture::Format::RGBA8);
         texture->setDeleteMode(DeleteMode::Manual);
         texture->setFilter(Texture::Filter::Linear);
+        //setSize(texture->getSize());
+        //setOrigin(Origin::TopRight);
         add(texture);
+
+        // videos menu options
+        std::vector<MenuItem> items;
+        for (auto &stream : file.media.videos) {
+            items.emplace_back("Lang: " + stream.language, "", MenuItem::Position::Top, stream.id);
+        }
+        menuVideoStreams = new MenuVideoSubmenu(
+                main, main->getMenuVideo()->getGlobalBounds(), items, MENU_VIDEO_TYPE_VID);
+        menuVideoStreams->setVisibility(Visibility::Hidden, false);
+        menuVideoStreams->setLayer(3);
+        add(menuVideoStreams);
     }
 
     if (subtitles_streams.size > 0) {
@@ -121,11 +149,24 @@ bool Player::load(const c2d::Io::File &file) {
         memset(buf, 0, 1024 * 1024 * 4);
         textureSub->unlock();
         textureSub->setFilter(Texture::Filter::Point);
+        textureSub->setVisibility(Visibility::Hidden);
         add(textureSub);
+
+        // subtitles menu options
+        std::vector<MenuItem> items;
+        items.emplace_back("None", "", MenuItem::Position::Top, -1);
+        for (auto &stream : file.media.subtitles) {
+            items.emplace_back("Lang: " + stream.language, "", MenuItem::Position::Top, stream.id);
+        }
+        menuSubtitlesStreams = new MenuVideoSubmenu(
+                main, main->getMenuVideo()->getGlobalBounds(), items, MENU_VIDEO_TYPE_SUB);
+        menuSubtitlesStreams->setVisibility(Visibility::Hidden, false);
+        menuSubtitlesStreams->setLayer(3);
+        add(menuSubtitlesStreams);
     }
 
     setVisibility(Visibility::Visible);
-    osd->setLayer(100);
+    osd->setLayer(3);
 
     // start playback
     Kit_PlayerPlay(player);
@@ -135,16 +176,19 @@ bool Player::load(const c2d::Io::File &file) {
     return true;
 }
 
-void Player::onInput(c2d::Input::Player *players) {
+bool Player::onInput(c2d::Input::Player *players) {
 
-    if (!isVisible() || !isFullscreen()) {
-        return;
+    if (main->getFiler()->isVisible() || main->getMenuVideo()->isVisible()
+        || (getMenuVideoStreams() && getMenuVideoStreams()->isVisible())
+        || (getMenuAudioStreams() && getMenuAudioStreams()->isVisible())
+        || (getMenuSubtitlesStreams() && getMenuSubtitlesStreams()->isVisible())) {
+        return C2DObject::onInput(players);
     }
 
     //////////////////
     /// handle inputs
     //////////////////
-    unsigned int keys = players[0].state;
+    unsigned int keys = players[0].keys;
 
     if (keys & Input::Key::Fire1) {
         if (osd->isVisible()) {
@@ -174,8 +218,9 @@ void Player::onInput(c2d::Input::Player *players) {
             //osd->setVisibility(Visibility::Visible, true);
             //Kit_PlayerSeek(player, position - 60.0);
             main->setPlayerFullscreen(false);
+
         } else if (keys & c2d::Input::Key::Right) {
-            // TODO: video menu
+            main->getMenuVideo()->setVisibility(Visibility::Visible, true);
             //osd->setVisibility(Visibility::Visible, true);
             //if (position + 60 < duration) {
             //    Kit_PlayerSeek(player, position + 60.0);
@@ -191,7 +236,7 @@ void Player::onInput(c2d::Input::Player *players) {
         }
     }
 
-    C2DObject::onInput(players);
+    return true;
 }
 
 void Player::onDraw(c2d::Transform &transform) {
@@ -200,7 +245,7 @@ void Player::onDraw(c2d::Transform &transform) {
         if (isFullscreen()) {
             main->setPlayerFullscreen(false);
         }
-        Shape::onDraw(transform);
+        Rectangle::onDraw(transform);
         return;
     }
 
@@ -251,7 +296,7 @@ void Player::onDraw(c2d::Transform &transform) {
     }
 
     /// Subtitles
-    if (subtitles_streams.size > 0) {
+    if (show_subtitles && subtitles_streams.size > 0) {
         int count = Kit_GetPlayerSubtitleDataRaw(
                 player, textureSub->pixels, textureSub->getRectsSrc(), textureSub->getRectsDst(), ATLAS_MAX);
         textureSub->setRectsCount(count);
@@ -260,7 +305,37 @@ void Player::onDraw(c2d::Transform &transform) {
         }
     }
 
-    Shape::onDraw(transform);
+    Rectangle::onDraw(transform);
+}
+
+void Player::setVideoStream(int index) {
+    if (texture && index > -1) {
+        texture->setVisibility(Visibility::Visible);
+        Kit_SetPlayerStream(player, KIT_STREAMTYPE_VIDEO, index);
+    } else {
+        if (texture) {
+            texture->setVisibility(Visibility::Hidden);
+        }
+    }
+}
+
+void Player::setAudioStream(int index) {
+    if (index > -1) {
+        Kit_SetPlayerStream(player, KIT_STREAMTYPE_AUDIO, index);
+    }
+}
+
+void Player::setSubtitleStream(int index) {
+    if (textureSub && index > -1) {
+        show_subtitles = true;
+        textureSub->setVisibility(Visibility::Visible);
+        Kit_SetPlayerStream(player, KIT_STREAMTYPE_SUBTITLE, index);
+    } else {
+        show_subtitles = false;
+        if (textureSub) {
+            textureSub->setVisibility(Visibility::Hidden);
+        }
+    }
 }
 
 bool Player::isPlaying() {
@@ -281,7 +356,21 @@ bool Player::isFullscreen() {
 }
 
 void Player::setFullscreen(bool fs) {
+
     fullscreen = fs;
+
+    if (!fullscreen) {
+        main->getMenuVideo()->setVisibility(Visibility::Hidden, true);
+        if (getMenuVideoStreams()) {
+            getMenuVideoStreams()->setVisibility(Visibility::Hidden, true);
+        }
+        if (getMenuAudioStreams()) {
+            getMenuAudioStreams()->setVisibility(Visibility::Hidden, true);
+        }
+        if (getMenuSubtitlesStreams()) {
+            getMenuSubtitlesStreams()->setVisibility(Visibility::Hidden, true);
+        }
+    }
 }
 
 void Player::pause() {
@@ -321,11 +410,20 @@ void Player::stop() {
         SDL_CloseAudioDevice(audioDeviceID);
         audioDeviceID = 0;
     }
+    if (menuAudioStreams) {
+        delete (menuAudioStreams);
+        menuAudioStreams = nullptr;
+    }
+
 
     /// Video
     if (texture) {
         delete (texture);
         texture = nullptr;
+    }
+    if (menuVideoStreams) {
+        delete (menuVideoStreams);
+        menuVideoStreams = nullptr;
     }
 
     /// Subtitles
@@ -333,10 +431,15 @@ void Player::stop() {
         delete (textureSub);
         textureSub = nullptr;
     }
+    if (menuSubtitlesStreams) {
+        delete (menuSubtitlesStreams);
+        menuSubtitlesStreams = nullptr;
+    }
 
     video_streams.reset();
     audio_streams.reset();
     subtitles_streams.reset();
+    show_subtitles = false;
 
     setCpuClock(CpuClock::Min);
 }
@@ -374,6 +477,15 @@ c2d::TweenScale *Player::getTweenScale() {
     return tweenScale;
 }
 
-Player::~Player() {
-    stop();
+MenuVideoSubmenu *Player::getMenuVideoStreams() {
+    return menuVideoStreams;
 }
+
+MenuVideoSubmenu *Player::getMenuAudioStreams() {
+    return menuAudioStreams;
+}
+
+MenuVideoSubmenu *Player::getMenuSubtitlesStreams() {
+    return menuSubtitlesStreams;
+}
+

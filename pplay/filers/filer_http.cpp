@@ -67,12 +67,10 @@ bool FilerHttp::getDir(const std::string &p) {
         }
     }
 
-    setSelection(0);
-
     return true;
 }
 
-void FilerHttp::enter() {
+void FilerHttp::enter(int prev_index) {
 
     MediaFile file = getSelection();
 
@@ -82,14 +80,18 @@ void FilerHttp::enter() {
     }
 
     browser->follow_link(browser->unescape(file.path));
-    getDir(browser->geturl());
+    if (getDir(browser->geturl())) {
+        Filer::enter(prev_index);
+    }
 }
 
 void FilerHttp::exit() {
 
     if (browser->get_history().size() > 1) {
         browser->back(10);
-        getDir(browser->geturl());
+        if (getDir(browser->geturl())) {
+            Filer::exit();
+        }
     }
 }
 

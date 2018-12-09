@@ -22,7 +22,7 @@ public:
 
 private:
 
-    void enter() override;
+    void enter(int prev_index) override;
 
     void exit() override;
 

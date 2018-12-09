@@ -33,7 +33,7 @@ public:
 
     bool isRunning();
 
-    std::vector<std::string> mediaList;
+    std::vector<c2d::Io::File> mediaList;
 
 private:
 

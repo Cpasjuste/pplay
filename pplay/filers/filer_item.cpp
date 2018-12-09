@@ -22,13 +22,13 @@ FilerItem::FilerItem(Main *main, const c2d::FloatRect &rect, const MediaFile &fi
     textTitle->setWidth(getSize().x - 64);
     add(textTitle);
 
-    textVideo = new Text("", FONT_SIZE - 8, main->getFont());
+    textVideo = new Text("Video: N/A", FONT_SIZE - 8, main->getFont());
     textVideo->setPosition(16, 4 + FONT_SIZE + 4);
     textVideo->setWidth(getSize().x - 64);
     textVideo->setFillColor(COLOR_FONT);
     add(textVideo);
 
-    textAudio = new Text("", FONT_SIZE - 8, main->getFont());
+    textAudio = new Text("Audio: N/A", FONT_SIZE - 8, main->getFont());
     textAudio->setPosition(16, textVideo->getPosition().y + FONT_SIZE - 6);
     textAudio->setWidth(getSize().x - 64);
     textAudio->setFillColor(COLOR_FONT);
@@ -56,20 +56,24 @@ void FilerItem::setFile(const MediaFile &file) {
     }
     textTitle->setAlpha(alpha);
 
-    if (!file.getMedia().videos.empty()) {
-        std::ostringstream oss;
-        oss << "Video: " << file.getMedia().videos[0].width << "x" << file.getMedia().videos[0].height;
-        oss << ", " << file.getMedia().videos[0].codec << " @ " << file.getMedia().videos[0].rate / 1000 << " kb/s";
-        textVideo->setString(oss.str());
+    if (file.type == Io::Type::File) {
+        if (!file.getMedia().videos.empty()) {
+            std::ostringstream oss;
+            oss << "Video: " << file.getMedia().videos[0].width << "x" << file.getMedia().videos[0].height;
+            oss << ", " << file.getMedia().videos[0].codec << " @ " << file.getMedia().videos[0].rate / 1000 << " kb/s";
+            textVideo->setString(oss.str());
+        } else {
+            textVideo->setString("Video: n/a");
+        }
+        if (!file.getMedia().audios.empty()) {
+            std::ostringstream oss;
+            oss << "Audio: " << file.getMedia().audios[0].codec << " @ " << file.getMedia().audios[0].rate << " hz";
+            textAudio->setString(oss.str());
+        } else {
+            textAudio->setString("Audio: n/a");
+        }
     } else {
         textVideo->setString("");
-    }
-
-    if (!file.getMedia().audios.empty()) {
-        std::ostringstream oss;
-        oss << "Audio: " << file.getMedia().audios[0].codec << " @ " << file.getMedia().audios[0].rate << " hz";
-        textAudio->setString(oss.str());
-    } else {
         textAudio->setString("");
     }
 }

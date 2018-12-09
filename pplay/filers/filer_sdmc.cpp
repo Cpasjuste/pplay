@@ -34,7 +34,7 @@ bool FilerSdmc::getDir(const std::string &p) {
     if (_files.empty()) {
         // add up/back ("..")
         _files.emplace_back("..", "..", Io::Type::Directory, 0, COLOR_BLUE);
-        return false;
+        //return true;
     }
 
     _files.erase(std::remove_if(_files.begin(), _files.end(), [](Io::File file) {
@@ -44,19 +44,17 @@ bool FilerSdmc::getDir(const std::string &p) {
 #ifdef __SWITCH__
     files.emplace_back(Io::File{"..", "..", Io::Type::Directory, 0, COLOR_BLUE});
 #endif
-
     for (auto &file : _files) {
         files.emplace_back(file, main->getMediaThread()->getMediaInfo(file));
     }
 
-    setSelection(0);
-
     return true;
 }
 
-void FilerSdmc::enter() {
+void FilerSdmc::enter(int index) {
 
     MediaFile file = getSelection();
+    bool success;
 
     if (file.name == "..") {
         exit();
@@ -64,25 +62,32 @@ void FilerSdmc::enter() {
     }
 
     if (path == "/") {
-        getDir(path + file.name);
+        success = getDir(path + file.name);
     } else {
-        getDir(path + "/" + file.name);
+        success = getDir(path + "/" + file.name);
+    }
+    if (success) {
+        Filer::enter(index);
     }
 }
 
 void FilerSdmc::exit() {
 
-    if (path == "/" || path.find('/') == std::string::npos) {
+    std::string path_new = path;
+
+    if (path_new == "/" || path_new.find('/') == std::string::npos) {
         return;
     }
 
-    while (path.back() != '/') {
-        path.erase(path.size() - 1);
+    while (path_new.back() != '/') {
+        path_new.erase(path_new.size() - 1);
     }
 
-    if (path.size() > 1 && Utility::endsWith(path, "/")) {
-        path.erase(path.size() - 1);
+    if (path_new.size() > 1 && Utility::endsWith(path_new, "/")) {
+        path_new.erase(path_new.size() - 1);
     }
 
-    getDir(path);
+    if (getDir(path_new)) {
+        Filer::exit();
+    }
 }

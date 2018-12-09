@@ -10,12 +10,12 @@
 
 using namespace c2d;
 
-Filer::Filer(Main *m, const std::string &path, const c2d::FloatRect &rect) : RectangleShape(rect) {
+Filer::Filer(Main *m, const std::string &path, const c2d::FloatRect &rect) : Rectangle(rect) {
 
     main = m;
 
     // set default bg colors
-    setFillColor(Color::Transparent);
+    //setFillColor(Color::Transparent);
 
     // highlight
     highlight = new Highlight({getSize().x, ITEM_HEIGHT}, Highlight::CursorPosition::Left);
@@ -83,21 +83,20 @@ void Filer::setSelection(int index) {
 void Filer::onDraw(c2d::Transform &transform) {
 
     setSelection(item_index);
-    Shape::onDraw(transform);
+    Rectangle::onDraw(transform);
 }
 
-void Filer::onInput(c2d::Input::Player *players) {
+bool Filer::onInput(c2d::Input::Player *players) {
 
-    if (!isVisible()
-        || main->getMenu()->isVisible()
+    if (main->getMenuMain()->isVisible()
         || main->getPlayer()->isFullscreen()) {
-        return;
+        return false;
     }
 
-    unsigned int keys = players[0].state;
+    unsigned int keys = players[0].keys;
 
     if (keys & c2d::Input::Start || keys & c2d::Input::Select) {
-        main->getMenu()->setVisibility(Visibility::Visible, true);
+        main->getMenuMain()->setVisibility(Visibility::Visible, true);
     } else if (keys & Input::Key::Up) {
         item_index--;
         if (item_index < 0)
@@ -108,26 +107,47 @@ void Filer::onInput(c2d::Input::Player *players) {
             item_index = 0;
         }
     } else if (keys & Input::Key::Left) {
-        main->getMenu()->setVisibility(Visibility::Visible, true);
+        main->getMenuMain()->setVisibility(Visibility::Visible, true);
     } else if (keys & Input::Key::Right) {
         if (main->getPlayer()->isPlaying() && !main->getPlayer()->isFullscreen()) {
             main->setPlayerFullscreen(true);
         }
     } else if (keys & Input::Key::Fire1) {
         if (getSelection().type == Io::Type::Directory) {
-            enter();
+            enter(item_index);
         } else if (pplay::Utility::isMedia(getSelection())) {
-            main->getMessageBox()->show("Please Wait", "Media is loading...");
+            std::string msg = "Loading " + getSelection().name;
+            main->getStatus()->show("Please Wait...", msg, true, true);
             if (main->getPlayer()->load(getSelection())) {
                 main->setPlayerFullscreen(true);
+                main->getStatus()->hide();
+            } else {
+                main->getStatus()->show("Error", "Can't load media");
             }
-            main->getMessageBox()->hide();
         }
     } else if (keys & Input::Key::Fire2) {
         exit();
     }
 
-    C2DObject::onInput(players);
+    return true;
+}
+
+void Filer::enter(int index) {
+    item_index_prev.push_back(index);
+}
+
+void Filer::exit() {
+    if (!item_index_prev.empty()) {
+        int last = (int) item_index_prev.size() - 1;
+        if (item_index_prev[last] < (int) files.size()) {
+            item_index = item_index_prev[last];
+        }
+        item_index_prev.erase(item_index_prev.end() - 1);
+    }
+}
+
+void Filer::clearHistory() {
+    item_index_prev.clear();
 }
 
 std::string Filer::getPath() {
@@ -136,3 +156,5 @@ std::string Filer::getPath() {
 
 Filer::~Filer() {
 }
+
+
