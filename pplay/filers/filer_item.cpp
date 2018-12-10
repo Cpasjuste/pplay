@@ -10,12 +10,10 @@
 
 using namespace c2d;
 
-FilerItem::FilerItem(Main *main, const c2d::FloatRect &rect, const MediaFile &file) : RectangleShape(rect) {
+FilerItem::FilerItem(Main *main, const c2d::FloatRect &rect, const MediaFile &file) : Rectangle(rect) {
 
     this->main = main;
     this->file = file;
-
-    setFillColor(Color::Transparent);
 
     textTitle = new Text(file.name, FONT_SIZE, main->getFont());
     textTitle->setPosition(16, 4);
@@ -33,14 +31,6 @@ FilerItem::FilerItem(Main *main, const c2d::FloatRect &rect, const MediaFile &fi
     textAudio->setWidth(getSize().x - 64);
     textAudio->setFillColor(COLOR_FONT);
     add(textAudio);
-}
-
-c2d::Text *FilerItem::getTitle() {
-    return textTitle;
-}
-
-const MediaFile FilerItem::getFile() const {
-    return file;
 }
 
 void FilerItem::setFile(const MediaFile &file) {
@@ -76,10 +66,4 @@ void FilerItem::setFile(const MediaFile &file) {
         textVideo->setString("");
         textAudio->setString("");
     }
-}
-
-void FilerItem::onDraw(c2d::Transform &transform) {
-    // don't change alpha bg on tween
-    setFillColor(Color::Transparent);
-    Shape::onDraw(transform);
 }

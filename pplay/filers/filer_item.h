@@ -10,21 +10,15 @@
 
 class Main;
 
-class FilerItem : public c2d::RectangleShape {
+class FilerItem : public c2d::Rectangle {
 
 public:
 
     FilerItem(Main *main, const c2d::FloatRect &rect, const MediaFile &file = {});
 
-    c2d::Text *getTitle();
-
-    const MediaFile getFile() const;
-
     void setFile(const MediaFile &file);
 
 private:
-
-    void onDraw(c2d::Transform &transform) override;
 
     Main *main;
     MediaFile file;

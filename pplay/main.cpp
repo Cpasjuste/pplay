@@ -73,10 +73,10 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
 
     // video menu
     items.clear();
-    items.emplace_back("Video", "", MenuItem::Position::Top);
-    items.emplace_back("Audio", "", MenuItem::Position::Top);
-    items.emplace_back("Subtitles", "", MenuItem::Position::Top);
-    items.emplace_back("Stop", "", MenuItem::Position::Bottom);
+    items.emplace_back("Video", "video.png", MenuItem::Position::Top);
+    items.emplace_back("Audio", "audio.png", MenuItem::Position::Top);
+    items.emplace_back("Subtitles", "subtitles.png", MenuItem::Position::Top);
+    items.emplace_back("Stop", "exit.png", MenuItem::Position::Bottom);
     menu_video = new MenuVideo(this, {getSize().x, 0, 250, getSize().y}, items);
     menu_video->setVisibility(Visibility::Hidden, false);
     menu_video->setLayer(2);

@@ -153,5 +153,3 @@ std::string Filer::getPath() {
 
 Filer::~Filer() {
 }
-
-
