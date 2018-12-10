@@ -52,8 +52,6 @@ public:
 
     void show(MenuType type);
 
-    void setPlayerFullscreen(bool fs);
-
     bool isRunning();
 
     Menu *getMenuMain();

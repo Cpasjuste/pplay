@@ -14,9 +14,6 @@ Filer::Filer(Main *m, const std::string &path, const c2d::FloatRect &rect) : Rec
 
     main = m;
 
-    // set default bg colors
-    //setFillColor(Color::Transparent);
-
     // highlight
     highlight = new Highlight({getSize().x, ITEM_HEIGHT}, Highlight::CursorPosition::Left);
     highlight->setFillColor({255, 255, 255, 40});
@@ -36,7 +33,7 @@ Filer::Filer(Main *m, const std::string &path, const c2d::FloatRect &rect) : Rec
     }
 
     // tween
-    add(new TweenAlpha(0, 255, 1));
+    add(new TweenAlpha(0, 255, 0.5f));
 };
 
 const MediaFile Filer::getSelection() const {
@@ -110,19 +107,19 @@ bool Filer::onInput(c2d::Input::Player *players) {
         main->getMenuMain()->setVisibility(Visibility::Visible, true);
     } else if (keys & Input::Key::Right) {
         if (main->getPlayer()->isPlaying() && !main->getPlayer()->isFullscreen()) {
-            main->setPlayerFullscreen(true);
+            main->getPlayer()->setFullscreen(true);
         }
     } else if (keys & Input::Key::Fire1) {
         if (getSelection().type == Io::Type::Directory) {
             enter(item_index);
         } else if (pplay::Utility::isMedia(getSelection())) {
-            std::string msg = "Loading " + getSelection().name;
+            std::string msg = "Loading..." + getSelection().name;
             main->getStatus()->show("Please Wait...", msg, true, true);
             if (main->getPlayer()->load(getSelection())) {
-                main->setPlayerFullscreen(true);
+                main->getPlayer()->setFullscreen(true);
                 main->getStatus()->hide();
             } else {
-                main->getStatus()->show("Error", "Can't load media");
+                main->getStatus()->show("Error...", "Can't load media...");
             }
         }
     } else if (keys & Input::Key::Fire2) {

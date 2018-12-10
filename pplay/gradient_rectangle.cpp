@@ -20,3 +20,10 @@ void GradientRectangle::setColor(const Color &color1, const Color &color2) {
     vertices->at(3).color = color1;
     getVertexArray()->update();
 }
+
+void GradientRectangle::setAlpha(uint8_t alpha, bool recursive) {
+    auto *vertices = getVertexArray()->getVertices();
+    vertices->at(2).color.a = alpha;
+    vertices->at(3).color.a = alpha;
+    getVertexArray()->update();
+}

@@ -9,9 +9,7 @@
 using namespace c2d;
 
 MenuVideo::MenuVideo(Main *main, const c2d::FloatRect &rect, const std::vector<MenuItem> &items)
-        : Menu(main, rect, items, false) {
-
-}
+        : Menu(main, rect, items, false) {}
 
 void MenuVideo::onOptionSelection(MenuItem *item) {
 
@@ -38,7 +36,7 @@ void MenuVideo::onOptionSelection(MenuItem *item) {
         }
     } else if (item->name == "Stop") {
         main->getPlayer()->stop();
-        main->setPlayerFullscreen(false);
+        main->getPlayer()->setFullscreen(false);
         setVisibility(Visibility::Hidden, true);
     }
 }

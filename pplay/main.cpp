@@ -107,7 +107,7 @@ bool Main::onInput(c2d::Input::Player *players) {
 
     if (keys & EV_QUIT) {
         if (player->isFullscreen()) {
-            setPlayerFullscreen(false);
+            player->setFullscreen(false);
             filer->setVisibility(Visibility::Visible, true);
         } else {
             quit();
@@ -115,7 +115,7 @@ bool Main::onInput(c2d::Input::Player *players) {
     } else if (keys & Input::Touch) {
         if (player->getGlobalBounds().contains(players[0].touch)) {
             if (player->isPlaying() && !player->isFullscreen()) {
-                setPlayerFullscreen(true);
+                player->setFullscreen(true);
                 return true;
             }
         }
@@ -134,9 +134,8 @@ bool Main::onInput(c2d::Input::Player *players) {
 void Main::show(MenuType type) {
 
     if (player->isPlaying() && player->isFullscreen()) {
-        setPlayerFullscreen(false);
+        player->setFullscreen(false);
     }
-
     filerSdmc->setVisibility(type == MenuType::Home ? Visibility::Visible : Visibility::Hidden);
     filerHttp->setVisibility(type == MenuType::Home ? Visibility::Hidden : Visibility::Visible);
     filer = type == MenuType::Home ? filerSdmc : filerHttp;
@@ -154,20 +153,6 @@ void Main::show(MenuType type) {
             filer->clearHistory();
         }
     }
-}
-
-void Main::setPlayerFullscreen(bool fs) {
-
-    if (fs) {
-        filer->setVisibility(Visibility::Hidden, true);
-        player->getTweenPosition()->play(TweenDirection::Forward);
-        player->getTweenScale()->play(TweenDirection::Forward);
-    } else {
-        player->getTweenPosition()->play(TweenDirection::Backward);
-        player->getTweenScale()->play(TweenDirection::Backward);
-        filer->setVisibility(Visibility::Visible, true);
-    }
-    player->setFullscreen(fs);
 }
 
 bool Main::isRunning() {

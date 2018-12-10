@@ -124,10 +124,8 @@ bool Player::load(const MediaFile &file) {
     if (video_streams.size > 0) {
         texture = new VideoTexture(
                 {playerInfo.video.output.width, playerInfo.video.output.height});
-        texture->setDeleteMode(DeleteMode::Manual);
+        //texture->setDeleteMode(DeleteMode::Manual);
         texture->setFilter(Texture::Filter::Linear);
-        //setSize(texture->getSize());
-        //setOrigin(Origin::TopRight);
         add(texture);
 
         // videos menu options
@@ -144,7 +142,7 @@ bool Player::load(const MediaFile &file) {
 
     if (subtitles_streams.size > 0) {
         textureSub = new SubtitlesTexture();
-        textureSub->setDeleteMode(DeleteMode::Manual);
+        //textureSub->setDeleteMode(DeleteMode::Manual);
         void *buf;
         textureSub->lock(nullptr, &buf, nullptr);
         memset(buf, 0, 1024 * 1024 * 4);
@@ -218,8 +216,7 @@ bool Player::onInput(c2d::Input::Player *players) {
             // TODO: seek
             //osd->setVisibility(Visibility::Visible, true);
             //Kit_PlayerSeek(player, position - 60.0);
-            main->setPlayerFullscreen(false);
-
+            setFullscreen(false);
         } else if (keys & c2d::Input::Key::Right) {
             main->getMenuVideo()->setVisibility(Visibility::Visible, true);
             //osd->setVisibility(Visibility::Visible, true);
@@ -244,7 +241,7 @@ void Player::onDraw(c2d::Transform &transform) {
 
     if (!isPlaying()) {
         if (isFullscreen()) {
-            main->setPlayerFullscreen(false);
+            setFullscreen(false);
         }
         Rectangle::onDraw(transform);
         return;
@@ -291,6 +288,8 @@ void Player::onDraw(c2d::Transform &transform) {
         if (scale.x > max_scale.x) {
             scale.x = scale.y = max_scale.x;
         }
+        //texture->setOrigin(Origin::TopRight);
+        //texture->setPosition(getSize().x, 0);
         texture->setOrigin(Origin::Center);
         texture->setPosition(getSize().x / 2.0f, getSize().y / 2.0f);
         texture->setScale(scale);
@@ -361,16 +360,29 @@ void Player::setFullscreen(bool fs) {
     fullscreen = fs;
 
     if (!fullscreen) {
+        tweenPosition->play(TweenDirection::Backward);
+        tweenScale->play(TweenDirection::Backward);
+        if (texture) {
+            texture->showGradients();
+        }
         main->getMenuVideo()->setVisibility(Visibility::Hidden, true);
-        if (getMenuVideoStreams()) {
-            getMenuVideoStreams()->setVisibility(Visibility::Hidden, true);
+        if (menuVideoStreams) {
+            menuVideoStreams->setVisibility(Visibility::Hidden, true);
         }
-        if (getMenuAudioStreams()) {
-            getMenuAudioStreams()->setVisibility(Visibility::Hidden, true);
+        if (menuAudioStreams) {
+            menuAudioStreams->setVisibility(Visibility::Hidden, true);
         }
-        if (getMenuSubtitlesStreams()) {
-            getMenuSubtitlesStreams()->setVisibility(Visibility::Hidden, true);
+        if (menuSubtitlesStreams) {
+            menuSubtitlesStreams->setVisibility(Visibility::Hidden, true);
         }
+        main->getFiler()->setVisibility(Visibility::Visible, true);
+    } else {
+        if (texture) {
+            texture->hideGradients();
+        }
+        tweenPosition->play(TweenDirection::Forward);
+        tweenScale->play(TweenDirection::Forward);
+        main->getFiler()->setVisibility(Visibility::Hidden, true);
     }
 }
 
@@ -490,3 +502,6 @@ MenuVideoSubmenu *Player::getMenuSubtitlesStreams() {
     return menuSubtitlesStreams;
 }
 
+VideoTexture *Player::getVideoTexture() {
+    return texture;
+}

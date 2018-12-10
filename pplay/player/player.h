@@ -94,6 +94,8 @@ public:
 
     Main *getMain();
 
+    VideoTexture *getVideoTexture();
+
     c2d::TweenPosition *getTweenPosition();
 
     c2d::TweenScale *getTweenScale();

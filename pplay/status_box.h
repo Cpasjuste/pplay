@@ -9,7 +9,7 @@
 
 class Main;
 
-class StatusBox : public c2d::RectangleShape {
+class StatusBox : public c2d::Rectangle {
 
 public:
 

@@ -8,14 +8,11 @@
 
 using namespace c2d;
 
-StatusBox::StatusBox(Main *m, const c2d::Vector2f &position) : RectangleShape({m->getSize().x - 64, 48}) {
+StatusBox::StatusBox(Main *m, const c2d::Vector2f &position) : Rectangle({m->getSize().x - 64, 48}) {
 
     main = m;
 
     setPosition(position);
-    setFillColor(Color::Transparent);
-    setOutlineColor(COLOR_RED);
-    //setOutlineThickness(1);
 
     icon = new C2DTexture(main->getIo()->getDataReadPath() + "skin/wait.png");
     icon->setOrigin(Origin::Center);
@@ -85,7 +82,7 @@ void StatusBox::onDraw(c2d::Transform &transform) {
     setPosition(bounds.left + bounds.width + 10, getPosition().y);
 
     SDL_LockMutex(mutex);
-    Shape::onDraw(transform);
+    C2DObject::onDraw(transform);
     SDL_UnlockMutex(mutex);
 }
 
