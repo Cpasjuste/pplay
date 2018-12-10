@@ -49,15 +49,21 @@ void FilerItem::setFile(const MediaFile &file) {
     if (file.type == Io::Type::File) {
         if (!file.getMedia().videos.empty()) {
             std::ostringstream oss;
-            oss << "Video: " << file.getMedia().videos[0].width << "x" << file.getMedia().videos[0].height;
-            oss << ", " << file.getMedia().videos[0].codec << " @ " << file.getMedia().videos[0].rate / 1000 << " kb/s";
+            oss << "Video: "
+                << file.getMedia().videos[0].codec << " @ "
+                << file.getMedia().bit_rate / 1000 << " kb/s, "
+                << file.getMedia().videos[0].width << "x"
+                << file.getMedia().videos[0].height;
             textVideo->setString(oss.str());
         } else {
             textVideo->setString("Video: n/a");
         }
         if (!file.getMedia().audios.empty()) {
             std::ostringstream oss;
-            oss << "Audio: " << file.getMedia().audios[0].codec << " @ " << file.getMedia().audios[0].rate << " hz";
+            oss << "Audio: "
+                << file.getMedia().audios[0].codec << " @ "
+                << file.getMedia().audios[0].bit_rate / 1000 << " kb/s, "
+                << file.getMedia().audios[0].sample_rate << " hz";
             textAudio->setString(oss.str());
         } else {
             textAudio->setString("Audio: n/a");

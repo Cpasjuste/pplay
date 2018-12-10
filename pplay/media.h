@@ -20,7 +20,8 @@ public:
         std::string title;
         std::string language;
         std::string codec;
-        int rate;
+        int bit_rate;
+        int sample_rate;
         int width;
         int height;
     };
@@ -28,6 +29,7 @@ public:
     std::string title;
     std::string path;
     long duration;
+    int bit_rate;
     std::vector<Stream> videos;
     std::vector<Stream> audios;
     std::vector<Stream> subtitles;

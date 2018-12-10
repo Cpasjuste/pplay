@@ -93,6 +93,7 @@ static int media_info_thread(void *ptr) {
         AVDictionaryEntry *language, *title = av_dict_get(ctx->metadata, "title", nullptr, 0);
         media.title = title ? title->value : "N/A";
         media.path = mediaPath;
+        media.bit_rate = (int) ctx->bit_rate;
         media.duration = ctx->duration / AV_TIME_BASE;
         printf("media_thread: stream count: %i\n", ctx->nb_streams);
         //dump_metadata("media", ctx->metadata);
@@ -108,7 +109,7 @@ static int media_info_thread(void *ptr) {
                 stream.title = title ? title->value : "N/A";
                 stream.language = language ? language->value : "N/A";
                 stream.codec = avcodec_get_name(codec->codec_id);
-                stream.rate = (int) ctx->bit_rate;
+                stream.bit_rate = (int) codec->bit_rate;
                 stream.width = codec->width;
                 stream.height = codec->height;
                 media.videos.push_back(stream);
@@ -122,7 +123,8 @@ static int media_info_thread(void *ptr) {
                 stream.title = title ? title->value : "N/A";
                 stream.language = language ? language->value : "N/A";
                 stream.codec = avcodec_get_name(codec->codec_id);
-                stream.rate = codec->sample_rate;
+                stream.bit_rate = (int) codec->bit_rate;
+                stream.sample_rate = codec->sample_rate;
                 media.audios.push_back(stream);
                 printf("media_thread: found audio stream: %s\n", stream.title.c_str());
                 //dump_metadata("audio stream", ctx->streams[i]->metadata);

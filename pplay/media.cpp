@@ -35,6 +35,9 @@ bool MediaInfo::serialize(const std::string &dst) {
     fs.write((char *) &duration, sizeof(duration));
     //printf("Media::serialize: duration = %li\n", duration);
 
+    // bit rate
+    fs.write((char *) &bit_rate, sizeof(bit_rate));
+
     // video streams
     count = (int) videos.size();
     fs.write((char *) &count, sizeof(count));
@@ -55,7 +58,7 @@ bool MediaInfo::serialize(const std::string &dst) {
         fs.write((char *) &size, sizeof(size_t));
         fs.write((char *) stream.codec.c_str(), size);
         // rate
-        fs.write((char *) &stream.rate, sizeof(stream.rate));
+        fs.write((char *) &stream.bit_rate, sizeof(stream.bit_rate));
         // width / height
         fs.write((char *) &stream.width, sizeof(stream.width));
         fs.write((char *) &stream.height, sizeof(stream.height));
@@ -81,7 +84,8 @@ bool MediaInfo::serialize(const std::string &dst) {
         fs.write((char *) &size, sizeof(size_t));
         fs.write((char *) stream.codec.c_str(), size);
         // rate
-        fs.write((char *) &stream.rate, sizeof(stream.rate));
+        fs.write((char *) &stream.bit_rate, sizeof(stream.bit_rate));
+        fs.write((char *) &stream.sample_rate, sizeof(stream.sample_rate));
     }
 
     // subtitles streams
@@ -148,6 +152,9 @@ bool MediaInfo::deserialize(const std::string &src) {
     fs.read((char *) &duration, sizeof(duration));
     //printf("Media::deserialize: duration = %li\n", duration);
 
+    // bit rate
+    fs.read((char *) &bit_rate, sizeof(bit_rate));
+
     // video streams
     videos.clear();
     fs.read((char *) &count, sizeof(count));
@@ -178,7 +185,7 @@ bool MediaInfo::deserialize(const std::string &src) {
         stream.codec = data;
         delete[] data;
         // rate
-        fs.read((char *) &stream.rate, sizeof(stream.rate));
+        fs.read((char *) &stream.bit_rate, sizeof(stream.bit_rate));
         // width / height
         fs.read((char *) &stream.width, sizeof(stream.width));
         fs.read((char *) &stream.height, sizeof(stream.height));
@@ -216,7 +223,8 @@ bool MediaInfo::deserialize(const std::string &src) {
         stream.codec = data;
         delete[] data;
         // rate
-        fs.read((char *) &stream.rate, sizeof(stream.rate));
+        fs.read((char *) &stream.bit_rate, sizeof(stream.bit_rate));
+        fs.read((char *) &stream.sample_rate, sizeof(stream.sample_rate));
 
         audios.push_back(stream);
     }
@@ -266,13 +274,13 @@ void MediaInfo::debut_print() {
     for (auto &stream : videos) {
         printf("\t\tlanguage: %s, title: %s, resolution: %ix%i, codec: %s @ %i kb/s\n",
                stream.language.c_str(), stream.title.c_str(),
-               stream.width, stream.height, stream.codec.c_str(), stream.rate / 1000);
+               stream.width, stream.height, stream.codec.c_str(), stream.bit_rate / 1000);
     }
     printf("\taudio streams: %i\n", (int) audios.size());
     for (auto &stream : audios) {
         printf("\t\tlanguage: %s, title: %s, codec: %s @ %i hz\n",
                stream.language.c_str(), stream.title.c_str(),
-               stream.codec.c_str(), stream.rate);
+               stream.codec.c_str(), stream.bit_rate);
     }
     printf("\tsubtitle streams: %i\n", (int) subtitles.size());
     for (auto &stream : subtitles) {
