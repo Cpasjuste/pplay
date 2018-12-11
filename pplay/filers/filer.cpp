@@ -57,9 +57,11 @@ void Filer::setSelection(int index) {
         } else {
             // load media info, set file
             int idx = index_start + i;
-            if (files[idx].type == Io::Type::File && !files[idx].getMedia().isLoaded()) {
-                //printf("Filer: getting media info for %s\n", files[idx].name.c_str());
-                files[idx].media = main->getMediaThread()->getMediaInfo(files[idx]);
+            if (main->getMediaThread()->isCaching()) {
+                if (files[idx].type == Io::Type::File && !files[idx].getMedia().isLoaded()) {
+                    //printf("Filer: getting media info for %s\n", files[idx].name.c_str());
+                    files[idx].media = main->getMediaThread()->getMediaInfo(files[idx]);
+                }
             }
             items[i]->setFile(files[idx]);
             items[i]->setVisibility(Visibility::Visible);
@@ -115,7 +117,12 @@ bool Filer::onInput(c2d::Input::Player *players) {
         } else if (pplay::Utility::isMedia(getSelection())) {
             std::string msg = "Loading..." + getSelection().name;
             main->getStatus()->show("Please Wait...", msg, true, true);
-            if (main->getPlayer()->load(getSelection())) {
+            if (!main->getMediaThread()->isCaching()) {
+                if (!files[item_index].media.isLoaded()) {
+                    files[item_index].setMedia(main->getMediaThread()->getMediaInfo(files[item_index]));
+                }
+            }
+            if (main->getPlayer()->load(files[item_index])) {
                 main->getPlayer()->setFullscreen(true);
                 main->getStatus()->hide();
             } else {

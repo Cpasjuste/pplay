@@ -46,10 +46,6 @@ StatusBox::~StatusBox() {
     SDL_DestroyMutex(mutex);
 }
 
-void StatusBox::show(const std::string &message, bool infinite, bool drawNow) {
-    show(titleText->getString(), message, drawNow);
-}
-
 void StatusBox::show(const std::string &title, const std::string &message, bool infinite, bool drawNow) {
 
     SDL_LockMutex(mutex);

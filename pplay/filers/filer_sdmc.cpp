@@ -20,9 +20,6 @@ bool FilerSdmc::getDir(const std::string &p) {
 
     printf("getDir(%s)\n", p.c_str());
 
-    // cache media infos
-    main->getMediaThread()->cacheDir(p);
-
     item_index = 0;
     files.clear();
     path = p;
@@ -45,7 +42,8 @@ bool FilerSdmc::getDir(const std::string &p) {
     files.emplace_back(Io::File{"..", "..", Io::Type::Directory, 0, COLOR_BLUE});
 #endif
     for (auto &file : _files) {
-        files.emplace_back(file, main->getMediaThread()->getMediaInfo(file));
+        bool fromCache = main->getMediaThread()->isCaching() == 0;
+        files.emplace_back(file, main->getMediaThread()->getMediaInfo(file, fromCache));
     }
 
     return true;

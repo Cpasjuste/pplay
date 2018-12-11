@@ -17,8 +17,6 @@ public:
 
     ~StatusBox() override;
 
-    void show(const std::string &message, bool infinite = false, bool drawNow = false);
-
     void show(const std::string &title, const std::string &message, bool infinite = false, bool drawNow = false);
 
     void hide();

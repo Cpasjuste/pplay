@@ -7,6 +7,11 @@
 
 #include "cross2d/skeleton/config.h"
 
+#define OPT_NETWORK             "NETWORK"
+#define OPT_HOME_PATH           "HOME_PATH"
+#define OPT_LAST_PATH           "LAST_PATH"
+#define OPT_CACHE_MEDIA_INFO    "CACHE_MEDIA_INFO"
+
 class Main;
 
 class PPLAYConfig : public c2d::config::Config {

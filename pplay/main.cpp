@@ -55,7 +55,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     filerHttp->setVisibility(Visibility::Hidden);
     add(filerHttp);
     filer = filerSdmc;
-    filer->getDir(config->getOption("LAST_PATH")->getString());
+    filer->getDir(config->getOption(OPT_LAST_PATH)->getString());
 
     // ffmpeg player
     player = new Player(this);
@@ -140,13 +140,13 @@ void Main::show(MenuType type) {
     filerHttp->setVisibility(type == MenuType::Home ? Visibility::Hidden : Visibility::Visible);
     filer = type == MenuType::Home ? filerSdmc : filerHttp;
     if (type == MenuType::Home) {
-        if (!filer->getDir(config->getOption("HOME_PATH")->getString())) {
+        if (!filer->getDir(config->getOption(OPT_HOME_PATH)->getString())) {
             if (filer->getDir("/")) {
                 filer->clearHistory();
             }
         }
     } else {
-        if (!filer->getDir(config->getOption("NETWORK")->getString())) {
+        if (!filer->getDir(config->getOption(OPT_NETWORK)->getString())) {
             messageBox->show("Oups", "Could not open url (see config file?)", "OK");
             show(MenuType::Home);
         } else {
@@ -163,7 +163,7 @@ void Main::quit() {
 
     // TODO: save network path
     if (filerSdmc->isVisible()) {
-        config->getOption("LAST_PATH")->setString(filer->getPath());
+        config->getOption(OPT_LAST_PATH)->setString(filer->getPath());
         config->save();
     }
 
