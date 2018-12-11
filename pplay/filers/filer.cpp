@@ -6,7 +6,7 @@
 #include "filer.h"
 #include "utility.h"
 
-#define ITEM_HEIGHT 64
+#define ITEM_HEIGHT 80
 
 using namespace c2d;
 
@@ -59,7 +59,6 @@ void Filer::setSelection(int index) {
             int idx = index_start + i;
             if (main->getMediaThread()->isCaching()) {
                 if (files[idx].type == Io::Type::File && !files[idx].getMedia().isLoaded()) {
-                    //printf("Filer: getting media info for %s\n", files[idx].name.c_str());
                     files[idx].media = main->getMediaThread()->getMediaInfo(files[idx]);
                 }
             }
@@ -125,8 +124,6 @@ bool Filer::onInput(c2d::Input::Player *players) {
             if (main->getPlayer()->load(files[item_index])) {
                 main->getPlayer()->setFullscreen(true);
                 main->getStatus()->hide();
-            } else {
-                main->getStatus()->show("Error...", "Can't load media...");
             }
         }
     } else if (keys & Input::Key::Fire2) {

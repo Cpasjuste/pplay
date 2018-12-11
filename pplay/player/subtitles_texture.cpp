@@ -3,7 +3,6 @@
 //
 
 #include "cross2d/c2d.h"
-#include "cross2d/skeleton/stb_image.h"
 #include "subtitles_texture.h"
 
 using namespace c2d;

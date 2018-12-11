@@ -8,10 +8,6 @@
 
 using namespace c2d;
 
-#define ICON_SIZE 24
-#define BUTTON_HEIGHT 64
-
-
 MenuButton::MenuButton(Main *main, const MenuItem &item, const FloatRect &rect) : RectangleShape(rect) {
 
     this->item = item;

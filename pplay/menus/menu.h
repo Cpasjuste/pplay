@@ -45,8 +45,8 @@ public:
     MenuButton(Main *main, const MenuItem &item, const c2d::FloatRect &rect);
 
     MenuItem item;
-    c2d::Texture *icon;
-    c2d::Text *name;
+    c2d::Texture *icon = nullptr;
+    c2d::Text *name = nullptr;
 };
 
 class Menu : public c2d::RectangleShape {
@@ -67,12 +67,9 @@ protected:
     bool onInput(c2d::Input::Player *players) override;
 
     Main *main;
-
-private:
-
     c2d::Text *title;
-    c2d::RectangleShape *menuButton;
     std::vector<MenuButton *> buttons;
+    c2d::RectangleShape *menuButton;
     Highlight *highlight;
     c2d::TweenPosition *tween;
     int index = 0;

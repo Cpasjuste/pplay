@@ -50,6 +50,7 @@ bool Player::load(const MediaFile &file) {
     printf("Player::load: %s\n", file.path.c_str());
     source = Kit_CreateSourceFromUrl(file.path.c_str());
     if (!source) {
+        main->getStatus()->show("Error...", Kit_GetError());
         printf("unable to load '%s': %s\n", file.path.c_str(), Kit_GetError());
         stop();
         return false;
@@ -66,6 +67,7 @@ bool Player::load(const MediaFile &file) {
            video_streams.size, audio_streams.size, subtitles_streams.size);
     if (!video_streams.size && !audio_streams.size) {
         printf("no usable audio or video stream found: %s\n", Kit_GetError());
+        main->getStatus()->show("Error...", "no video or audio stream found");
         stop();
         return false;
     }
@@ -83,10 +85,14 @@ bool Player::load(const MediaFile &file) {
             subtitles_streams.getCurrentStream(),
             (int) getSize().x, (int) getSize().y);
     if (!player) {
+        main->getStatus()->show("Error...", Kit_GetError());
         printf("unable to create player: %s\n", Kit_GetError());
         stop();
         return false;
     }
+
+    // hack, needs to fix subtitles problem when not enabled on Kit_CreatePlayer
+    subtitles_streams.current = -1;
 
     // get some information
     Kit_GetPlayerInfo(player, &playerInfo);
@@ -142,12 +148,12 @@ bool Player::load(const MediaFile &file) {
 
     if (subtitles_streams.size > 0) {
         textureSub = new SubtitlesTexture();
+        textureSub->setFilter(Texture::Filter::Point);
         //textureSub->setDeleteMode(DeleteMode::Manual);
         void *buf;
         textureSub->lock(nullptr, &buf, nullptr);
         memset(buf, 0, 1024 * 1024 * 4);
         textureSub->unlock();
-        textureSub->setFilter(Texture::Filter::Point);
         textureSub->setVisibility(Visibility::Hidden);
         add(textureSub);
 
@@ -237,6 +243,7 @@ bool Player::onInput(c2d::Input::Player *players) {
     return true;
 }
 
+
 void Player::onDraw(c2d::Transform &transform) {
 
     if (!isPlaying()) {
@@ -255,6 +262,7 @@ void Player::onDraw(c2d::Transform &transform) {
     //////////////////
     /// step ffmpeg
     //////////////////
+
     /// audio
     if (audio_streams.size > 0) {
         int queued = SDL_GetQueuedAudioSize(audioDeviceID);
@@ -309,10 +317,22 @@ void Player::onDraw(c2d::Transform &transform) {
 }
 
 void Player::setVideoStream(int index) {
+
+    if (index == video_streams.getCurrentStream()) {
+        main->getStatus()->show("Info...", "selected video stream already set");
+        return;
+    }
+
     if (texture && index > -1) {
+        for (int i = 0; i < video_streams.size; i++) {
+            if (index == video_streams.streams[i]) {
+                video_streams.current = i;
+            }
+        }
         texture->setVisibility(Visibility::Visible);
         Kit_SetPlayerStream(player, KIT_STREAMTYPE_VIDEO, index);
     } else {
+        video_streams.current = -1;
         if (texture) {
             texture->setVisibility(Visibility::Hidden);
         }
@@ -320,17 +340,42 @@ void Player::setVideoStream(int index) {
 }
 
 void Player::setAudioStream(int index) {
+
+    if (index == audio_streams.getCurrentStream()) {
+        main->getStatus()->show("Info...", "selected audio stream already set");
+        return;
+    }
+
     if (index > -1) {
+        for (int i = 0; i < audio_streams.size; i++) {
+            if (index == audio_streams.streams[i]) {
+                audio_streams.current = i;
+            }
+        }
         Kit_SetPlayerStream(player, KIT_STREAMTYPE_AUDIO, index);
+    } else {
+        audio_streams.current = -1;
     }
 }
 
 void Player::setSubtitleStream(int index) {
-    if (textureSub && index > -1) {
-        show_subtitles = true;
-        textureSub->setVisibility(Visibility::Visible);
+
+    if (index == subtitles_streams.getCurrentStream()) {
+        main->getStatus()->show("Info...", "selected subtitles stream already set");
+        return;
+    }
+
+    if (textureSub && index >= 0) {
+        for (int i = 0; i < subtitles_streams.size; i++) {
+            if (index == subtitles_streams.streams[i]) {
+                subtitles_streams.current = i;
+            }
+        }
         Kit_SetPlayerStream(player, KIT_STREAMTYPE_SUBTITLE, index);
+        textureSub->setVisibility(Visibility::Visible);
+        show_subtitles = true;
     } else {
+        subtitles_streams.current = index;
         show_subtitles = false;
         if (textureSub) {
             textureSub->setVisibility(Visibility::Hidden);
@@ -406,6 +451,8 @@ void Player::resume() {
 
 void Player::stop() {
 
+    setCpuClock(CpuClock::Min);
+
     /// Kit
     if (player) {
         Kit_PlayerStop(player);
@@ -453,8 +500,6 @@ void Player::stop() {
     audio_streams.reset();
     subtitles_streams.reset();
     show_subtitles = false;
-
-    setCpuClock(CpuClock::Min);
 }
 
 void Player::setCpuClock(const CpuClock &clock) {
@@ -504,4 +549,16 @@ MenuVideoSubmenu *Player::getMenuSubtitlesStreams() {
 
 VideoTexture *Player::getVideoTexture() {
     return texture;
+}
+
+Player::Stream *Player::getVideoStreams() {
+    return &video_streams;
+}
+
+Player::Stream *Player::getAudioStreams() {
+    return &audio_streams;
+}
+
+Player::Stream *Player::getSubtitlesStreams() {
+    return &subtitles_streams;
 }

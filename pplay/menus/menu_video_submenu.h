@@ -20,6 +20,7 @@ public:
     bool onInput(c2d::Input::Player *players) override;
 
     int type;
+    Highlight *highlight;
 
 private:
 

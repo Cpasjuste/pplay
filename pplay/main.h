@@ -18,6 +18,9 @@
 #define INPUT_DELAY 250
 #define FONT_SIZE 22
 
+#define ICON_SIZE 24
+#define BUTTON_HEIGHT 64
+
 #define COLOR_BG            Color(50, 45, 45, 255)
 #define COLOR_FONT          Color(170, 170, 170, 255)
 #define COLOR_HIGHLIGHT     Color(255, 255, 255, 40)

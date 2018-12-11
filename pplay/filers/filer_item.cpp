@@ -20,8 +20,14 @@ FilerItem::FilerItem(Main *main, const c2d::FloatRect &rect, const MediaFile &fi
     textTitle->setWidth(getSize().x - 64);
     add(textTitle);
 
+    textInfo = new Text("Info: N/A", FONT_SIZE - 8, main->getFont());
+    textInfo->setPosition(16, 4 + FONT_SIZE + 4);
+    textInfo->setWidth(getSize().x - 64);
+    textInfo->setFillColor(COLOR_FONT);
+    add(textInfo);
+
     textVideo = new Text("Video: N/A", FONT_SIZE - 8, main->getFont());
-    textVideo->setPosition(16, 4 + FONT_SIZE + 4);
+    textVideo->setPosition(16, textInfo->getPosition().y + FONT_SIZE - 6);
     textVideo->setWidth(getSize().x - 64);
     textVideo->setFillColor(COLOR_FONT);
     add(textVideo);
@@ -47,6 +53,9 @@ void FilerItem::setFile(const MediaFile &file) {
     textTitle->setAlpha(alpha);
 
     if (file.type == Io::Type::File) {
+        std::ostringstream ossInfo;
+        ossInfo << "Info: " << file.size;
+        textInfo->setString(ossInfo.str());
         if (!file.getMedia().videos.empty()) {
             std::ostringstream oss;
             oss << "Video: "
@@ -69,6 +78,7 @@ void FilerItem::setFile(const MediaFile &file) {
             textAudio->setString("Audio: n/a");
         }
     } else {
+        textInfo->setString("");
         textVideo->setString("");
         textAudio->setString("");
     }

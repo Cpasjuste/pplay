@@ -114,6 +114,14 @@ static const MediaInfo get_media_info(MediaThread *mediaThread, const c2d::Io::F
 
     media.serialize(cachePath);
     avformat_close_input(&ctx);
+#if 0
+    // TODO: extract thumbnail
+        std::string p = cachePath + ".png";
+        const char *argv[] = {
+                "ffmpeg", "-i", mediaPath.c_str(), "-ss", "00:00:02", "-vframes", "1", p.c_str()
+        };
+        ffmpeg_main(8, argv);
+#endif
     mediaThread->getMain()->getStatus()->hide();
 
     return media;
@@ -147,16 +155,6 @@ static int media_info_thread(void *ptr) {
         SDL_LockMutex(mediaThread->getMutex());
         mediaThread->mediaList.erase(mediaThread->mediaList.begin());
         SDL_UnlockMutex(mediaThread->getMutex());
-
-#if 0
-        // TODO: extract thumbnail
-        std::string p = cachePath + ".png";
-        const char *argv[] = {
-                "ffmpeg", "-i", mediaPath.c_str(), "-ss", "00:00:02", "-vframes", "1", p.c_str()
-        };
-        ffmpeg_main(8, argv);
-#endif
-        printf("media_thread: process: OK\n");
     }
 
     printf("media_thread: end\n");

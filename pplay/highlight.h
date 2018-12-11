@@ -16,7 +16,7 @@ public:
 
     explicit Highlight(const c2d::Vector2f &size, const CursorPosition &cursor = CursorPosition::Right);
 
-    void setAlpha(uint8_t alpha, bool recursive) override;
+    void setAlpha(uint8_t alpha, bool recursive = false) override;
 
     void setFillColor(const c2d::Color &color) override;
 

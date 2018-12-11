@@ -27,20 +27,6 @@ public:
 
     class Stream {
     public:
-        void next() {
-            current++;
-            if (current >= size) {
-                current = 0;
-            }
-        }
-
-        void prev() {
-            current--;
-            if (current < 0) {
-                current = size - 1;
-            }
-        }
-
         void reset() {
             memset(streams, 0, MAX_STREAM_LIST_SIZE * sizeof(int));
             size = 0;
@@ -48,7 +34,7 @@ public:
         }
 
         int getCurrentStream() {
-            if (current < size) {
+            if (current >= 0 && current < size) {
                 return streams[current];
             }
             return -1;
@@ -106,9 +92,15 @@ public:
 
     MenuVideoSubmenu *getMenuSubtitlesStreams();
 
+    Stream *getVideoStreams();
+
+    Stream *getAudioStreams();
+
+    Stream *getSubtitlesStreams();
+
     bool onInput(c2d::Input::Player *players) override;
 
-private:
+//private:
 
     void onDraw(c2d::Transform &transform) override;
 

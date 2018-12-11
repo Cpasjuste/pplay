@@ -11,10 +11,10 @@ class SubtitlesTexture : public c2d::C2DTexture {
 
 public:
 
-    SubtitlesTexture(const c2d::Vector2f &size = c2d::Vector2f(1024, 1024),
-                     c2d::Texture::Format format = c2d::Texture::Format::RGBA8);
+    explicit SubtitlesTexture(const c2d::Vector2f &size = c2d::Vector2f(1024, 1024),
+                              c2d::Texture::Format format = c2d::Texture::Format::RGBA8);
 
-    ~SubtitlesTexture();
+    ~SubtitlesTexture() override;
 
     void setRectsCount(int count);
 
