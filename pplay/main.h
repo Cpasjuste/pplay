@@ -9,7 +9,6 @@
 #include "filers/filer.h"
 #include "filers/filer_http.h"
 #include "player/player.h"
-#include "player/player_osd.h"
 #include "config.h"
 #include "media_thread.h"
 #include "menus/menu.h"

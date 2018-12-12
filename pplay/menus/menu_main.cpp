@@ -9,7 +9,7 @@
 using namespace c2d;
 
 MenuMain::MenuMain(Main *main, const c2d::FloatRect &rect, const std::vector<MenuItem> &items)
-        : Menu(main, rect, items, true) {
+        : Menu(main, rect, "PPLAY______", items, true) {
 
 }
 

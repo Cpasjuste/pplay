@@ -7,6 +7,7 @@
 
 #include "main.h"
 #include "player.h"
+#include "player_osd.h"
 #include "gradient_rectangle.h"
 
 using namespace c2d;
@@ -24,14 +25,15 @@ Player::Player(Main *_main) : Rectangle(_main->getSize()) {
     tweenScale = new TweenScale({0.6f, 0.6f}, {1.0f, 1.0f}, 0.5f);
     add(tweenScale);
 
-    osd = new PlayerOSD(this);
+    osd = new PlayerOSD(main);
     add(osd);
 
     setVisibility(Visibility::Hidden);
 }
 
 Player::~Player() {
-    stop();
+    // crash on switch?
+    //stop();
 }
 
 bool Player::load(const MediaFile &file) {
@@ -78,13 +80,13 @@ bool Player::load(const MediaFile &file) {
              getMain()->getIo()->getDataReadPath().c_str());
 
     // create the player
-    player = Kit_CreatePlayer(
+    kit_player = Kit_CreatePlayer(
             source,
             video_streams.getCurrentStream(),
             audio_streams.getCurrentStream(),
             subtitles_streams.getCurrentStream(),
             (int) getSize().x, (int) getSize().y);
-    if (!player) {
+    if (!kit_player) {
         main->getStatus()->show("Error...", Kit_GetError());
         printf("unable to create player: %s\n", Kit_GetError());
         stop();
@@ -95,7 +97,7 @@ bool Player::load(const MediaFile &file) {
     subtitles_streams.current = -1;
 
     // get some information
-    Kit_GetPlayerInfo(player, &playerInfo);
+    Kit_GetPlayerInfo(kit_player, &playerInfo);
     printf("Video(%s, %s): %i x %i , Audio(%s): %i hz\n",
            playerInfo.video.codec.name,
            SDL_GetPixelFormatName(playerInfo.video.output.format),
@@ -121,7 +123,7 @@ bool Player::load(const MediaFile &file) {
             items.emplace_back("Lang: " + stream.language, "", MenuItem::Position::Top, stream.id);
         }
         menuAudioStreams = new MenuVideoSubmenu(
-                main, main->getMenuVideo()->getGlobalBounds(), items, MENU_VIDEO_TYPE_AUD);
+                main, main->getMenuVideo()->getGlobalBounds(), "AUDIO______", items, MENU_VIDEO_TYPE_AUD);
         menuAudioStreams->setVisibility(Visibility::Hidden, false);
         menuAudioStreams->setLayer(3);
         add(menuAudioStreams);
@@ -140,7 +142,7 @@ bool Player::load(const MediaFile &file) {
             items.emplace_back("Lang: " + stream.language, "", MenuItem::Position::Top, stream.id);
         }
         menuVideoStreams = new MenuVideoSubmenu(
-                main, main->getMenuVideo()->getGlobalBounds(), items, MENU_VIDEO_TYPE_VID);
+                main, main->getMenuVideo()->getGlobalBounds(), "VIDEO______", items, MENU_VIDEO_TYPE_VID);
         menuVideoStreams->setVisibility(Visibility::Hidden, false);
         menuVideoStreams->setLayer(3);
         add(menuVideoStreams);
@@ -164,7 +166,7 @@ bool Player::load(const MediaFile &file) {
             items.emplace_back("Lang: " + stream.language, "", MenuItem::Position::Top, stream.id);
         }
         menuSubtitlesStreams = new MenuVideoSubmenu(
-                main, main->getMenuVideo()->getGlobalBounds(), items, MENU_VIDEO_TYPE_SUB);
+                main, main->getMenuVideo()->getGlobalBounds(), "SUBTITLES______", items, MENU_VIDEO_TYPE_SUB);
         menuSubtitlesStreams->setVisibility(Visibility::Hidden, false);
         menuSubtitlesStreams->setLayer(3);
         add(menuSubtitlesStreams);
@@ -174,16 +176,20 @@ bool Player::load(const MediaFile &file) {
     osd->setLayer(3);
 
     // start playback
-    Kit_PlayerPlay(player);
+    Kit_PlayerPlay(kit_player);
 
     setCpuClock(CpuClock::Max);
+
+    stopped = false;
 
     return true;
 }
 
 bool Player::onInput(c2d::Input::Player *players) {
 
-    if (main->getFiler()->isVisible() || main->getMenuVideo()->isVisible()
+    if (main->getFiler()->isVisible()
+        || main->getMenuVideo()->isVisible()
+        || osd->isVisible()
         || (getMenuVideoStreams() && getMenuVideoStreams()->isVisible())
         || (getMenuAudioStreams() && getMenuAudioStreams()->isVisible())
         || (getMenuSubtitlesStreams() && getMenuSubtitlesStreams()->isVisible())) {
@@ -194,15 +200,34 @@ bool Player::onInput(c2d::Input::Player *players) {
     /// handle inputs
     //////////////////
     unsigned int keys = players[0].keys;
+    if ((keys & Input::Key::Fire1) || (keys & Input::Key::Down)) {
+        if (!osd->isVisible()) {
+            osd->setVisibility(Visibility::Visible, true);
+        }
+    } else if (keys & c2d::Input::Key::Left) {
+        // TODO: seek
+        //osd->setVisibility(Visibility::Visible, true);
+        //Kit_PlayerSeek(player, position - 60.0);
+        setFullscreen(false);
+    } else if (keys & c2d::Input::Key::Right) {
+        main->getMenuVideo()->setVisibility(Visibility::Visible, true);
+        //osd->setVisibility(Visibility::Visible, true);
+        //if (position + 60 < duration) {
+        //    Kit_PlayerSeek(player, position + 60.0);
+        //}
+    }
 
+#if 0
     if (keys & Input::Key::Fire1) {
         if (osd->isVisible()) {
             if (isPaused()) {
                 resume();
-                osd->resume();
+                // TODO
+                //osd->resume();
             } else {
                 pause();
-                osd->pause();
+                // TODO
+                //osd->pause();
             }
         } else {
             osd->setVisibility(Visibility::Visible, true);
@@ -239,25 +264,21 @@ bool Player::onInput(c2d::Input::Player *players) {
             Kit_PlayerSeek(player, position - (60.0 * 10.0));
         }
     }
-
+#endif
     return true;
 }
 
 
 void Player::onDraw(c2d::Transform &transform) {
 
-    if (!isPlaying()) {
+    if (!isPlaying() && !isPaused()) {
+        stop();
         if (isFullscreen()) {
             setFullscreen(false);
         }
         Rectangle::onDraw(transform);
         return;
     }
-
-    /// OSD
-    double position = Kit_GetPlayerPosition(player);
-    double duration = Kit_GetPlayerDuration(player);
-    osd->setProgress((float) duration, (float) position);
 
     //////////////////
     /// step ffmpeg
@@ -270,7 +291,7 @@ void Player::onDraw(c2d::Transform &transform) {
             int need = AUDIO_BUFFER_SIZE - queued;
             while (need > 0) {
                 int ret = Kit_GetPlayerAudioData(
-                        player, (unsigned char *) audioBuffer, AUDIO_BUFFER_SIZE);
+                        kit_player, (unsigned char *) audioBuffer, AUDIO_BUFFER_SIZE);
                 need -= ret;
                 if (ret > 0) {
                     SDL_QueueAudio(audioDeviceID, audioBuffer, (Uint32) ret);
@@ -285,7 +306,7 @@ void Player::onDraw(c2d::Transform &transform) {
     if (video_streams.size > 0) {
         void *video_data;
         texture->lock(nullptr, &video_data, nullptr);
-        if (Kit_GetPlayerVideoDataRaw(player, video_data)) {
+        if (Kit_GetPlayerVideoDataRaw(kit_player, video_data)) {
             texture->unlock();
         }
         // scaling
@@ -306,7 +327,7 @@ void Player::onDraw(c2d::Transform &transform) {
     /// Subtitles
     if (show_subtitles && subtitles_streams.size > 0) {
         int count = Kit_GetPlayerSubtitleDataRaw(
-                player, textureSub->pixels, textureSub->getRectsSrc(), textureSub->getRectsDst(), ATLAS_MAX);
+                kit_player, textureSub->pixels, textureSub->getRectsSrc(), textureSub->getRectsDst(), ATLAS_MAX);
         textureSub->setRectsCount(count);
         if (count > 0) {
             textureSub->unlock();
@@ -330,7 +351,7 @@ void Player::setVideoStream(int index) {
             }
         }
         texture->setVisibility(Visibility::Visible);
-        Kit_SetPlayerStream(player, KIT_STREAMTYPE_VIDEO, index);
+        Kit_SetPlayerStream(kit_player, KIT_STREAMTYPE_VIDEO, index);
     } else {
         video_streams.current = -1;
         if (texture) {
@@ -352,7 +373,7 @@ void Player::setAudioStream(int index) {
                 audio_streams.current = i;
             }
         }
-        Kit_SetPlayerStream(player, KIT_STREAMTYPE_AUDIO, index);
+        Kit_SetPlayerStream(kit_player, KIT_STREAMTYPE_AUDIO, index);
     } else {
         audio_streams.current = -1;
     }
@@ -371,7 +392,7 @@ void Player::setSubtitleStream(int index) {
                 subtitles_streams.current = i;
             }
         }
-        Kit_SetPlayerStream(player, KIT_STREAMTYPE_SUBTITLE, index);
+        Kit_SetPlayerStream(kit_player, KIT_STREAMTYPE_SUBTITLE, index);
         textureSub->setVisibility(Visibility::Visible);
         show_subtitles = true;
     } else {
@@ -385,15 +406,18 @@ void Player::setSubtitleStream(int index) {
 
 bool Player::isPlaying() {
 
-    return player != nullptr
-           && (Kit_GetPlayerState(player) == KIT_PLAYING
-               || Kit_GetPlayerState(player) == KIT_PAUSED);
+    return kit_player != nullptr
+           && Kit_GetPlayerState(kit_player) == KIT_PLAYING;
 }
 
 bool Player::isPaused() {
 
-    return player != nullptr
-           && Kit_GetPlayerState(player) == KIT_PAUSED;
+    return kit_player != nullptr
+           && Kit_GetPlayerState(kit_player) == KIT_PAUSED;
+}
+
+bool Player::isStopped() {
+    return stopped;
 }
 
 bool Player::isFullscreen() {
@@ -433,8 +457,8 @@ void Player::setFullscreen(bool fs) {
 
 void Player::pause() {
 
-    if (!isPaused()) {
-        Kit_PlayerPause(player);
+    if (isPlaying()) {
+        Kit_PlayerPause(kit_player);
     }
 
     setCpuClock(CpuClock::Min);
@@ -443,7 +467,7 @@ void Player::pause() {
 void Player::resume() {
 
     if (isPaused()) {
-        Kit_PlayerPlay(player);
+        Kit_PlayerPlay(kit_player);
     }
 
     setCpuClock(CpuClock::Max);
@@ -451,55 +475,58 @@ void Player::resume() {
 
 void Player::stop() {
 
-    setCpuClock(CpuClock::Min);
+    if (!stopped) {
+        setCpuClock(CpuClock::Min);
 
-    /// Kit
-    if (player) {
-        Kit_PlayerStop(player);
-        Kit_ClosePlayer(player);
-        player = nullptr;
-    }
-    if (source) {
-        Kit_CloseSource(source);
-        source = nullptr;
-    }
-    Kit_Quit();
+        /// Kit
+        if (kit_player) {
+            Kit_PlayerStop(kit_player);
+            Kit_ClosePlayer(kit_player);
+            kit_player = nullptr;
+        }
+        if (source) {
+            Kit_CloseSource(source);
+            source = nullptr;
+        }
+        Kit_Quit();
 
-    /// Audio
-    if (audioDeviceID > 0) {
-        SDL_CloseAudioDevice(audioDeviceID);
-        audioDeviceID = 0;
-    }
-    if (menuAudioStreams) {
-        delete (menuAudioStreams);
-        menuAudioStreams = nullptr;
-    }
+        /// Audio
+        if (audioDeviceID > 0) {
+            SDL_CloseAudioDevice(audioDeviceID);
+            audioDeviceID = 0;
+        }
+        if (menuAudioStreams) {
+            delete (menuAudioStreams);
+            menuAudioStreams = nullptr;
+        }
 
 
-    /// Video
-    if (texture) {
-        delete (texture);
-        texture = nullptr;
-    }
-    if (menuVideoStreams) {
-        delete (menuVideoStreams);
-        menuVideoStreams = nullptr;
-    }
+        /// Video
+        if (texture) {
+            delete (texture);
+            texture = nullptr;
+        }
+        if (menuVideoStreams) {
+            delete (menuVideoStreams);
+            menuVideoStreams = nullptr;
+        }
 
-    /// Subtitles
-    if (textureSub) {
-        delete (textureSub);
-        textureSub = nullptr;
-    }
-    if (menuSubtitlesStreams) {
-        delete (menuSubtitlesStreams);
-        menuSubtitlesStreams = nullptr;
-    }
+        /// Subtitles
+        if (textureSub) {
+            delete (textureSub);
+            textureSub = nullptr;
+        }
+        if (menuSubtitlesStreams) {
+            delete (menuSubtitlesStreams);
+            menuSubtitlesStreams = nullptr;
+        }
 
-    video_streams.reset();
-    audio_streams.reset();
-    subtitles_streams.reset();
-    show_subtitles = false;
+        video_streams.reset();
+        audio_streams.reset();
+        subtitles_streams.reset();
+        show_subtitles = false;
+        stopped = true;
+    }
 }
 
 void Player::setCpuClock(const CpuClock &clock) {
@@ -561,4 +588,8 @@ Player::Stream *Player::getAudioStreams() {
 
 Player::Stream *Player::getSubtitlesStreams() {
     return &subtitles_streams;
+}
+
+Kit_Player *Player::getKitPlayer() {
+    return kit_player;
 }

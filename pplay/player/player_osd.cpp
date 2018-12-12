@@ -1,128 +1,161 @@
 //
-// Created by cpasjuste on 03/10/18.
+// Created by cpasjuste on 12/12/18.
 //
 
 #include "main.h"
 #include "utility.h"
 #include "player_osd.h"
 
-#define OSD_STATUS_HEIGHT   64.0f
-#define OSD_HIDE_TIME       4.0f
-
 using namespace c2d;
 
-PlayerOSD::PlayerOSD(Player *p) : Rectangle(p->getSize()) {
+#define OSD_HEIGHT      100.0f
+#define OSD_HIDE_TIME   4.0f
 
-    player = p;
-    //setFillColor(Color::Transparent);
+PlayerOSD::PlayerOSD(Main *m) : Rectangle({64, 64}) {
 
-    std::string path = p->getMain()->getIo()->getDataReadPath() + "skin/play-button.png";
-    button_play = new C2DTexture(path);
-    auto size = button_play->getTextureRect();
-    //button_play->setFillColor(COLOR_BLUE);
-    button_play->setOrigin(Origin::Left);
-    button_play->setPosition(16, OSD_STATUS_HEIGHT / 2);
-    button_play->setScale((OSD_STATUS_HEIGHT * 0.6f) / (float) size.width,
-                          (OSD_STATUS_HEIGHT * 0.6f) / (float) size.height);
-    button_play->setVisibility(Visibility::Hidden);
+    main = m;
 
-    path = p->getMain()->getIo()->getDataReadPath() + "skin/pause-button.png";
-    button_pause = new C2DTexture(path);
-    //button_pause->setFillColor(COLOR_BLUE);
-    button_pause->setOrigin(Origin::Left);
-    button_pause->setPosition(16, OSD_STATUS_HEIGHT / 2);
-    button_pause->setScale((OSD_STATUS_HEIGHT * 0.6f) / (float) size.width,
-                           (OSD_STATUS_HEIGHT * 0.6f) / (float) size.height);
+    setSize(main->getSize().x - 200, OSD_HEIGHT);
+    setPosition(main->getSize().x / 2, main->getSize().y + OSD_HEIGHT);
+    setOrigin(Origin::Bottom);
 
-    status = new C2DRoundedRectangle({getSize().x - 384, OSD_STATUS_HEIGHT});
-    status->setOrigin(Origin::Bottom);
-    status->setPosition(getSize().x / 2, getSize().y - 32);
-    status->setFillColor(COLOR_GRAY_DARK);
-    status->setOutlineColor(Color::White);
-    status->setOutlineThickness(2);
+    highlight = new Highlight({OSD_HEIGHT, 64});
+    highlight->setOrigin(Origin::Left);
+    highlight->setRotation(90);
+    highlight->setPosition(64, 0);
+    add(highlight);
 
-    status->add(button_play);
-    status->add(button_pause);
-
-    add(status);
-
-    float x = button_play->getGlobalBounds().left + button_play->getGlobalBounds().width + 16;
-    progress = new Progress({x, status->getSize().y / 2.0f, status->getSize().x - 196, 16});
-    progress->setOrigin(Origin::Left);
-    progress->setFgColor(COLOR_BLUE);
+    progress = new Progress({0, 0, getSize().x, 6});
+    progress->setFgColor(COLOR_RED);
     progress->setBgColor(COLOR_GRAY);
-    progress->setOutlineThickness(1);
-    progress->setOutlineColor(COLOR_GRAY_LIGHT);
-    status->add(progress);
+    progress->setOutlineThickness(0);
+    add(progress);
 
-    remaining = new Text("01:23:45", 22, player->getMain()->getFont());
-    remaining->setOrigin(Origin::Right);
-    remaining->setPosition(
-            status->getSize().x - 20,
-            status->getSize().y / 2.0f - 2);
-    remaining->setOutlineThickness(1);
-    status->add(remaining);
+    auto btn = new C2DTexture(main->getIo()->getDataReadPath() + "skin/btn_seek_backward_10.png");
+    btn->setSize(32, 32);
+    btn->setPosition(64 * 1, getSize().y / 2);
+    btn->setOrigin(Origin::Center);
+    add(btn);
+    buttons.push_back(btn);
 
-    current = new Text("01:23:45", 18, player->getMain()->getFont());
-    current->setOrigin(Origin::Bottom);
-    current->setOutlineThickness(1);
-    status->add(current);
+    btn = new C2DTexture(main->getIo()->getDataReadPath() + "skin/btn_seek_backward_1.png");
+    btn->setSize(32, 32);
+    btn->setPosition(64 * 2, getSize().y / 2);
+    btn->setOrigin(Origin::Center);
+    add(btn);
+    buttons.push_back(btn);
 
-    tweenAlpha = new TweenAlpha(0, 200, 0.6f);
-    status->add(tweenAlpha);
+    btn = new C2DTexture(main->getIo()->getDataReadPath() + "skin/btn_pause.png");
+    btn->setSize(32, 32);
+    btn->setPosition(64 * 3, getSize().y / 2);
+    btn->setOrigin(Origin::Center);
+    add(btn);
+    buttons.push_back(btn);
+
+    btn = new C2DTexture(main->getIo()->getDataReadPath() + "skin/btn_seek_forward_1.png");
+    btn->setSize(32, 32);
+    btn->setPosition(64 * 4, getSize().y / 2);
+    btn->setOrigin(Origin::Center);
+    add(btn);
+    buttons.push_back(btn);
+
+    btn = new C2DTexture(main->getIo()->getDataReadPath() + "skin/btn_seek_forward_10.png");
+    btn->setSize(32, 32);
+    btn->setPosition(64 * 5, getSize().y / 2);
+    btn->setOrigin(Origin::Center);
+    add(btn);
+    buttons.push_back(btn);
+
+    /*
+    btn = new C2DTexture(main->getIo()->getDataReadPath() + "skin/btn_stop.png");
+    btn->setPosition(64 * 2, getSize().y / 2);
+    btn->setOrigin(Origin::Center);
+    add(btn);
+    buttons.push_back(btn);
+    */
+
+    //
+    btn_play = new C2DTexture(main->getIo()->getDataReadPath() + "skin/btn_play.png");
+    btn_play->setSize(32, 32);
+    btn_play->setPosition(buttons.at((size_t) ButtonID::Pause)->getPosition().x, getSize().y / 2);
+    btn_play->setOrigin(Origin::Center);
+    btn_play->setVisibility(Visibility::Hidden);
+    add(btn_play);
+
+
+    add(new TweenPosition({getPosition().x, getPosition().y},
+                          {getPosition().x, getPosition().y - OSD_HEIGHT}, 0.5f));
 
     clock.restart();
-    setVisibility(Visibility::Hidden, false);
-}
-
-void PlayerOSD::setProgress(float duration, float position) {
-
-    if (clock.getElapsedTime().asSeconds() >= OSD_HIDE_TIME) {
-        setVisibility(Visibility::Hidden);
-    } else {
-        std::string rem = pplay::Utility::formatTime(duration - position);
-        remaining->setString(rem);
-
-        std::string cur = pplay::Utility::formatTimeShort(position);
-        current->setString(cur);
-        current->setPosition(
-                progress->getPosition().x + progress->getProgressWidth(),
-                progress->getPosition().y - 12);
-
-        progress->setProgress(position / duration);
-    }
-}
-
-void PlayerOSD::pause() {
-    clock.restart();
-    button_pause->setVisibility(Visibility::Hidden);
-    button_play->setVisibility(Visibility::Visible);
-}
-
-void PlayerOSD::resume() {
-    clock.restart();
-    button_pause->setVisibility(Visibility::Visible);
-    button_play->setVisibility(Visibility::Hidden);
-}
-
-bool PlayerOSD::isVisible() {
-    return status->getVisibility() == Visibility::Visible;
-}
-
-c2d::Visibility PlayerOSD::getVisibility() {
-    return status->getVisibility();
 }
 
 void PlayerOSD::setVisibility(c2d::Visibility visibility, bool tweenPlay) {
 
     clock.restart();
-    if (visibility == status->getVisibility()) {
-        return;
-    }
-
-    status->setVisibility(visibility, tweenPlay);
+    C2DObject::setVisibility(visibility, tweenPlay);
 }
 
-PlayerOSD::~PlayerOSD() {
+void PlayerOSD::onDraw(c2d::Transform &transform) {
 
+    if (clock.getElapsedTime().asSeconds() >= OSD_HIDE_TIME) {
+        setVisibility(Visibility::Hidden);
+    }
+
+    if (main->getPlayer()->isPlaying()) {
+        position = (float) Kit_GetPlayerPosition(main->getPlayer()->getKitPlayer());
+        duration = (float) Kit_GetPlayerDuration(main->getPlayer()->getKitPlayer());
+        progress->setProgress(position / duration);
+    }
+
+    C2DObject::onDraw(transform);
+}
+
+bool PlayerOSD::onInput(c2d::Input::Player *players) {
+
+    unsigned int keys = players[0].keys;
+
+    if ((keys & Input::Key::Up) || keys & Input::Key::Fire2) {
+        setVisibility(Visibility::Hidden, true);
+    } else if (keys & Input::Key::Left) {
+        index--;
+        if (index < 0) {
+            index = (int) buttons.size() - 1;
+        }
+        highlight->setPosition(buttons.at((size_t) index)->getPosition().x, 0);
+        clock.restart();
+    } else if (keys & Input::Key::Right) {
+        index++;
+        if (index >= (int) buttons.size()) {
+            index = 0;
+        }
+        highlight->setPosition(buttons.at((size_t) index)->getPosition().x, 0);
+        clock.restart();
+    } else if (keys & Input::Key::Fire1) {
+        if (index == (int) ButtonID::Pause) {
+            bool pause = main->getPlayer()->isPlaying();
+            btn_play->setVisibility(pause ? Visibility::Visible : Visibility::Hidden);
+            buttons.at((int) ButtonID::Pause)->setVisibility(pause ? Visibility::Hidden : Visibility::Visible);
+            if (pause) {
+                main->getPlayer()->pause();
+            } else {
+                main->getPlayer()->resume();
+            }
+        } else if (index == (int) ButtonID::SeekForward1) {
+            Kit_PlayerSeek(main->getPlayer()->getKitPlayer(), position + 60.0);
+        } else if (index == (int) ButtonID::SeekForward10) {
+            Kit_PlayerSeek(main->getPlayer()->getKitPlayer(), position + (60.0 * 10.0));
+        } else if (index == (int) ButtonID::SeekBackward1) {
+            Kit_PlayerSeek(main->getPlayer()->getKitPlayer(), position - 60.0);
+        } else if (index == (int) ButtonID::SeekBackward10) {
+            Kit_PlayerSeek(main->getPlayer()->getKitPlayer(), position - (60.0 * 10.0));
+        } else if (index == (int) ButtonID::Stop) {
+            setVisibility(Visibility::Hidden);
+            main->getPlayer()->stop();
+            main->getPlayer()->setFullscreen(false);
+        }
+
+        clock.restart();
+    }
+
+    return true;
 }

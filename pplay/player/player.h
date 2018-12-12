@@ -10,9 +10,9 @@ extern "C" {
 #include "kitchensink/internal/kitlibstate.h"
 }
 
-#include "subtitles_texture.h"
 #include "menus/menu_video_submenu.h"
 #include "video_texture.h"
+#include "subtitles_texture.h"
 
 #define AUDIO_BUFFER_SIZE (1024 * 64)
 #define MAX_STREAM_LIST_SIZE 32
@@ -66,6 +66,8 @@ public:
 
     bool isPaused();
 
+    bool isStopped();
+
     bool isFullscreen();
 
     void setFullscreen(bool maximize);
@@ -79,6 +81,8 @@ public:
     void setCpuClock(const CpuClock &clock);
 
     Main *getMain();
+
+    Kit_Player *getKitPlayer();
 
     VideoTexture *getVideoTexture();
 
@@ -100,7 +104,7 @@ public:
 
     bool onInput(c2d::Input::Player *players) override;
 
-//private:
+private:
 
     void onDraw(c2d::Transform &transform) override;
 
@@ -116,7 +120,7 @@ public:
 
     // kit player
     Kit_Source *source = nullptr;
-    Kit_Player *player = nullptr;
+    Kit_Player *kit_player = nullptr;
     Kit_PlayerInfo playerInfo;
     Stream video_streams;
     Stream audio_streams;
@@ -128,6 +132,7 @@ public:
 
     bool show_subtitles = false;
     bool fullscreen = false;
+    bool stopped = true;
 };
 
 #endif //PPLAY_PLAYER_H

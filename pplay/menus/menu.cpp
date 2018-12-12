@@ -31,7 +31,7 @@ MenuButton::MenuButton(Main *main, const MenuItem &item, const FloatRect &rect) 
 }
 
 
-Menu::Menu(Main *m, const c2d::FloatRect &rect,
+Menu::Menu(Main *m, const c2d::FloatRect &rect, const std::string &_title,
            const std::vector<MenuItem> &items, bool left) : RectangleShape(rect) {
 
     main = m;
@@ -64,7 +64,7 @@ Menu::Menu(Main *m, const c2d::FloatRect &rect,
     add(highlight);
 
     // title
-    title = new Text("PPLAY______", 24, main->getFont());
+    title = new Text(_title, 24, main->getFont());
     title->setStyle(Text::Underlined);
     title->setPosition(32, 32);
     title->setFillColor(COLOR_FONT);

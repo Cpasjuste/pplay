@@ -54,7 +54,7 @@ class Menu : public c2d::RectangleShape {
 public:
 
     explicit Menu(Main *main, const c2d::FloatRect &rect,
-                  const std::vector<MenuItem> &items, bool left);
+                  const std::string &title, const std::vector<MenuItem> &items, bool left);
 
     void setVisibility(c2d::Visibility visibility, bool tweenPlay) override;
 

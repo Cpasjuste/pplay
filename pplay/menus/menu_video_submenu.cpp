@@ -8,8 +8,10 @@
 
 using namespace c2d;
 
-MenuVideoSubmenu::MenuVideoSubmenu(Main *main, const c2d::FloatRect &rect, const std::vector<MenuItem> &items, int type)
-        : Menu(main, rect, items, false) {
+MenuVideoSubmenu::MenuVideoSubmenu(
+        Main *main, const c2d::FloatRect &rect, const std::string &_title,
+        const std::vector<MenuItem> &items, int type)
+        : Menu(main, rect, _title, items, false) {
 
     this->type = type;
 

@@ -114,7 +114,7 @@ bool Main::onInput(c2d::Input::Player *players) {
         }
     } else if (keys & Input::Touch) {
         if (player->getGlobalBounds().contains(players[0].touch)) {
-            if (player->isPlaying() && !player->isFullscreen()) {
+            if (!player->isStopped() && !player->isFullscreen()) {
                 player->setFullscreen(true);
                 return true;
             }
@@ -166,6 +166,8 @@ void Main::quit() {
         config->getOption(OPT_LAST_PATH)->setString(filer->getPath());
         config->save();
     }
+
+    player->stop();
 
     running = false;
 }
