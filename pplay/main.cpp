@@ -30,6 +30,9 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     // init/load config file
     config = new PPLAYConfig(this);
 
+    // scaling
+    scaling = size.x / 1280.0f;
+
     // font
     font = new C2DFont();
     font->loadFromFile(getIo()->getDataReadPath() + "skin/font.ttf");
@@ -66,7 +69,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     items.emplace_back("Home", "home.png", MenuItem::Position::Top);
     items.emplace_back("Network", "network.png", MenuItem::Position::Top);
     items.emplace_back("Exit", "exit.png", MenuItem::Position::Bottom);
-    menu_main = new MenuMain(this, {-250, 0, 250, getSize().y}, items);
+    menu_main = new MenuMain(this, {-250 * scaling, 0, 250 * scaling, getSize().y}, items);
     menu_main->setVisibility(Visibility::Hidden, false);
     menu_main->setLayer(2);
     add(menu_main);
@@ -77,7 +80,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     items.emplace_back("Audio", "audio.png", MenuItem::Position::Top);
     items.emplace_back("Subtitles", "subtitles.png", MenuItem::Position::Top);
     items.emplace_back("Stop", "exit.png", MenuItem::Position::Bottom);
-    menu_video = new MenuVideo(this, {getSize().x, 0, 250, getSize().y}, items);
+    menu_video = new MenuVideo(this, {getSize().x, 0, 250 * scaling, getSize().y}, items);
     menu_video->setVisibility(Visibility::Hidden, false);
     menu_video->setLayer(2);
     add(menu_video);
@@ -85,7 +88,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     // a messagebox...
     float w = getSize().x / 2;
     float h = getSize().y / 2;
-    messageBox = new MessageBox({w, h, w, h}, getInput(), getFont(), FONT_SIZE);
+    messageBox = new MessageBox({w, h, w, h}, getInput(), getFont(), getFontSize());
     messageBox->setOrigin(Origin::Center);
     messageBox->setFillColor(COLOR_BG);
     messageBox->setAlpha(200);
@@ -94,6 +97,13 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     messageBox->getTitleText()->setOutlineThickness(0);
     messageBox->getMessageText()->setOutlineThickness(0);
     add(messageBox);
+}
+
+Main::~Main() {
+    delete (mediaInfoThread);
+    delete (config);
+    delete (timer);
+    delete (font);
 }
 
 bool Main::onInput(c2d::Input::Player *players) {
@@ -204,15 +214,16 @@ c2d::MessageBox *Main::getMessageBox() {
     return messageBox;
 }
 
-Main::~Main() {
-    delete (mediaInfoThread);
-    delete (config);
-    delete (timer);
-    delete (font);
-}
-
 StatusBox *Main::getStatus() {
     return statusBox;
+}
+
+float Main::getScaling() {
+    return scaling;
+}
+
+unsigned int Main::getFontSize() {
+    return (unsigned int) (fontSize * scaling);
 }
 
 int main() {
@@ -222,7 +233,7 @@ int main() {
     //pthread_init();
 #endif
 
-    Main *main = new Main({C2D_SCREEN_WIDTH, C2D_SCREEN_HEIGHT});
+    Main *main = new Main({1280, 720});
 
     while (main->isRunning()) {
         main->flip();

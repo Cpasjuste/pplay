@@ -1,0 +1,13 @@
+TODO
+====
+
+- add status bar (time, battery)
+
+DONE
+====
+
+- player osd: limit osd title width
+- player osd: move status msg up when visible
+- player osd: add time
+- filer: finish item "Info" message (size, duration)
+- menus: add back button to menu (B)

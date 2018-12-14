@@ -6,7 +6,7 @@
 #include "filer.h"
 #include "utility.h"
 
-#define ITEM_HEIGHT 80
+#define ITEM_HEIGHT 90
 
 using namespace c2d;
 
@@ -15,12 +15,12 @@ Filer::Filer(Main *m, const std::string &path, const c2d::FloatRect &rect) : Rec
     main = m;
 
     // highlight
-    highlight = new Highlight({getSize().x, ITEM_HEIGHT}, Highlight::CursorPosition::Left);
+    highlight = new Highlight({getSize().x, ITEM_HEIGHT * main->getScaling()}, Highlight::CursorPosition::Left);
     highlight->setFillColor({255, 255, 255, 40});
     add(highlight);
 
     // items
-    item_height = ITEM_HEIGHT;
+    item_height = ITEM_HEIGHT * main->getScaling();
     item_max = (int) (getSize().y / item_height);
     if ((item_max * item_height) < getSize().y) {
         item_height = getSize().y / (float) item_max;

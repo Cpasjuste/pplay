@@ -18,6 +18,8 @@ namespace pplay {
         static std::string formatTime(double seconds);
 
         static std::string formatTimeShort(double seconds);
+
+        static std::string formatSize(size_t size);
     };
 }
 

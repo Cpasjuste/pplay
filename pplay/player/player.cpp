@@ -132,7 +132,6 @@ bool Player::load(const MediaFile &file) {
     if (video_streams.size > 0) {
         texture = new VideoTexture(
                 {playerInfo.video.output.width, playerInfo.video.output.height});
-        //texture->setDeleteMode(DeleteMode::Manual);
         texture->setFilter(Texture::Filter::Linear);
         add(texture);
 
@@ -151,7 +150,6 @@ bool Player::load(const MediaFile &file) {
     if (subtitles_streams.size > 0) {
         textureSub = new SubtitlesTexture();
         textureSub->setFilter(Texture::Filter::Point);
-        //textureSub->setDeleteMode(DeleteMode::Manual);
         void *buf;
         textureSub->lock(nullptr, &buf, nullptr);
         memset(buf, 0, 1024 * 1024 * 4);
@@ -171,6 +169,8 @@ bool Player::load(const MediaFile &file) {
         menuSubtitlesStreams->setLayer(3);
         add(menuSubtitlesStreams);
     }
+
+    title = file.name;
 
     setVisibility(Visibility::Visible);
     osd->setLayer(3);
@@ -204,67 +204,12 @@ bool Player::onInput(c2d::Input::Player *players) {
         if (!osd->isVisible()) {
             osd->setVisibility(Visibility::Visible, true);
         }
-    } else if (keys & c2d::Input::Key::Left) {
-        // TODO: seek
-        //osd->setVisibility(Visibility::Visible, true);
-        //Kit_PlayerSeek(player, position - 60.0);
+    } else if (keys & c2d::Input::Key::Left || keys & Input::Key::Fire2) {
         setFullscreen(false);
     } else if (keys & c2d::Input::Key::Right) {
         main->getMenuVideo()->setVisibility(Visibility::Visible, true);
-        //osd->setVisibility(Visibility::Visible, true);
-        //if (position + 60 < duration) {
-        //    Kit_PlayerSeek(player, position + 60.0);
-        //}
     }
 
-#if 0
-    if (keys & Input::Key::Fire1) {
-        if (osd->isVisible()) {
-            if (isPaused()) {
-                resume();
-                // TODO
-                //osd->resume();
-            } else {
-                pause();
-                // TODO
-                //osd->pause();
-            }
-        } else {
-            osd->setVisibility(Visibility::Visible, true);
-        }
-    } else if (keys & Input::Key::Fire2) {
-        if (osd->isVisible()) {
-            osd->setVisibility(Visibility::Hidden, true);
-        } else {
-            osd->setVisibility(Visibility::Visible, true);
-        }
-    } else {
-
-        double position = Kit_GetPlayerPosition(player);
-        double duration = Kit_GetPlayerDuration(player);
-
-        if (keys & c2d::Input::Key::Left) {
-            // TODO: seek
-            //osd->setVisibility(Visibility::Visible, true);
-            //Kit_PlayerSeek(player, position - 60.0);
-            setFullscreen(false);
-        } else if (keys & c2d::Input::Key::Right) {
-            main->getMenuVideo()->setVisibility(Visibility::Visible, true);
-            //osd->setVisibility(Visibility::Visible, true);
-            //if (position + 60 < duration) {
-            //    Kit_PlayerSeek(player, position + 60.0);
-            //}
-        } else if (keys & c2d::Input::Key::Up) {
-            osd->setVisibility(Visibility::Visible, true);
-            if (position + (60.0 * 10.0) < duration) {
-                Kit_PlayerSeek(player, position + (60.0 * 10.0));
-            }
-        } else if (keys & c2d::Input::Key::Down) {
-            osd->setVisibility(Visibility::Visible, true);
-            Kit_PlayerSeek(player, position - (60.0 * 10.0));
-        }
-    }
-#endif
     return true;
 }
 
@@ -317,8 +262,7 @@ void Player::onDraw(c2d::Transform &transform) {
         if (scale.x > max_scale.x) {
             scale.x = scale.y = max_scale.x;
         }
-        //texture->setOrigin(Origin::TopRight);
-        //texture->setPosition(getSize().x, 0);
+        // TODO: set position to top right
         texture->setOrigin(Origin::Center);
         texture->setPosition(getSize().x / 2.0f, getSize().y / 2.0f);
         texture->setScale(scale);
@@ -340,7 +284,7 @@ void Player::onDraw(c2d::Transform &transform) {
 void Player::setVideoStream(int index) {
 
     if (index == video_streams.getCurrentStream()) {
-        main->getStatus()->show("Info...", "selected video stream already set");
+        main->getStatus()->show("Info...", "Selected video stream already set");
         return;
     }
 
@@ -363,7 +307,7 @@ void Player::setVideoStream(int index) {
 void Player::setAudioStream(int index) {
 
     if (index == audio_streams.getCurrentStream()) {
-        main->getStatus()->show("Info...", "selected audio stream already set");
+        main->getStatus()->show("Info...", "Selected audio stream already set");
         return;
     }
 
@@ -382,7 +326,7 @@ void Player::setAudioStream(int index) {
 void Player::setSubtitleStream(int index) {
 
     if (index == subtitles_streams.getCurrentStream()) {
-        main->getStatus()->show("Info...", "selected subtitles stream already set");
+        main->getStatus()->show("Info...", "Selected subtitles stream already set");
         return;
     }
 
@@ -425,6 +369,10 @@ bool Player::isFullscreen() {
 }
 
 void Player::setFullscreen(bool fs) {
+
+    if (fs == fullscreen) {
+        return;
+    }
 
     fullscreen = fs;
 
@@ -524,6 +472,7 @@ void Player::stop() {
         video_streams.reset();
         audio_streams.reset();
         subtitles_streams.reset();
+        title.clear();
         show_subtitles = false;
         stopped = true;
     }
@@ -592,4 +541,12 @@ Player::Stream *Player::getSubtitlesStreams() {
 
 Kit_Player *Player::getKitPlayer() {
     return kit_player;
+}
+
+const std::string &Player::getTitle() const {
+    return title;
+}
+
+PlayerOSD *Player::getOSD() {
+    return osd;
 }

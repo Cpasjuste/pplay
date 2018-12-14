@@ -43,7 +43,7 @@ void MenuVideo::onOptionSelection(MenuItem *item) {
 
 bool MenuVideo::onInput(c2d::Input::Player *players) {
 
-    if (players[0].keys & Input::Left) {
+    if (players[0].keys & Input::Left || players[0].keys & Input::Key::Fire2) {
         setVisibility(Visibility::Hidden, true);
         return true;
     }

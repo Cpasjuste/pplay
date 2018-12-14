@@ -27,10 +27,10 @@ void MenuMain::onOptionSelection(MenuItem *item) {
 
 bool MenuMain::onInput(c2d::Input::Player *players) {
 
-    if (players[0].keys & Input::Right) {
+    if (players[0].keys & Input::Right || players[0].keys & Input::Key::Fire2) {
         setVisibility(Visibility::Hidden, true);
         return true;
     }
-
+    
     return Menu::onInput(players);
 }

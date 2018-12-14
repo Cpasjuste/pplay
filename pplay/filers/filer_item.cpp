@@ -7,6 +7,7 @@
 #include "cross2d/c2d.h"
 #include "main.h"
 #include "filer_item.h"
+#include "utility.h"
 
 using namespace c2d;
 
@@ -15,25 +16,25 @@ FilerItem::FilerItem(Main *main, const c2d::FloatRect &rect, const MediaFile &fi
     this->main = main;
     this->file = file;
 
-    textTitle = new Text(file.name, FONT_SIZE, main->getFont());
+    textTitle = new Text(file.name, main->getFontSize(), main->getFont());
     textTitle->setPosition(16, 4);
     textTitle->setWidth(getSize().x - 64);
     add(textTitle);
 
-    textInfo = new Text("Info: N/A", FONT_SIZE - 8, main->getFont());
-    textInfo->setPosition(16, 4 + FONT_SIZE + 4);
+    textInfo = new Text("Info: N/A", main->getFontSize() - 8, main->getFont());
+    textInfo->setPosition(16, textTitle->getPosition().y + main->getFontSize() + 4);
     textInfo->setWidth(getSize().x - 64);
     textInfo->setFillColor(COLOR_FONT);
     add(textInfo);
 
-    textVideo = new Text("Video: N/A", FONT_SIZE - 8, main->getFont());
-    textVideo->setPosition(16, textInfo->getPosition().y + FONT_SIZE - 6);
+    textVideo = new Text("Video: N/A", main->getFontSize() - 8, main->getFont());
+    textVideo->setPosition(16, textInfo->getPosition().y + main->getFontSize());
     textVideo->setWidth(getSize().x - 64);
     textVideo->setFillColor(COLOR_FONT);
     add(textVideo);
 
-    textAudio = new Text("Audio: N/A", FONT_SIZE - 8, main->getFont());
-    textAudio->setPosition(16, textVideo->getPosition().y + FONT_SIZE - 6);
+    textAudio = new Text("Audio: N/A", main->getFontSize() - 8, main->getFont());
+    textAudio->setPosition(16, textVideo->getPosition().y + main->getFontSize());
     textAudio->setWidth(getSize().x - 64);
     textAudio->setFillColor(COLOR_FONT);
     add(textAudio);
@@ -54,7 +55,8 @@ void FilerItem::setFile(const MediaFile &file) {
 
     if (file.type == Io::Type::File) {
         std::ostringstream ossInfo;
-        ossInfo << "Info: " << file.size;
+        ossInfo << "Duration: " << pplay::Utility::formatTime(file.media.duration)
+                << ", Size: " << pplay::Utility::formatSize(file.size);
         textInfo->setString(ossInfo.str());
         if (!file.getMedia().videos.empty()) {
             std::ostringstream oss;

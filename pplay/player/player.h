@@ -82,6 +82,8 @@ public:
 
     Main *getMain();
 
+    PlayerOSD *getOSD();
+
     Kit_Player *getKitPlayer();
 
     VideoTexture *getVideoTexture();
@@ -102,6 +104,8 @@ public:
 
     Stream *getSubtitlesStreams();
 
+    const std::string &getTitle() const;
+
     bool onInput(c2d::Input::Player *players) override;
 
 private:
@@ -117,6 +121,7 @@ private:
     MenuVideoSubmenu *menuVideoStreams = nullptr;
     MenuVideoSubmenu *menuAudioStreams = nullptr;
     MenuVideoSubmenu *menuSubtitlesStreams = nullptr;
+    std::string title;
 
     // kit player
     Kit_Source *source = nullptr;

@@ -14,9 +14,9 @@ class PlayerOSD : public c2d::Rectangle {
 public:
 
     enum class ButtonID {
-        SeekBackward1,
-        SeekBackward10,
         Pause,
+        SeekBackward10,
+        SeekBackward1,
         SeekForward1,
         SeekForward10,
         Stop
@@ -35,6 +35,9 @@ private:
     Main *main;
     Highlight *highlight = nullptr;
     c2d::Progress *progress = nullptr;
+    c2d::Text *title = nullptr;
+    c2d::Text *progress_text = nullptr;
+    c2d::Text *duration_text = nullptr;
     c2d::Texture *btn_play = nullptr;
     std::vector<c2d::Texture *> buttons;
     float position = 0;

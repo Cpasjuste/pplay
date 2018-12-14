@@ -15,8 +15,6 @@
 #include "status_box.h"
 
 #define INPUT_DELAY 250
-#define FONT_SIZE 22
-
 #define ICON_SIZE 24
 #define BUTTON_HEIGHT 64
 
@@ -74,6 +72,10 @@ public:
 
     StatusBox *getStatus();
 
+    float getScaling();
+
+    unsigned int getFontSize();
+
     void quit();
 
 private:
@@ -92,6 +94,9 @@ private:
     Menu *menu_main = nullptr;
     Menu *menu_video = nullptr;
     MediaThread *mediaInfoThread = nullptr;
+
+    float scaling = 1;
+    unsigned int fontSize = 22;
 
     bool running = true;
 };

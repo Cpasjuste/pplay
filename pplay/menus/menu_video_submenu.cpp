@@ -16,7 +16,7 @@ MenuVideoSubmenu::MenuVideoSubmenu(
     this->type = type;
 
     // highlight
-    highlight = new Highlight({getSize().x, BUTTON_HEIGHT}, Highlight::CursorPosition::Left);
+    highlight = new Highlight({getSize().x, BUTTON_HEIGHT * main->getScaling()}, Highlight::CursorPosition::Left);
     highlight->setFillColor(COLOR_BLUE);
     highlight->setAlpha(40);
     highlight->setCursorColor(COLOR_RED);
@@ -69,7 +69,7 @@ void MenuVideoSubmenu::onOptionSelection(MenuItem *item) {
 
 bool MenuVideoSubmenu::onInput(c2d::Input::Player *players) {
 
-    if (players[0].keys & Input::Left) {
+    if (players[0].keys & Input::Left || players[0].keys & Input::Key::Fire2) {
         setVisibility(Visibility::Hidden, true);
         main->getMenuVideo()->setVisibility(Visibility::Visible, true);
         return true;

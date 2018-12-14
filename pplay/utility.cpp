@@ -55,3 +55,32 @@ std::string Utility::formatTimeShort(double seconds) {
 
     return oss.str();
 }
+
+static std::string convertToString(double num) {
+    std::ostringstream convert;
+    convert << num;
+    return convert.str();
+}
+
+static double roundOff(double n) {
+    double d = n * 100.0;
+    int i = (int) (d + 0.5);
+    d = (float) i / 100.0;
+    return d;
+}
+
+std::string Utility::formatSize(size_t size) {
+
+    static const char *sizes[] = {"B", "KB", "MB", "GB"};
+    int div = 0;
+    size_t rem = 0;
+
+    while (size >= 1024 && div < (sizeof sizes / sizeof *sizes)) {
+        rem = (size_t) (size % 1024);
+        div++;
+        size /= 1024;
+    }
+
+    double size_d = (float) size + (float) rem / 1024.0;
+    return convertToString(roundOff(size_d)) + " " + sizes[div];
+}

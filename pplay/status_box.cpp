@@ -5,10 +5,12 @@
 #include "cross2d/c2d.h"
 #include "main.h"
 #include "status_box.h"
+#include "player_osd.h"
 
 using namespace c2d;
 
-StatusBox::StatusBox(Main *m, const c2d::Vector2f &position) : Rectangle({m->getSize().x - 64, 48}) {
+StatusBox::StatusBox(Main *m, const c2d::Vector2f &position)
+        : Rectangle({(m->getSize().x - 64) * m->getScaling(), 48 * m->getScaling()}) {
 
     main = m;
 
@@ -16,20 +18,22 @@ StatusBox::StatusBox(Main *m, const c2d::Vector2f &position) : Rectangle({m->get
 
     icon = new C2DTexture(main->getIo()->getDataReadPath() + "skin/wait.png");
     icon->setOrigin(Origin::Center);
+    icon->setScale(main->getSize().x / 1920, main->getSize().y / 1080);
     icon->setPosition(icon->getSize().x / 2 + 8, getSize().y / 2);
     icon->setFillColor(COLOR_FONT);
     icon->setAlpha(200);
     icon->add(new TweenRotation(0, 360, 2, TweenLoop::Loop));
     add(icon);
 
-    titleText = new Text("Please Wait...", FONT_SIZE, main->getFont());
+    titleText = new Text("Please Wait...", main->getFontSize(), main->getFont());
     titleText->setFillColor(COLOR_RED);
     titleText->setPosition(icon->getSize().x + 16, 4);
     add(titleText);
 
-    messageText = new Text("Doing something in background, please wait", 16, main->getFont());
+    messageText = new Text("Doing something in background, please wait",
+                           (unsigned int) (16 * main->getScaling()), main->getFont());
     messageText->setFillColor(COLOR_FONT);
-    messageText->setPosition(icon->getSize().x + 16, titleText->getPosition().y + FONT_SIZE + 4);
+    messageText->setPosition(icon->getSize().x + 16, titleText->getPosition().y + main->getFontSize() + 4);
     messageText->setWidth(getSize().x - icon->getSize().x - 16);
     add(messageText);
 
@@ -74,8 +78,13 @@ void StatusBox::onDraw(c2d::Transform &transform) {
         setVisibility(Visibility::Hidden, true);
     }
 
-    FloatRect bounds = main->getMenuMain()->getGlobalBounds();
-    setPosition(bounds.left + bounds.width + 10, getPosition().y);
+    if (main->getPlayer()->getOSD()->isVisible()) {
+        FloatRect bounds = main->getPlayer()->getOSD()->getGlobalBounds();
+        setPosition(10, bounds.top - 32);
+    } else {
+        FloatRect bounds = main->getMenuMain()->getGlobalBounds();
+        setPosition(bounds.left + bounds.width + 10, main->getSize().y - 16);
+    }
 
     SDL_LockMutex(mutex);
     C2DObject::onDraw(transform);

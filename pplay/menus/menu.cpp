@@ -17,15 +17,16 @@ MenuButton::MenuButton(Main *main, const MenuItem &item, const FloatRect &rect) 
     if (!item.icon.empty()) {
         icon = new C2DTexture(main->getIo()->getDataReadPath() + "skin/" + item.icon);
         icon->setOrigin(Origin::Left);
-        icon->setPosition(16, getSize().y / 2);
+        icon->setPosition(16 * main->getScaling(), getSize().y / 2);
+        icon->setScale(main->getSize().x / 1920, main->getSize().y / 1080);
         icon->setFillColor(COLOR_FONT);
         add(icon);
     }
 
-    name = new Text(item.name, FONT_SIZE - 2, main->getFont());
+    name = new Text(item.name, main->getFontSize() - 2, main->getFont());
     name->setOrigin(Origin::Left);
-    name->setPosition(ICON_SIZE + 32, getSize().y / 2);
-    name->setWidth(getSize().x - ICON_SIZE + 32);
+    name->setPosition((ICON_SIZE + 32) * main->getScaling(), getSize().y / 2);
+    name->setWidth((getSize().x - ICON_SIZE + 32) * main->getScaling());
     name->setFillColor(COLOR_FONT);
     add(name);
 }
@@ -58,33 +59,33 @@ Menu::Menu(Main *m, const c2d::FloatRect &rect, const std::string &_title,
 #endif
 
     // highlight
-    highlight = new Highlight({getSize().x, BUTTON_HEIGHT});
+    highlight = new Highlight({getSize().x, BUTTON_HEIGHT * main->getScaling()});
     highlight->setOrigin(Origin::Left);
     highlight->setPosition(0, 200);
     add(highlight);
 
     // title
-    title = new Text(_title, 24, main->getFont());
+    title = new Text(_title, 24 * (unsigned int) main->getScaling(), main->getFont());
     title->setStyle(Text::Underlined);
     title->setPosition(32, 32);
     title->setFillColor(COLOR_FONT);
     add(title);
 
     // options
-    FloatRect top = {0, 200, getSize().x, BUTTON_HEIGHT};
-    FloatRect bottom = {0, getSize().y - 32, getSize().x, BUTTON_HEIGHT};
+    FloatRect top = {0, 200, getSize().x, BUTTON_HEIGHT * main->getScaling()};
+    FloatRect bottom = {0, getSize().y - 32, getSize().x, BUTTON_HEIGHT * main->getScaling()};
 
     for (auto &item : items) {
         if (item.position == MenuItem::Position::Top) {
             auto *option = new MenuButton(main, item, top);
             add(option);
             buttons.push_back(option);
-            top.top += 64;
+            top.top += 64 * main->getScaling();
         } else {
             auto *option = new MenuButton(main, item, bottom);
             add(option);
             buttons.push_back(option);
-            bottom.top -= 64;
+            bottom.top -= 64 * main->getScaling();
         }
     }
 
