@@ -108,6 +108,10 @@ Main::~Main() {
 
 bool Main::onInput(c2d::Input::Player *players) {
 
+    if (player->isLoading()) {
+        return true;
+    }
+
     unsigned int keys = players[0].keys;
 
     if (messageBox->isVisible()) {

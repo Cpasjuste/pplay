@@ -68,6 +68,8 @@ public:
 
     bool isStopped();
 
+    bool isLoading();
+
     bool isFullscreen();
 
     void setFullscreen(bool maximize);
@@ -131,6 +133,7 @@ private:
     bool show_subtitles = false;
     bool fullscreen = false;
     bool stopped = true;
+    bool loading = false;
 };
 
 #endif //PPLAY_PLAYER_H

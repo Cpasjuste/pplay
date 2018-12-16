@@ -9,8 +9,16 @@
 #include "player.h"
 #include "player_osd.h"
 #include "gradient_rectangle.h"
+#include "kitchensink/internal/kitdecoder.h"
 
 using namespace c2d;
+
+enum DecoderIndex {
+    KIT_VIDEO_DEC = 0,
+    KIT_AUDIO_DEC,
+    KIT_SUBTITLE_DEC,
+    KIT_DEC_COUNT
+};
 
 Player::Player(Main *_main) : Rectangle(_main->getSize()) {
 
@@ -26,6 +34,7 @@ Player::Player(Main *_main) : Rectangle(_main->getSize()) {
     add(tweenScale);
 
     osd = new PlayerOSD(main);
+    osd->setLayer(3);
     add(osd);
 
     audio = new C2DAudio(48000, 24);
@@ -53,8 +62,8 @@ bool Player::load(const MediaFile &file) {
     }
 
     Kit_SetHint(KIT_HINT_VIDEO_BUFFER_FRAMES, 256);
-    Kit_SetHint(KIT_HINT_AUDIO_BUFFER_FRAMES, 4096);
-    Kit_SetHint(KIT_HINT_SUBTITLE_BUFFER_FRAMES, 8);
+    Kit_SetHint(KIT_HINT_AUDIO_BUFFER_FRAMES, 2048);
+    //Kit_SetHint(KIT_HINT_SUBTITLE_BUFFER_FRAMES, 8);
 
     // open source file
     printf("Player::load: %s\n", file.path.c_str());
@@ -100,6 +109,8 @@ bool Player::load(const MediaFile &file) {
         stop();
         return false;
     }
+
+    title = file.name;
 
     // we should be good to go, set max cpu for now
     setCpuClock(CpuClock::Max);
@@ -170,14 +181,28 @@ bool Player::load(const MediaFile &file) {
         add(menuSubtitlesStreams);
     }
 
-    title = file.name;
-
-    setVisibility(Visibility::Visible);
-    osd->setLayer(3);
+    // preload/cache some stream frames
+    loading = true;
+    int flip = 0, ret = 1;
+    while (ret > 0) {
+        ret = Kit_PlayerPlay(kit_player);
+        if (flip % 30 == 0) {
+            auto *dec = (Kit_Decoder *) kit_player->decoders[KIT_VIDEO_DEC];
+            float total = dec->buffer[KIT_DEC_BUF_OUT]->size;
+            float current = Kit_GetBufferLength(dec->buffer[KIT_DEC_BUF_OUT]);
+            int progress = (int) ((current / total) * 100.0f);
+            std::string msg = "Loading..." + file.name + "... " + std::to_string(progress) + "%";
+            main->getStatus()->show("Please Wait...", msg, true);
+            main->flip();
+        }
+        flip++;
+    }
+    loading = false;
 
     // start playback
     audio->pause(0);
-    Kit_PlayerPlay(kit_player);
+    // must be after Kit_PlayerPlay pre-loading
+    setVisibility(Visibility::Visible);
 
     return true;
 }
@@ -212,6 +237,10 @@ bool Player::onInput(c2d::Input::Player *players) {
 
 
 void Player::onDraw(c2d::Transform &transform) {
+
+    if (loading) {
+        return;
+    }
 
     if (!isPlaying() && !isPaused()) {
         stop();
@@ -532,4 +561,8 @@ const std::string &Player::getTitle() const {
 
 PlayerOSD *Player::getOSD() {
     return osd;
+}
+
+bool Player::isLoading() {
+    return loading;
 }
