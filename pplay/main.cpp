@@ -228,12 +228,19 @@ unsigned int Main::getFontSize() {
 
 int main() {
 
-#if defined(__SWITCH__) && !defined(__NET_DEBUG__)
+    Vector2f size = {1280, 720};
+
+#ifdef __SWITCH__
+#ifndef __NET_DEBUG__
     socketInitializeDefault();
-    //pthread_init();
+#endif
+    appletMainLoop();
+    if (appletGetOperationMode() == AppletOperationMode_Docked) {
+        size = {1920, 1080};
+    }
 #endif
 
-    Main *main = new Main({1280, 720});
+    Main *main = new Main(size);
 
     while (main->isRunning()) {
         main->flip();
@@ -242,7 +249,6 @@ int main() {
     delete (main);
 
 #if defined(__SWITCH__) && !defined(__NET_DEBUG__)
-    //pthread_terminate();
     socketExit();
 #endif
 

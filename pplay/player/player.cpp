@@ -28,10 +28,13 @@ Player::Player(Main *_main) : Rectangle(_main->getSize()) {
     osd = new PlayerOSD(main);
     add(osd);
 
+    audio = new C2DAudio(48000, 24);
+
     setVisibility(Visibility::Hidden);
 }
 
 Player::~Player() {
+    delete (audio);
     // crash on switch?
     //stop();
 }
@@ -39,6 +42,7 @@ Player::~Player() {
 bool Player::load(const MediaFile &file) {
 
     stop();
+    stopped = false;
 
     // avformat_network_init/deinit handled in media info thread
     int err = Kit_Init(KIT_INIT_ASS);
@@ -47,6 +51,10 @@ bool Player::load(const MediaFile &file) {
         stop();
         return false;
     }
+
+    Kit_SetHint(KIT_HINT_VIDEO_BUFFER_FRAMES, 256);
+    Kit_SetHint(KIT_HINT_AUDIO_BUFFER_FRAMES, 4096);
+    Kit_SetHint(KIT_HINT_SUBTITLE_BUFFER_FRAMES, 8);
 
     // open source file
     printf("Player::load: %s\n", file.path.c_str());
@@ -93,6 +101,9 @@ bool Player::load(const MediaFile &file) {
         return false;
     }
 
+    // we should be good to go, set max cpu for now
+    setCpuClock(CpuClock::Max);
+
     // hack, needs to fix subtitles problem when not enabled on Kit_CreatePlayer
     subtitles_streams.current = -1;
 
@@ -106,17 +117,6 @@ bool Player::load(const MediaFile &file) {
            playerInfo.audio.output.samplerate);
 
     if (audio_streams.size > 0) {
-        if (!SDL_WasInit(SDL_INIT_AUDIO)) {
-            SDL_InitSubSystem(SDL_INIT_AUDIO);
-        }
-        SDL_AudioSpec wanted_spec, audio_spec;
-        SDL_memset(&wanted_spec, 0, sizeof(wanted_spec));
-        wanted_spec.freq = playerInfo.audio.output.samplerate;
-        wanted_spec.format = (SDL_AudioFormat) playerInfo.audio.output.format;
-        wanted_spec.channels = (Uint8) playerInfo.audio.output.channels;
-        audioDeviceID = SDL_OpenAudioDevice(nullptr, 0, &wanted_spec, &audio_spec, 0);
-        SDL_PauseAudioDevice(audioDeviceID, 0);
-
         // audios menu options
         std::vector<MenuItem> items;
         for (auto &stream : file.media.audios) {
@@ -176,11 +176,8 @@ bool Player::load(const MediaFile &file) {
     osd->setLayer(3);
 
     // start playback
+    audio->pause(0);
     Kit_PlayerPlay(kit_player);
-
-    setCpuClock(CpuClock::Max);
-
-    stopped = false;
 
     return true;
 }
@@ -231,15 +228,15 @@ void Player::onDraw(c2d::Transform &transform) {
 
     /// audio
     if (audio_streams.size > 0) {
-        int queued = SDL_GetQueuedAudioSize(audioDeviceID);
-        if (queued < AUDIO_BUFFER_SIZE) {
-            int need = AUDIO_BUFFER_SIZE - queued;
+        int queued = audio->getQueuedSize();
+        if (queued < audio->getBufferSize()) {
+            int need = audio->getBufferSize() - queued;
             while (need > 0) {
                 int ret = Kit_GetPlayerAudioData(
-                        kit_player, (unsigned char *) audioBuffer, AUDIO_BUFFER_SIZE);
+                        kit_player, (unsigned char *) audio->getBuffer(), audio->getBufferSize());
                 need -= ret;
                 if (ret > 0) {
-                    SDL_QueueAudio(audioDeviceID, audioBuffer, (Uint32) ret);
+                    audio->play(audio->getBuffer(), ret);
                 } else {
                     break;
                 }
@@ -424,6 +421,7 @@ void Player::resume() {
 void Player::stop() {
 
     if (!stopped) {
+
         setCpuClock(CpuClock::Min);
 
         /// Kit
@@ -439,10 +437,7 @@ void Player::stop() {
         Kit_Quit();
 
         /// Audio
-        if (audioDeviceID > 0) {
-            SDL_CloseAudioDevice(audioDeviceID);
-            audioDeviceID = 0;
-        }
+        audio->pause(1);
         if (menuAudioStreams) {
             delete (menuAudioStreams);
             menuAudioStreams = nullptr;
@@ -474,8 +469,9 @@ void Player::stop() {
         subtitles_streams.reset();
         title.clear();
         show_subtitles = false;
-        stopped = true;
     }
+
+    stopped = true;
 }
 
 void Player::setCpuClock(const CpuClock &clock) {
@@ -484,31 +480,22 @@ void Player::setCpuClock(const CpuClock &clock) {
         if (SwitchSys::getClock(SwitchSys::Module::Cpu) != SwitchSys::getClockStock(SwitchSys::Module::Cpu)) {
             int clock_old = SwitchSys::getClock(SwitchSys::Module::Cpu);
             SwitchSys::setClock(SwitchSys::Module::Cpu, (int) SwitchSys::CPUClock::Stock);
-            printf("restored cpu speed (old: %i, new: %i)\n",
+            printf("restoring cpu speed (old: %i, new: %i)\n",
                    clock_old, SwitchSys::getClock(SwitchSys::Module::Cpu));
         }
     } else {
-        if (playerInfo.video.output.width > 1280
-            || playerInfo.video.output.height > 720) {
-            int clock_old = SwitchSys::getClock(SwitchSys::Module::Cpu);
-            SwitchSys::setClock(SwitchSys::Module::Cpu, (int) SwitchSys::CPUClock::Max);
-            printf("fhd video spotted, setting max cpu speed (old: %i, new: %i)\n",
-                   clock_old, SwitchSys::getClock(SwitchSys::Module::Cpu));
-        }
+        //if (playerInfo.video.output.width > 1280 || playerInfo.video.output.height > 720) {
+        int clock_old = SwitchSys::getClock(SwitchSys::Module::Cpu);
+        SwitchSys::setClock(SwitchSys::Module::Cpu, (int) SwitchSys::CPUClock::Max);
+        printf("setting max cpu speed (old: %i, new: %i)\n",
+               clock_old, SwitchSys::getClock(SwitchSys::Module::Cpu));
+        //}
     }
 #endif
 }
 
 Main *Player::getMain() {
     return main;
-}
-
-c2d::TweenPosition *Player::getTweenPosition() {
-    return tweenPosition;
-}
-
-c2d::TweenScale *Player::getTweenScale() {
-    return tweenScale;
 }
 
 MenuVideoSubmenu *Player::getMenuVideoStreams() {
@@ -521,10 +508,6 @@ MenuVideoSubmenu *Player::getMenuAudioStreams() {
 
 MenuVideoSubmenu *Player::getMenuSubtitlesStreams() {
     return menuSubtitlesStreams;
-}
-
-VideoTexture *Player::getVideoTexture() {
-    return texture;
 }
 
 Player::Stream *Player::getVideoStreams() {

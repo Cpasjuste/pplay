@@ -19,12 +19,17 @@ bool Utility::isMedia(const c2d::Io::File &file) {
             || c2d::Utility::endsWith(file.name, ".mp4", false)
             || c2d::Utility::endsWith(file.name, ".mov", false)
             || c2d::Utility::endsWith(file.name, ".flv", false)
+            || c2d::Utility::endsWith(file.name, ".ts", false)
             || c2d::Utility::endsWith(file.name, ".mp3", false)
             || c2d::Utility::endsWith(file.name, ".wav", false)
             || c2d::Utility::endsWith(file.name, ".ogg", false));
 }
 
 std::string Utility::formatTime(double seconds) {
+
+    if (seconds <= 0) {
+        return "00:00:00";
+    }
 
     int h((int) seconds / 3600);
     int min((int) seconds / 60 - h * 60);

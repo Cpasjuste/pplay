@@ -86,12 +86,6 @@ public:
 
     Kit_Player *getKitPlayer();
 
-    VideoTexture *getVideoTexture();
-
-    c2d::TweenPosition *getTweenPosition();
-
-    c2d::TweenScale *getTweenScale();
-
     MenuVideoSubmenu *getMenuVideoStreams();
 
     MenuVideoSubmenu *getMenuAudioStreams();
@@ -132,8 +126,7 @@ private:
     Stream subtitles_streams;
 
     // audio
-    SDL_AudioDeviceID audioDeviceID = 0;
-    char audioBuffer[AUDIO_BUFFER_SIZE];
+    c2d::C2DAudio *audio = nullptr;
 
     bool show_subtitles = false;
     bool fullscreen = false;
