@@ -25,15 +25,16 @@ StatusBox::StatusBox(Main *m, const c2d::Vector2f &position)
     icon->add(new TweenRotation(0, 360, 2, TweenLoop::Loop));
     add(icon);
 
-    titleText = new Text("Please Wait...", main->getFontSize(), main->getFont());
+    titleText = new Text("Please Wait...", main->getFontSize(Main::FontSize::Medium), main->getFont());
     titleText->setFillColor(COLOR_RED);
     titleText->setPosition(icon->getSize().x + 16, 4);
     add(titleText);
 
     messageText = new Text("Doing something in background, please wait",
-                           (unsigned int) (16 * main->getScaling()), main->getFont());
+                           main->getFontSize(Main::FontSize::Small), main->getFont());
     messageText->setFillColor(COLOR_FONT);
-    messageText->setPosition(icon->getSize().x + 16, titleText->getPosition().y + main->getFontSize() + 4);
+    messageText->setPosition(icon->getSize().x + 16,
+                             titleText->getPosition().y + main->getFontSize(Main::FontSize::Medium) + 4);
     messageText->setWidth(getSize().x - icon->getSize().x - 16);
     add(messageText);
 

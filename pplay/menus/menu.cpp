@@ -23,7 +23,7 @@ MenuButton::MenuButton(Main *main, const MenuItem &item, const FloatRect &rect) 
         add(icon);
     }
 
-    name = new Text(item.name, main->getFontSize() - 2, main->getFont());
+    name = new Text(item.name, main->getFontSize(Main::FontSize::Medium), main->getFont());
     name->setOrigin(Origin::Left);
     name->setPosition((ICON_SIZE + 32) * main->getScaling(), getSize().y / 2);
     name->setWidth((getSize().x - ICON_SIZE + 32) * main->getScaling());
@@ -65,7 +65,7 @@ Menu::Menu(Main *m, const c2d::FloatRect &rect, const std::string &_title,
     add(highlight);
 
     // title
-    title = new Text(_title, 24 * (unsigned int) main->getScaling(), main->getFont());
+    title = new Text(_title, main->getFontSize(Main::FontSize::Big), main->getFont());
     title->setStyle(Text::Underlined);
     title->setPosition(32, 32);
     title->setFillColor(COLOR_FONT);

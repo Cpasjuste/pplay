@@ -16,25 +16,25 @@ FilerItem::FilerItem(Main *main, const c2d::FloatRect &rect, const MediaFile &fi
     this->main = main;
     this->file = file;
 
-    textTitle = new Text(file.name, main->getFontSize(), main->getFont());
-    textTitle->setPosition(16, 4);
+    textTitle = new Text(file.name, main->getFontSize(Main::FontSize::Medium), main->getFont());
+    textTitle->setPosition(16, 2);
     textTitle->setWidth(getSize().x - 64);
     add(textTitle);
 
-    textInfo = new Text("Info: N/A", main->getFontSize() - 8, main->getFont());
-    textInfo->setPosition(16, textTitle->getPosition().y + main->getFontSize() + 4);
+    textInfo = new Text("Info: N/A", main->getFontSize(Main::FontSize::Small), main->getFont());
+    textInfo->setPosition(16, textTitle->getPosition().y + main->getFontSize(Main::FontSize::Medium) + 4);
     textInfo->setWidth(getSize().x - 64);
     textInfo->setFillColor(COLOR_FONT);
     add(textInfo);
 
-    textVideo = new Text("Video: N/A", main->getFontSize() - 8, main->getFont());
-    textVideo->setPosition(16, textInfo->getPosition().y + main->getFontSize());
+    textVideo = new Text("Video: N/A", main->getFontSize(Main::FontSize::Small), main->getFont());
+    textVideo->setPosition(16, textInfo->getPosition().y + main->getFontSize(Main::FontSize::Medium));
     textVideo->setWidth(getSize().x - 64);
     textVideo->setFillColor(COLOR_FONT);
     add(textVideo);
 
-    textAudio = new Text("Audio: N/A", main->getFontSize() - 8, main->getFont());
-    textAudio->setPosition(16, textVideo->getPosition().y + main->getFontSize());
+    textAudio = new Text("Audio: N/A", main->getFontSize(Main::FontSize::Small), main->getFont());
+    textAudio->setPosition(16, textVideo->getPosition().y + main->getFontSize(Main::FontSize::Medium));
     textAudio->setWidth(getSize().x - 64);
     textAudio->setFillColor(COLOR_FONT);
     add(textAudio);

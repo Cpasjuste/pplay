@@ -2,12 +2,12 @@ TODO
 ====
 
 - allow ui rendering/flip when buffering media
-- define 2 or 3 font size for backing
 - add status bar (time, battery)
 
 DONE
 ====
 
+- pplay: define 2 or 3 font size for backing
 - player osd: limit osd title width
 - player osd: move status msg up when visible
 - player osd: add time

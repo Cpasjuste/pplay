@@ -88,7 +88,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     // a messagebox...
     float w = getSize().x / 2;
     float h = getSize().y / 2;
-    messageBox = new MessageBox({w, h, w, h}, getInput(), getFont(), getFontSize());
+    messageBox = new MessageBox({w, h, w, h}, getInput(), getFont(), getFontSize(Main::FontSize::Medium));
     messageBox->setOrigin(Origin::Center);
     messageBox->setFillColor(COLOR_BG);
     messageBox->setAlpha(200);
@@ -226,8 +226,8 @@ float Main::getScaling() {
     return scaling;
 }
 
-unsigned int Main::getFontSize() {
-    return (unsigned int) (fontSize * scaling);
+unsigned int Main::getFontSize(FontSize fontSize) {
+    return (unsigned int) ((float) fontSize * scaling);
 }
 
 int main() {

@@ -46,6 +46,12 @@ public:
         Current
     };
 
+    enum class FontSize {
+        Small = 16,
+        Medium = 22,
+        Big = 26
+    };
+
     Main(const c2d::Vector2f &size);
 
     ~Main();
@@ -66,7 +72,7 @@ public:
 
     PPLAYConfig *getConfig();
 
-    c2d::Font *getFont() override;
+    c2d::Font *getFont();
 
     c2d::MessageBox *getMessageBox();
 
@@ -74,7 +80,7 @@ public:
 
     float getScaling();
 
-    unsigned int getFontSize();
+    unsigned int getFontSize(FontSize fontSize);
 
     void quit();
 
@@ -94,10 +100,7 @@ private:
     Menu *menu_main = nullptr;
     Menu *menu_video = nullptr;
     MediaThread *mediaInfoThread = nullptr;
-
     float scaling = 1;
-    unsigned int fontSize = 22;
-
     bool running = true;
 };
 

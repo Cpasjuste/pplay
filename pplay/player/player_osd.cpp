@@ -31,12 +31,12 @@ PlayerOSD::PlayerOSD(Main *m) : Rectangle({64, 64}) {
     progress->setOutlineThickness(0);
     add(progress);
 
-    progress_text = new Text("00:00:00", main->getFontSize(), main->getFont());
+    progress_text = new Text("00:00:00", main->getFontSize(Main::FontSize::Medium), main->getFont());
     progress_text->setOrigin(Origin::Left);
     progress_text->setPosition((-100 + 20) * main->getScaling(), getSize().y / 2);
     add(progress_text);
 
-    duration_text = new Text("00:00:00", main->getFontSize(), main->getFont());
+    duration_text = new Text("00:00:00", main->getFontSize(Main::FontSize::Medium), main->getFont());
     duration_text->setOrigin(Origin::Left);
     duration_text->setPosition(getSize().x - (20 * main->getScaling()), getSize().y / 2);
     add(duration_text);
@@ -94,7 +94,7 @@ PlayerOSD::PlayerOSD(Main *m) : Rectangle({64, 64}) {
     add(btn_play);
 
     // TITLE
-    title = new Text("", main->getFontSize(), main->getFont());
+    title = new Text("", main->getFontSize(Main::FontSize::Medium), main->getFont());
     title->setFillColor(COLOR_RED);
     title->setOrigin(Origin::Left);
     title->setPosition((64 * 3 + 50) * main->getScaling(), getSize().y / 2);
