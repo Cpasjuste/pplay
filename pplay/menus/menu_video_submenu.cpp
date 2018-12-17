@@ -15,7 +15,8 @@ MenuVideoSubmenu::MenuVideoSubmenu(
     this->type = type;
 
     // highlight
-    highlight_selection = new Highlight({getSize().x, BUTTON_HEIGHT * main->getScaling()}, Highlight::CursorPosition::Left);
+    highlight_selection = new Highlight({getSize().x, BUTTON_HEIGHT * main->getScaling()},
+                                        Highlight::CursorPosition::Left);
     highlight_selection->setFillColor(COLOR_BLUE);
     highlight_selection->setAlpha(40);
     highlight_selection->setCursorColor(COLOR_RED);
@@ -29,22 +30,22 @@ void MenuVideoSubmenu::onOptionSelection(MenuItem *item) {
 
     if (item->position == MenuItem::Position::Top) {
         if (type == MENU_VIDEO_TYPE_VID) {
-            main->getStatus()->show("Video...",
-                                    "Loading video: " + item->name + ". This can take a few seconds...");
+            main->getStatus()->show("Please Wait...",
+                                    "Loading video stream: " + item->name + ". This can take a few seconds...");
             main->getPlayer()->setVideoStream(item->id);
             // update checked/current state
-            int stream_id = main->getPlayer()->getVideoStreams()->getCurrentStream();
+            int stream_id = main->getPlayer()->getVideoStreams()->getCurrent();
             for (auto &button : buttons) {
                 if (button->item.id == stream_id) {
                     highlight_selection->setPosition(button->getPosition());
                 }
             }
         } else if (type == MENU_VIDEO_TYPE_AUD) {
-            main->getStatus()->show("Audio...",
-                                    "Loading audio: " + item->name + ". This can take a few seconds...");
+            main->getStatus()->show("Please Wait...",
+                                    "Loading audio stream: " + item->name + ". This can take a few seconds...");
             main->getPlayer()->setAudioStream(item->id);
             // update checked/current state
-            int stream_id = main->getPlayer()->getAudioStreams()->getCurrentStream();
+            int stream_id = main->getPlayer()->getAudioStreams()->getCurrent();
             for (auto &button : buttons) {
                 if (button->item.id == stream_id) {
                     highlight_selection->setPosition(button->getPosition());
@@ -52,11 +53,11 @@ void MenuVideoSubmenu::onOptionSelection(MenuItem *item) {
             }
         }
         if (type == MENU_VIDEO_TYPE_SUB) {
-            main->getStatus()->show("Subtitles...",
-                                    "Loading subtitle: " + item->name + ". This can take a few seconds...");
+            main->getStatus()->show("Please Wait...",
+                                    "Loading subtitle stream: " + item->name + ". This can take a few seconds...");
             main->getPlayer()->setSubtitleStream(item->id);
             // update checked/current state
-            int stream_id = main->getPlayer()->getSubtitlesStreams()->getCurrentStream();
+            int stream_id = main->getPlayer()->getSubtitlesStreams()->getCurrent();
             for (auto &button : buttons) {
                 if (button->item.id == stream_id) {
                     highlight_selection->setPosition(button->getPosition());

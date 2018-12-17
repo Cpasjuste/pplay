@@ -13,6 +13,7 @@ extern "C" {
 #include "menus/menu_video_submenu.h"
 #include "video_texture.h"
 #include "subtitles_texture.h"
+#include "media_config.h"
 
 #define MAX_STREAM_LIST_SIZE 32
 
@@ -38,8 +39,16 @@ public:
             current = 0;
         }
 
-        int getCurrentStream() {
-            if (current >= 0 && current < size) {
+        void setCurrent(int streamId) {
+            for (int i = 0; i < size; i++) {
+                if (streamId == streams[i]) {
+                    current = i;
+                }
+            }
+        }
+
+        int getCurrent() {
+            if (current > -1 && current < size) {
                 return streams[current];
             }
             return -1;
@@ -79,11 +88,11 @@ public:
 
     void setFullscreen(bool maximize);
 
-    void setVideoStream(int index);
+    void setVideoStream(int streamId);
 
-    void setAudioStream(int index);
+    void setAudioStream(int streamId);
 
-    void setSubtitleStream(int index);
+    void setSubtitleStream(int streamId);
 
     void setCpuClock(const CpuClock &clock);
 
@@ -113,10 +122,9 @@ private:
 
     void onDraw(c2d::Transform &transform) override;
 
+    // ui
     Main *main = nullptr;
     PlayerOSD *osd = nullptr;
-    VideoTexture *texture = nullptr;
-    SubtitlesTexture *textureSub = nullptr;
     c2d::TweenPosition *tweenPosition = nullptr;
     c2d::TweenScale *tweenScale = nullptr;
     MenuVideoSubmenu *menuVideoStreams = nullptr;
@@ -124,16 +132,19 @@ private:
     MenuVideoSubmenu *menuSubtitlesStreams = nullptr;
     std::string title;
 
-    // kit player
+    // player
+    VideoTexture *texture = nullptr;
+    SubtitlesTexture *textureSub = nullptr;
     Kit_Source *source = nullptr;
     Kit_Player *kit_player = nullptr;
     Kit_PlayerInfo playerInfo;
     Stream video_streams;
     Stream audio_streams;
     Stream subtitles_streams;
-
     // audio
     c2d::C2DAudio *audio = nullptr;
+
+    MediaConfig *config = nullptr;
 
     bool show_subtitles = false;
     bool fullscreen = false;
