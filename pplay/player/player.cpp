@@ -46,21 +46,35 @@ bool Player::load(const MediaFile &file) {
     // avformat_network_init/deinit handled in media info thread
     int err = Kit_Init(KIT_INIT_ASS);
     if (err != 0) {
-        printf("unable to initialize Kitchensink: %s\n", Kit_GetError());
+        printf("Player::load: unable to initialize Kitchensink: %s\n", Kit_GetError());
         stop();
         return false;
     }
 
+    // default buffering, VeryHigh
     Kit_SetHint(KIT_HINT_VIDEO_BUFFER_FRAMES, 256);
     Kit_SetHint(KIT_HINT_AUDIO_BUFFER_FRAMES, 2048);
-    //Kit_SetHint(KIT_HINT_SUBTITLE_BUFFER_FRAMES, 8);
+    Kit_SetHint(KIT_HINT_SUBTITLE_BUFFER_FRAMES, 64);
+    std::string buffering = main->getConfig()->getOption(OPT_BUFFER)->getString();
+    if (Utility::toLower(buffering) == "low") {
+        Kit_SetHint(KIT_HINT_VIDEO_BUFFER_FRAMES, 3);
+        Kit_SetHint(KIT_HINT_AUDIO_BUFFER_FRAMES, 64);
+    } else if (Utility::toLower(buffering) == "medium") {
+        Kit_SetHint(KIT_HINT_VIDEO_BUFFER_FRAMES, 64);
+        Kit_SetHint(KIT_HINT_AUDIO_BUFFER_FRAMES, 512);
+    } else if (Utility::toLower(buffering) == "high") {
+        Kit_SetHint(KIT_HINT_VIDEO_BUFFER_FRAMES, 128);
+        Kit_SetHint(KIT_HINT_AUDIO_BUFFER_FRAMES, 1024);
+    }
+    printf("Player::load: buffering = %s (video=%i, audio=%i)\n", buffering.c_str(),
+           Kit_GetHint(KIT_HINT_VIDEO_BUFFER_FRAMES), Kit_GetHint(KIT_HINT_AUDIO_BUFFER_FRAMES));
 
     // open source file
     printf("Player::load: %s\n", file.path.c_str());
     source = Kit_CreateSourceFromUrl(file.path.c_str());
     if (!source) {
         main->getStatus()->show("Error...", Kit_GetError());
-        printf("unable to load '%s': %s\n", file.path.c_str(), Kit_GetError());
+        printf("Player::load: unable to load '%s': %s\n", file.path.c_str(), Kit_GetError());
         stop();
         return false;
     }
@@ -75,7 +89,7 @@ bool Player::load(const MediaFile &file) {
     printf("Player::load: \n\tVIDEO STREAMS: %i\n\tAUDIO STREAMS: %i\n\tSUBTITLES STREAMS: %i\n",
            video_streams.size, audio_streams.size, subtitles_streams.size);
     if (!video_streams.size && !audio_streams.size) {
-        printf("no usable audio or video stream found: %s\n", Kit_GetError());
+        printf("Player::load: no usable audio or video stream found: %s\n", Kit_GetError());
         main->getStatus()->show("Error...", "no video or audio stream found");
         stop();
         return false;
@@ -95,7 +109,7 @@ bool Player::load(const MediaFile &file) {
             (int) getSize().x, (int) getSize().y);
     if (!kit_player) {
         main->getStatus()->show("Error...", Kit_GetError());
-        printf("unable to create player: %s\n", Kit_GetError());
+        printf("Player::load: unable to create player: %s\n", Kit_GetError());
         stop();
         return false;
     }
@@ -110,7 +124,7 @@ bool Player::load(const MediaFile &file) {
 
     // get some information
     Kit_GetPlayerInfo(kit_player, &playerInfo);
-    printf("Video(%s, %s): %i x %i , Audio(%s): %i hz\n",
+    printf("Player::load: Video(%s, %s): %i x %i , Audio(%s): %i hz\n",
            playerInfo.video.codec.name,
            SDL_GetPixelFormatName(playerInfo.video.output.format),
            playerInfo.video.output.width, playerInfo.video.output.height,
@@ -513,20 +527,20 @@ void Player::stop() {
 
 void Player::setCpuClock(const CpuClock &clock) {
 #ifdef __SWITCH__
-    if (clock == CpuClock::Min) {
-        if (SwitchSys::getClock(SwitchSys::Module::Cpu) != SwitchSys::getClockStock(SwitchSys::Module::Cpu)) {
+    if(main->getConfig()->getOption(OPT_CPU_BOOST)->getString() == "Enabled") {
+        if (clock == CpuClock::Min) {
+            if (SwitchSys::getClock(SwitchSys::Module::Cpu) != SwitchSys::getClockStock(SwitchSys::Module::Cpu)) {
+                int clock_old = SwitchSys::getClock(SwitchSys::Module::Cpu);
+                SwitchSys::setClock(SwitchSys::Module::Cpu, (int) SwitchSys::CPUClock::Stock);
+                printf("restoring cpu speed (old: %i, new: %i)\n",
+                       clock_old, SwitchSys::getClock(SwitchSys::Module::Cpu));
+            }
+        } else {
             int clock_old = SwitchSys::getClock(SwitchSys::Module::Cpu);
-            SwitchSys::setClock(SwitchSys::Module::Cpu, (int) SwitchSys::CPUClock::Stock);
-            printf("restoring cpu speed (old: %i, new: %i)\n",
+            SwitchSys::setClock(SwitchSys::Module::Cpu, (int) SwitchSys::CPUClock::Max);
+            printf("setting max cpu speed (old: %i, new: %i)\n",
                    clock_old, SwitchSys::getClock(SwitchSys::Module::Cpu));
         }
-    } else {
-        //if (playerInfo.video.output.width > 1280 || playerInfo.video.output.height > 720) {
-        int clock_old = SwitchSys::getClock(SwitchSys::Module::Cpu);
-        SwitchSys::setClock(SwitchSys::Module::Cpu, (int) SwitchSys::CPUClock::Max);
-        printf("setting max cpu speed (old: %i, new: %i)\n",
-               clock_old, SwitchSys::getClock(SwitchSys::Module::Cpu));
-        //}
     }
 #endif
 }

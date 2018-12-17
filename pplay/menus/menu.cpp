@@ -31,7 +31,6 @@ MenuButton::MenuButton(Main *main, const MenuItem &item, const FloatRect &rect) 
     add(name);
 }
 
-
 Menu::Menu(Main *m, const c2d::FloatRect &rect, const std::string &_title,
            const std::vector<MenuItem> &items, bool left) : RectangleShape(rect) {
 
@@ -41,22 +40,6 @@ Menu::Menu(Main *m, const c2d::FloatRect &rect, const std::string &_title,
     setAlpha(245);
     setOutlineColor(Color::GrayLight);
     setOutlineThickness(2);
-
-#if 0
-    // TODO: menu button belong to main
-    // menu button
-    menuButton = new RectangleShape({0, 0, 40, 40});
-    menuButton->setFillColor(COLOR_BG);
-    menuButton->setAlpha(245);
-    menuButton->setOutlineColor(Color::GrayLight);
-    menuButton->setOutlineThickness(2);
-    auto *tex = new C2DTexture(main->getIo()->getDataReadPath() + "skin/menu.png");
-    tex->setFillColor(COLOR_FONT);
-    tex->setOrigin(Origin::Center);
-    tex->setPosition(menuButton->getSize().x / 2, menuButton->getSize().y / 2);
-    menuButton->add(tex);
-    main->getMainRect()->add(menuButton);
-#endif
 
     // highlight
     highlight = new Highlight({getSize().x, BUTTON_HEIGHT * main->getScaling()});

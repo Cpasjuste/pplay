@@ -10,20 +10,19 @@ using namespace c2d;
 
 MenuVideoSubmenu::MenuVideoSubmenu(
         Main *main, const c2d::FloatRect &rect, const std::string &_title,
-        const std::vector<MenuItem> &items, int type)
-        : Menu(main, rect, _title, items, false) {
+        const std::vector<MenuItem> &items, int type) : Menu(main, rect, _title, items, false) {
 
     this->type = type;
 
     // highlight
-    highlight = new Highlight({getSize().x, BUTTON_HEIGHT * main->getScaling()}, Highlight::CursorPosition::Left);
-    highlight->setFillColor(COLOR_BLUE);
-    highlight->setAlpha(40);
-    highlight->setCursorColor(COLOR_RED);
-    highlight->setOrigin(Origin::Left);
-    highlight->setPosition(0, 200);
-    highlight->setLayer(-1);
-    add(highlight);
+    highlight_selection = new Highlight({getSize().x, BUTTON_HEIGHT * main->getScaling()}, Highlight::CursorPosition::Left);
+    highlight_selection->setFillColor(COLOR_BLUE);
+    highlight_selection->setAlpha(40);
+    highlight_selection->setCursorColor(COLOR_RED);
+    highlight_selection->setOrigin(Origin::Left);
+    highlight_selection->setPosition(0, 200);
+    highlight_selection->setLayer(-1);
+    add(highlight_selection);
 }
 
 void MenuVideoSubmenu::onOptionSelection(MenuItem *item) {
@@ -37,7 +36,7 @@ void MenuVideoSubmenu::onOptionSelection(MenuItem *item) {
             int stream_id = main->getPlayer()->getVideoStreams()->getCurrentStream();
             for (auto &button : buttons) {
                 if (button->item.id == stream_id) {
-                    highlight->setPosition(button->getPosition());
+                    highlight_selection->setPosition(button->getPosition());
                 }
             }
         } else if (type == MENU_VIDEO_TYPE_AUD) {
@@ -48,7 +47,7 @@ void MenuVideoSubmenu::onOptionSelection(MenuItem *item) {
             int stream_id = main->getPlayer()->getAudioStreams()->getCurrentStream();
             for (auto &button : buttons) {
                 if (button->item.id == stream_id) {
-                    highlight->setPosition(button->getPosition());
+                    highlight_selection->setPosition(button->getPosition());
                 }
             }
         }
@@ -60,7 +59,7 @@ void MenuVideoSubmenu::onOptionSelection(MenuItem *item) {
             int stream_id = main->getPlayer()->getSubtitlesStreams()->getCurrentStream();
             for (auto &button : buttons) {
                 if (button->item.id == stream_id) {
-                    highlight->setPosition(button->getPosition());
+                    highlight_selection->setPosition(button->getPosition());
                 }
             }
         }

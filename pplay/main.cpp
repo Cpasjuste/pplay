@@ -68,6 +68,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     std::vector<MenuItem> items;
     items.emplace_back("Home", "home.png", MenuItem::Position::Top);
     items.emplace_back("Network", "network.png", MenuItem::Position::Top);
+    items.emplace_back("Options", "options.png", MenuItem::Position::Top);
     items.emplace_back("Exit", "exit.png", MenuItem::Position::Bottom);
     menu_main = new MenuMain(this, {-250 * scaling, 0, 250 * scaling, getSize().y}, items);
     menu_main->setVisibility(Visibility::Hidden, false);
@@ -198,11 +199,11 @@ Filer *Main::getFiler() {
     return filer;
 }
 
-Menu *Main::getMenuMain() {
+MenuMain *Main::getMenuMain() {
     return menu_main;
 }
 
-Menu *Main::getMenuVideo() {
+MenuVideo *Main::getMenuVideo() {
     return menu_video;
 }
 

@@ -85,8 +85,7 @@ void Filer::onDraw(c2d::Transform &transform) {
 
 bool Filer::onInput(c2d::Input::Player *players) {
 
-    if (main->getMenuMain()->isVisible()
-        || main->getPlayer()->isFullscreen()) {
+    if (main->getMenuMain()->isMenuVisible() || main->getPlayer()->isFullscreen()) {
         return false;
     }
 

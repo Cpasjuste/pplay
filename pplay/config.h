@@ -11,6 +11,8 @@
 #define OPT_HOME_PATH           "HOME_PATH"
 #define OPT_LAST_PATH           "LAST_PATH"
 #define OPT_CACHE_MEDIA_INFO    "CACHE_MEDIA_INFO"
+#define OPT_BUFFER              "BUFFER"
+#define OPT_CPU_BOOST           "CPU_BOOST"
 
 class Main;
 

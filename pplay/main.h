@@ -12,6 +12,8 @@
 #include "config.h"
 #include "media_thread.h"
 #include "menus/menu.h"
+#include "menus/menu_main.h"
+#include "menus/menu_video.h"
 #include "status_box.h"
 
 #define INPUT_DELAY 250
@@ -52,17 +54,17 @@ public:
         Big = 26
     };
 
-    Main(const c2d::Vector2f &size);
+    explicit Main(const c2d::Vector2f &size);
 
-    ~Main();
+    ~Main() override;
 
     void show(MenuType type);
 
     bool isRunning();
 
-    Menu *getMenuMain();
+    MenuMain *getMenuMain();
 
-    Menu *getMenuVideo();
+    MenuVideo *getMenuVideo();
 
     MediaThread *getMediaThread();
 
@@ -72,7 +74,7 @@ public:
 
     PPLAYConfig *getConfig();
 
-    c2d::Font *getFont();
+    c2d::Font *getFont() override;
 
     c2d::MessageBox *getMessageBox();
 
@@ -97,8 +99,8 @@ private:
     Filer *filerHttp = nullptr;
     Filer *filer = nullptr;
     Player *player = nullptr;
-    Menu *menu_main = nullptr;
-    Menu *menu_video = nullptr;
+    MenuMain *menu_main = nullptr;
+    MenuVideo *menu_video = nullptr;
     MediaThread *mediaInfoThread = nullptr;
     float scaling = 1;
     bool running = true;
