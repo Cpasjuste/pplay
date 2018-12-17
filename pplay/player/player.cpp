@@ -13,13 +13,6 @@
 
 using namespace c2d;
 
-enum DecoderIndex {
-    KIT_VIDEO_DEC = 0,
-    KIT_AUDIO_DEC,
-    KIT_SUBTITLE_DEC,
-    KIT_DEC_COUNT
-};
-
 Player::Player(Main *_main) : Rectangle(_main->getSize()) {
 
     main = _main;
@@ -184,15 +177,21 @@ bool Player::load(const MediaFile &file) {
     // preload/cache some stream frames
     loading = true;
     int flip = 0, ret = 1;
+    auto *dec = (Kit_Decoder *) kit_player->decoders[0];
+    if (!dec) {
+        // try with audio decoder
+        dec = (Kit_Decoder *) kit_player->decoders[1];
+    }
     while (ret > 0) {
         ret = Kit_PlayerPlay(kit_player);
         if (flip % 30 == 0) {
-            auto *dec = (Kit_Decoder *) kit_player->decoders[KIT_VIDEO_DEC];
-            float total = dec->buffer[KIT_DEC_BUF_OUT]->size;
-            float current = Kit_GetBufferLength(dec->buffer[KIT_DEC_BUF_OUT]);
-            int progress = (int) ((current / total) * 100.0f);
-            std::string msg = "Loading..." + file.name + "... " + std::to_string(progress) + "%";
-            main->getStatus()->show("Please Wait...", msg, true);
+            if (dec) {
+                float total = dec->buffer[KIT_DEC_BUF_OUT]->size;
+                float current = Kit_GetBufferLength(dec->buffer[KIT_DEC_BUF_OUT]);
+                int progress = (int) ((current / total) * 100.0f);
+                std::string msg = "Loading..." + file.name + "... " + std::to_string(progress) + "%";
+                main->getStatus()->show("Please Wait...", msg, true);
+            }
             main->flip();
         }
         flip++;

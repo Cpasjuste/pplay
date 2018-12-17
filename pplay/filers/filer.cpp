@@ -16,7 +16,6 @@ Filer::Filer(Main *m, const std::string &path, const c2d::FloatRect &rect) : Rec
 
     // highlight
     highlight = new Highlight({getSize().x, ITEM_HEIGHT * main->getScaling()}, Highlight::CursorPosition::Left);
-    highlight->setFillColor({255, 255, 255, 40});
     add(highlight);
 
     // items

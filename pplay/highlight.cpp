@@ -9,18 +9,15 @@
 
 using namespace c2d;
 
-Highlight::Highlight(const c2d::Vector2f &size, const CursorPosition &pos) : RectangleShape(size) {
+Highlight::Highlight(const c2d::Vector2f &size, const CursorPosition &pos) : Rectangle(size) {
 
-    Shape::setFillColor(Color::Transparent);
-
-    texture = new C2DTexture(c2d_renderer->getIo()->getDataReadPath() + "skin/gradient_white.png");
-    texture->setSize(size);
-    texture->setFillColor(COLOR_HIGHLIGHT);
-    if (pos == CursorPosition::Right) {
-        texture->setOrigin(Origin::BottomRight);
-        texture->setRotation(180);
+    gradientRectangle = new GradientRectangle({0, 0, size.x, size.y});
+    gradientRectangle->setColor(COLOR_HIGHLIGHT, Color::Transparent);
+    if (pos == CursorPosition::Left) {
+        gradientRectangle->setOrigin(Origin::BottomRight);
+        gradientRectangle->setRotation(180);
     }
-    add(texture);
+    add(gradientRectangle);
 
     cursor = new RectangleShape(Vector2f{6, size.y});
     cursor->setFillColor(COLOR_BLUE);
@@ -32,12 +29,13 @@ Highlight::Highlight(const c2d::Vector2f &size, const CursorPosition &pos) : Rec
 
 void Highlight::setAlpha(uint8_t alpha, bool recursive) {
     if (alpha <= COLOR_HIGHLIGHT.a) {
-        texture->setAlpha(alpha, recursive);
+        gradientRectangle->setAlpha(alpha);
     }
+    cursor->setAlpha(alpha);
 }
 
 void Highlight::setFillColor(const c2d::Color &color) {
-    texture->setFillColor(color);
+    gradientRectangle->setColor(color, Color::Transparent);
 }
 
 void Highlight::setCursorColor(const c2d::Color &color) {

@@ -5,7 +5,9 @@
 #ifndef PPLAY_HIGHLIGHT_H
 #define PPLAY_HIGHLIGHT_H
 
-class Highlight : public c2d::RectangleShape {
+#include "gradient_rectangle.h"
+
+class Highlight : public c2d::Rectangle {
 
 public:
 
@@ -18,15 +20,14 @@ public:
 
     void setAlpha(uint8_t alpha, bool recursive = false) override;
 
-    void setFillColor(const c2d::Color &color) override;
+    void setFillColor(const c2d::Color &color);
 
     void setCursorColor(const c2d::Color &color);
 
 private:
 
-    //void onDraw(c2d::Transform &transform) override;
-
-    c2d::Texture *texture;
+    //c2d::Texture *texture;
+    GradientRectangle *gradientRectangle;
     c2d::RectangleShape *cursor;
 };
 
