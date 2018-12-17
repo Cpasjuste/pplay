@@ -30,13 +30,10 @@ Player::Player(Main *_main) : Rectangle(_main->getSize()) {
     osd->setLayer(3);
     add(osd);
 
-    audio = new C2DAudio(48000, 24);
-
     setVisibility(Visibility::Hidden);
 }
 
 Player::~Player() {
-    delete (audio);
     // crash on switch?
     //stop();
 }
@@ -120,7 +117,22 @@ bool Player::load(const MediaFile &file) {
            playerInfo.audio.codec.name,
            playerInfo.audio.output.samplerate);
 
+    // get a decoder handle for audio fps and buffering status
+    auto *decoder = (Kit_Decoder *) kit_player->decoders[0];
+    if (!decoder) {
+        // try with audio decoder
+        decoder = (Kit_Decoder *) kit_player->decoders[1];
+    }
+
     if (audio_streams.size > 0) {
+        // set audio framerate based on video fps
+        float fps = 24;
+        if (decoder) {
+            if (video_streams.getCurrentStream() > -1) {
+                fps = (float) av_q2d(decoder->format_ctx->streams[video_streams.getCurrentStream()]->r_frame_rate);
+            }
+        }
+        audio = new C2DAudio(48000, fps);
         // audios menu options
         std::vector<MenuItem> items;
         for (auto &stream : file.media.audios) {
@@ -177,17 +189,12 @@ bool Player::load(const MediaFile &file) {
     // preload/cache some stream frames
     loading = true;
     int flip = 0, ret = 1;
-    auto *dec = (Kit_Decoder *) kit_player->decoders[0];
-    if (!dec) {
-        // try with audio decoder
-        dec = (Kit_Decoder *) kit_player->decoders[1];
-    }
     while (ret > 0) {
         ret = Kit_PlayerPlay(kit_player);
         if (flip % 30 == 0) {
-            if (dec) {
-                float total = dec->buffer[KIT_DEC_BUF_OUT]->size;
-                float current = Kit_GetBufferLength(dec->buffer[KIT_DEC_BUF_OUT]);
+            if (decoder) {
+                float total = decoder->buffer[KIT_DEC_BUF_OUT]->size;
+                float current = Kit_GetBufferLength(decoder->buffer[KIT_DEC_BUF_OUT]);
                 int progress = (int) ((current / total) * 100.0f);
                 std::string msg = "Loading..." + file.name + "... " + std::to_string(progress) + "%";
                 main->getStatus()->show("Please Wait...", msg, true);
@@ -198,8 +205,6 @@ bool Player::load(const MediaFile &file) {
     }
     loading = false;
 
-    // start playback
-    audio->pause(0);
     // must be after Kit_PlayerPlay pre-loading
     setVisibility(Visibility::Visible);
 
@@ -255,7 +260,7 @@ void Player::onDraw(c2d::Transform &transform) {
     //////////////////
 
     /// audio
-    if (audio_streams.size > 0) {
+    if (audio && audio_streams.size > 0) {
         int queued = audio->getQueuedSize();
         if (queued < audio->getBufferSize()) {
             int need = audio->getBufferSize() - queued;
@@ -273,7 +278,7 @@ void Player::onDraw(c2d::Transform &transform) {
     }
 
     /// video
-    if (video_streams.size > 0) {
+    if (texture && video_streams.size > 0) {
         void *video_data;
         texture->lock(nullptr, &video_data, nullptr);
         if (Kit_GetPlayerVideoDataRaw(kit_player, video_data)) {
@@ -465,7 +470,11 @@ void Player::stop() {
         Kit_Quit();
 
         /// Audio
-        audio->pause(1);
+        if (audio) {
+            audio->pause(1);
+            delete (audio);
+            audio = nullptr;
+        }
         if (menuAudioStreams) {
             delete (menuAudioStreams);
             menuAudioStreams = nullptr;

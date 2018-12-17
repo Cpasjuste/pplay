@@ -14,7 +14,6 @@ extern "C" {
 #include "video_texture.h"
 #include "subtitles_texture.h"
 
-#define AUDIO_BUFFER_SIZE (1024 * 64)
 #define MAX_STREAM_LIST_SIZE 32
 
 class Main;
@@ -27,8 +26,14 @@ public:
 
     class Stream {
     public:
+        Stream() {
+            reset();
+        }
+
         void reset() {
-            memset(streams, 0, MAX_STREAM_LIST_SIZE * sizeof(int));
+            for (int &stream : streams) {
+                stream = -1;
+            }
             size = 0;
             current = 0;
         }
@@ -40,7 +45,7 @@ public:
             return -1;
         }
 
-        int streams[MAX_STREAM_LIST_SIZE];
+        int streams[MAX_STREAM_LIST_SIZE]{};
         int size = 0;
         int current = 0;
     };
