@@ -98,6 +98,9 @@ class Browser {
         {
             return header_;
         }
+        const std::string getError() {
+            return std::string(curl_easy_strerror(res));
+        }
         forms_class forms;
         forms_class::form_class form;
         links_class links;

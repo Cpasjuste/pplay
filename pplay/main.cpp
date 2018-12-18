@@ -162,7 +162,8 @@ void Main::show(MenuType type) {
         }
     } else {
         if (!filer->getDir(config->getOption(OPT_NETWORK)->getString())) {
-            messageBox->show("Oups", "Could not open url (see config file?)", "OK");
+            std::string err = ((FilerHttp *) filerHttp)->getError();
+            messageBox->show("Oups", "Could not browse directory:\n" + err, "OK");
             show(MenuType::Home);
         } else {
             filer->clearHistory();

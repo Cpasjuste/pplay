@@ -72,8 +72,7 @@ elseif (BUILD_LINUX)
     # LINUX PLATORM
     #####################
     list(APPEND PPLAY_INC /usr/include/SDL2)
-    list(APPEND PPLAY_LDFLAGS pthread)
-    #lzma
+    list(APPEND PPLAY_LDFLAGS pthread lzma)
 endif ()
 
 #####################

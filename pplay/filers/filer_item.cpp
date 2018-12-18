@@ -21,7 +21,7 @@ FilerItem::FilerItem(Main *main, const c2d::FloatRect &rect, const MediaFile &fi
     textTitle->setWidth(getSize().x - 64);
     add(textTitle);
 
-    textInfo = new Text("Info: N/A", main->getFontSize(Main::FontSize::Small), main->getFont());
+    textInfo = new Text("Duration: N/A, Size: N/A", main->getFontSize(Main::FontSize::Small), main->getFont());
     textInfo->setPosition(16, textTitle->getPosition().y + main->getFontSize(Main::FontSize::Medium) + 4);
     textInfo->setWidth(getSize().x - 64);
     textInfo->setFillColor(COLOR_FONT);

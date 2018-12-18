@@ -28,8 +28,8 @@ public:
 
     std::string title;
     std::string path;
-    long duration;
-    int bit_rate;
+    long duration = 0;
+    int bit_rate = 0;
     std::vector<Stream> videos;
     std::vector<Stream> audios;
     std::vector<Stream> subtitles;

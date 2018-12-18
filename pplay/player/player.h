@@ -66,8 +66,6 @@ public:
 
     explicit Player(Main *main);
 
-    ~Player();
-
     bool load(const MediaFile &file);
 
     void pause();
@@ -75,6 +73,8 @@ public:
     void resume();
 
     void stop();
+
+    int seek(double position);
 
     bool isPlaying();
 
@@ -121,6 +121,8 @@ public:
 private:
 
     void onDraw(c2d::Transform &transform) override;
+
+    void play();
 
     // ui
     Main *main = nullptr;

@@ -11,6 +11,8 @@
 
 using namespace c2d;
 
+#define TIMEOUT 3
+
 FilerHttp::FilerHttp(Main *main, const FloatRect &rect) : Filer(main, "", rect) {
 
     // http Browser
@@ -23,13 +25,15 @@ FilerHttp::FilerHttp(Main *main, const FloatRect &rect) : Filer(main, "", rect) 
 
 bool FilerHttp::getDir(const std::string &p) {
 
-    printf("getDir(%s)\n", p.c_str());
+    printf("getDir(%s)\n", p.empty() ? browser->geturl().c_str() : p.c_str());
 
-    if (p != browser->geturl()) {
-        browser->open(p, 3);
-        if (browser->error() || browser->links.size() < 1) {
-            return false;
-        }
+    if (!p.empty()) {
+        browser->open(p, TIMEOUT);
+    }
+
+    if (browser->error() || browser->links.size() < 1) {
+        printf("FilerHttp::getDir: %s\n", browser->getError().c_str());
+        return false;
     }
 
     item_index = 0;
@@ -80,7 +84,7 @@ void FilerHttp::enter(int prev_index) {
     }
 
     browser->follow_link(browser->unescape(file.path));
-    if (getDir(browser->geturl())) {
+    if (getDir("")) {
         Filer::enter(prev_index);
     }
 }
@@ -88,11 +92,15 @@ void FilerHttp::enter(int prev_index) {
 void FilerHttp::exit() {
 
     if (browser->get_history().size() > 1) {
-        browser->back(10);
-        if (getDir(browser->geturl())) {
+        browser->back(TIMEOUT);
+        if (getDir("")) {
             Filer::exit();
         }
     }
+}
+
+const std::string FilerHttp::getError() {
+    return browser->getError();
 }
 
 FilerHttp::~FilerHttp() {

@@ -14,15 +14,32 @@ using namespace pplay;
 bool Utility::isMedia(const c2d::Io::File &file) {
 
     return file.type == c2d::Io::Type::File &&
-           (c2d::Utility::endsWith(file.name, ".avi", false)
-            || c2d::Utility::endsWith(file.name, ".mkv", false)
-            || c2d::Utility::endsWith(file.name, ".mp4", false)
-            || c2d::Utility::endsWith(file.name, ".mov", false)
+           (c2d::Utility::endsWith(file.name, ".8svx", false)
+            || c2d::Utility::endsWith(file.name, ".aac", false)
+            || c2d::Utility::endsWith(file.name, ".ac3", false)
+            || c2d::Utility::endsWith(file.name, ".aif", false)
+            || c2d::Utility::endsWith(file.name, ".asf", false)
+            || c2d::Utility::endsWith(file.name, ".avi", false)
+            || c2d::Utility::endsWith(file.name, ".dv", false)
             || c2d::Utility::endsWith(file.name, ".flv", false)
-            || c2d::Utility::endsWith(file.name, ".ts", false)
+            || c2d::Utility::endsWith(file.name, ".m2ts", false)
+            || c2d::Utility::endsWith(file.name, ".m2v", false)
+            || c2d::Utility::endsWith(file.name, ".m4a", false)
+            || c2d::Utility::endsWith(file.name, ".mkv", false)
+            || c2d::Utility::endsWith(file.name, ".mov", false)
             || c2d::Utility::endsWith(file.name, ".mp3", false)
+            || c2d::Utility::endsWith(file.name, ".mp4", false)
+            || c2d::Utility::endsWith(file.name, ".mpeg", false)
+            || c2d::Utility::endsWith(file.name, ".mpg", false)
+            || c2d::Utility::endsWith(file.name, ".mts", false)
+            || c2d::Utility::endsWith(file.name, ".ogg", false)
+            || c2d::Utility::endsWith(file.name, ".swf", false)
+            || c2d::Utility::endsWith(file.name, ".ts", false)
+            || c2d::Utility::endsWith(file.name, ".vob", false)
             || c2d::Utility::endsWith(file.name, ".wav", false)
-            || c2d::Utility::endsWith(file.name, ".ogg", false));
+            || c2d::Utility::endsWith(file.name, ".wma", false)
+            || c2d::Utility::endsWith(file.name, ".wmv", false)
+           );
 }
 
 std::string Utility::formatTime(double seconds) {
@@ -69,7 +86,7 @@ static std::string convertToString(double num) {
 
 static double roundOff(double n) {
     double d = n * 100.0;
-    int i = (int) (d + 0.5);
+    int i = (int) lround(d);//(int) (d + 0.5);
     d = (float) i / 100.0;
     return d;
 }
@@ -80,7 +97,7 @@ std::string Utility::formatSize(size_t size) {
     int div = 0;
     size_t rem = 0;
 
-    while (size >= 1024 && div < (sizeof sizes / sizeof *sizes)) {
+    while (size >= 1024 && (size_t) div < (sizeof sizes / sizeof *sizes)) {
         rem = (size_t) (size % 1024);
         div++;
         size /= 1024;

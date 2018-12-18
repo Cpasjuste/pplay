@@ -16,9 +16,11 @@ public:
 
     FilerHttp(Main *main, const c2d::FloatRect &rect);
 
-    ~FilerHttp();
+    ~FilerHttp() override;
 
     bool getDir(const std::string &path) override;
+
+    const std::string getError();
 
 private:
 

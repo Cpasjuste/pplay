@@ -34,11 +34,6 @@ Player::Player(Main *_main) : Rectangle(_main->getSize()) {
     setVisibility(Visibility::Hidden);
 }
 
-Player::~Player() {
-    // crash on switch?
-    //stop();
-}
-
 bool Player::load(const MediaFile &file) {
 
     stop();
@@ -129,7 +124,6 @@ bool Player::load(const MediaFile &file) {
         } else {
             // we need to init Kit_Player with a subtitle track, else it won't work
             subtitles_streams.current = 0;
-            config->setStream(OPT_STREAM_SUB, subtitles_streams.getCurrent());
         }
     }
 
@@ -171,7 +165,6 @@ bool Player::load(const MediaFile &file) {
                 {playerInfo.video.output.width, playerInfo.video.output.height});
         texture->setFilter(Texture::Filter::Linear);
         add(texture);
-
         // videos menu options
         std::vector<MenuItem> items;
         for (auto &stream : file.media.videos) {
@@ -216,7 +209,6 @@ bool Player::load(const MediaFile &file) {
             textureSub->setVisibility(Visibility::Hidden);
         }
         add(textureSub);
-
         // subtitles menu options
         std::vector<MenuItem> items;
         items.emplace_back("None", "", MenuItem::Position::Top, -1);
@@ -230,36 +222,83 @@ bool Player::load(const MediaFile &file) {
         add(menuSubtitlesStreams);
     }
 
-    // preload/cache some stream frames
-    loading = true;
-    // TODO
-    /*
-    if (config->getPosition() > 0) {
-        printf("Kit_PlayerSeek: %f\n", config->getPosition());
-        Kit_PlayerSeek(kit_player, (double) config->getPosition());
+    // preload/cache some frames, resume playback if needed
+    if (config->getPosition() > 5) {
+        Kit_SetClockSync(kit_player);
+        if (seek(config->getPosition() - 5) != 0) {
+            play();
+        }
+    } else {
+        play();
     }
-    */
-    int flip = 0, ret = 1;
-    while (ret > 0) {
-        ret = Kit_PlayerPlay(kit_player);
+
+    setVisibility(Visibility::Visible);
+
+    return true;
+}
+
+void Player::play() {
+
+    int flip = 0;
+    auto *decoder = (Kit_Decoder *) kit_player->decoders[0];
+    if (!decoder) {
+        decoder = (Kit_Decoder *) kit_player->decoders[1];
+    }
+
+    loading = true;
+
+    while (Kit_PlayerPlay(kit_player) > 0) {
         if (flip % 30 == 0) {
             if (decoder) {
-                float total = decoder->buffer[KIT_DEC_BUF_OUT]->size;
-                float current = Kit_GetBufferLength(decoder->buffer[KIT_DEC_BUF_OUT]);
-                int progress = (int) ((current / total) * 100.0f);
-                std::string msg = "Loading..." + file.name + "... " + std::to_string(progress) + "%";
-                main->getStatus()->show("Please Wait...", msg, true);
+                int progress = Kit_GetBufferBufferedSize(decoder->buffer[KIT_DEC_BUF_OUT]);
+                std::string msg = "Loading... " + title + "... " + std::to_string(progress) + "%";
+                main->getStatus()->show("Please Wait...", msg);
             }
             main->flip();
         }
         flip++;
     }
+
+    loading = false;
+}
+
+int Player::seek(double seek_position) {
+
+    int flip = 0;
+    double position = Kit_GetPlayerPosition(kit_player);
+    auto *decoder = (Kit_Decoder *) kit_player->decoders[0];
+    if (!decoder) {
+        decoder = (Kit_Decoder *) kit_player->decoders[1];
+    }
+
+    loading = true;
+
+    printf("Kit_PlayerSeekStart\n");
+    if (Kit_PlayerSeekStart(kit_player, position, seek_position) != 0) {
+        main->getStatus()->show("Error...", Kit_GetError());
+        loading = false;
+        return -1;
+    }
+    printf("Kit_PlayerSeekStart OK\n");
+
+    printf("Kit_PlayerSeekEnd\n");
+    while (Kit_PlayerSeekEnd(kit_player, position, seek_position) > 0) {
+        if (flip % 30 == 0) {
+            if (decoder) {
+                int progress = Kit_GetBufferBufferedSize(decoder->buffer[KIT_DEC_BUF_OUT]);
+                std::string msg = "Seeking... " + title + "... " + std::to_string(progress) + "%";
+                main->getStatus()->show("Please Wait...", msg);
+            }
+            main->flip();
+        }
+        flip++;
+    }
+    printf("Kit_PlayerSeekEnd OK\n");
+
+    kit_player->state = KIT_PLAYING;
     loading = false;
 
-    // must be after Kit_PlayerPlay pre-loading
-    setVisibility(Visibility::Visible);
-
-    return true;
+    return 0;
 }
 
 bool Player::onInput(c2d::Input::Player *players) {
@@ -294,6 +333,7 @@ bool Player::onInput(c2d::Input::Player *players) {
 void Player::onDraw(c2d::Transform &transform) {
 
     if (loading || isStopped()) {
+        Rectangle::onDraw(transform);
         return;
     }
 
@@ -511,7 +551,11 @@ void Player::stop() {
         if (kit_player) {
             // save position in stream
             if (config) {
-                config->setPosition((float) Kit_GetPlayerPosition(kit_player));
+                if (Kit_GetPlayerPosition(kit_player) < Kit_GetPlayerDuration(kit_player) - 5) {
+                    config->setPosition((float) Kit_GetPlayerPosition(kit_player));
+                } else {
+                    config->setPosition(0);
+                }
             }
             Kit_ClosePlayer(kit_player);
             kit_player = nullptr;
