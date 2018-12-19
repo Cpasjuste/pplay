@@ -8,10 +8,9 @@
 
 using namespace c2d;
 
-MenuButton::MenuButton(Main *main, const MenuItem &item, const FloatRect &rect) : RectangleShape(rect) {
+MenuButton::MenuButton(Main *main, const MenuItem &item, const FloatRect &rect) : Rectangle(rect) {
 
     this->item = item;
-    setFillColor(Color::Transparent);
     setOrigin(Origin::Left);
 
     if (!item.icon.empty()) {

@@ -16,7 +16,7 @@
 #include "menus/menu_video.h"
 #include "status_box.h"
 
-#define INPUT_DELAY 250
+#define INPUT_DELAY 500
 #define ICON_SIZE 24
 #define BUTTON_HEIGHT 64
 
@@ -89,6 +89,8 @@ public:
 private:
 
     bool onInput(c2d::Input::Player *players) override;
+
+    void onDraw(c2d::Transform &transform) override;
 
     c2d::Font *font = nullptr;
     c2d::Clock *timer = nullptr;

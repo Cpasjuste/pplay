@@ -114,12 +114,12 @@ bool Main::onInput(c2d::Input::Player *players) {
         return true;
     }
 
-    unsigned int keys = players[0].keys;
-
     if (messageBox->isVisible()) {
         // don't handle input if message box is visible
         return false;
     }
+
+    unsigned int keys = players[0].keys;
 
     if (keys & EV_QUIT) {
         if (player->isFullscreen()) {
@@ -138,6 +138,22 @@ bool Main::onInput(c2d::Input::Player *players) {
     }
 
     return Renderer::onInput(players);
+}
+
+void Main::onDraw(c2d::Transform &transform) {
+
+    unsigned int keys = getInput()->getKeys(0);
+
+    if (keys != Input::Key::Delay) {
+        if (keys && timer->getElapsedTime().asMilliseconds() > INPUT_DELAY) {
+            getInput()->setRepeatDelay(INPUT_DELAY / 5);
+        } else if (!keys) {
+            getInput()->setRepeatDelay(INPUT_DELAY);
+            timer->restart();
+        }
+    }
+
+    C2DObject::onDraw(transform);
 }
 
 // TODO: move this in menu_main

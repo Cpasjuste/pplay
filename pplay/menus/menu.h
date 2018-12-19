@@ -34,7 +34,7 @@ public:
     Position position = Position::Top;
 };
 
-class MenuButton : public c2d::RectangleShape {
+class MenuButton : public c2d::Rectangle {
 
 public:
 
