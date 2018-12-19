@@ -84,6 +84,8 @@ public:
 
     bool isLoading();
 
+    bool isSubtitlesEnabled();
+
     bool isFullscreen();
 
     void setFullscreen(bool maximize);

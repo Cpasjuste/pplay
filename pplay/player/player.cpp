@@ -396,9 +396,14 @@ void Player::setSubtitleStream(int streamId) {
 
     if (streamId == subtitles_streams.getCurrent()) {
         if (streamId > -1) {
-            config->setStream(OPT_STREAM_SUB, streamId);
-            textureSub->setVisibility(Visibility::Visible);
-            show_subtitles = true;
+            if (kit_player->decoders[2] && textureSub) {
+                config->setStream(OPT_STREAM_SUB, streamId);
+                textureSub->setVisibility(Visibility::Visible);
+                show_subtitles = true;
+            } else {
+                config->setStream(OPT_STREAM_SUB, -1);
+                main->getStatus()->show("Info...", "Subtitle format not supported");
+            }
         } else {
             main->getStatus()->show("Info...", "Selected subtitles stream already set");
         }
@@ -411,6 +416,12 @@ void Player::setSubtitleStream(int streamId) {
             config->setStream(OPT_STREAM_SUB, streamId);
             textureSub->setVisibility(Visibility::Visible);
             show_subtitles = true;
+        } else {
+            config->setStream(OPT_STREAM_SUB, -1);
+            subtitles_streams.current = -1;
+            show_subtitles = false;
+            textureSub->setVisibility(Visibility::Hidden);
+            main->getStatus()->show("Info...", "Subtitle format not supported");
         }
     } else {
         config->setStream(OPT_STREAM_SUB, -1);
@@ -695,4 +706,8 @@ PlayerOSD *Player::getOSD() {
 
 bool Player::isLoading() {
     return loading;
+}
+
+bool Player::isSubtitlesEnabled() {
+    return show_subtitles;
 }
