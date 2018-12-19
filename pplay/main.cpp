@@ -268,6 +268,21 @@ int main() {
 #if defined(__SWITCH__) && !defined(__NET_DEBUG__)
     socketExit();
 #endif
+    
+    while(appletMainLoop())
+    {
+        hidScanInput();
+
+        u64 kDown = hidKeysDown(CONTROLLER_P1_AUTO);
+        if (kDown & KEY_PLUS) break;
+		
+        gfxFlushBuffers();
+        gfxSwapBuffers();
+        gfxWaitForVsync();
+    }
+
+    consoleExit(NULL);		
+    gfxExit();
 
     return 0;
 }
