@@ -1,7 +1,8 @@
 pPlay
 ======
 
-pPlay is a video player for the Nintendo Switch.
+pPlay is a video player for the Nintendo Switch. pPlay support most popular video formats,
+have subtitles (embedded ass) and http streaming support.
 
 Installation 
 ----
