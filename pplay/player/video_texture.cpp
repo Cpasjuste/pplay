@@ -28,6 +28,11 @@ VideoTexture::VideoTexture(const c2d::Vector2f &size) : C2DTexture(size, Format:
     rectBottomTween = new TweenAlpha(0, 255, 0.5f);
     rectBottom->add(rectBottomTween);
     add(rectBottom);
+
+    void *buf;
+    lock(nullptr, &buf, nullptr);
+    memset(buf, 0, (size_t) (int) size.x * (int) size.y * 4);
+    unlock();
 }
 
 void VideoTexture::hideGradients() {

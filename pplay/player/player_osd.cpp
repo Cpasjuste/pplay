@@ -186,16 +186,12 @@ bool PlayerOSD::onInput(c2d::Input::Player *players) {
                 main->getPlayer()->resume();
             }
         } else if (index == (int) ButtonID::SeekForward1) {
-            //main->getStatus()->show("Info...", "Seeking 1 minute forward...", true);
             main->getPlayer()->seek(position + 60.0);
         } else if (index == (int) ButtonID::SeekForward10) {
-            //main->getStatus()->show("Info...", "Seeking 10 minute forward...", true);
             main->getPlayer()->seek(position + (60.0 * 10.0));
         } else if (index == (int) ButtonID::SeekBackward1) {
-            //main->getStatus()->show("Info...", "Seeking 1 minute backward...", true);
             main->getPlayer()->seek(position - 60.0);
         } else if (index == (int) ButtonID::SeekBackward10) {
-            //main->getStatus()->show("Info...", "Seeking 10 minutes backward...", true);
             main->getPlayer()->seek(position - (60.0 * 10.0));
         } else if (index == (int) ButtonID::Stop) {
             setVisibility(Visibility::Hidden);

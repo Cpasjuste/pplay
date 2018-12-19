@@ -223,9 +223,9 @@ bool Player::load(const MediaFile &file) {
     }
 
     // preload/cache some frames, resume playback if needed
-    if (config->getPosition() > 5) {
+    if (config->getPosition() > 10) {
         Kit_SetClockSync(kit_player);
-        if (seek(config->getPosition() - 5) != 0) {
+        if (seek(config->getPosition() - 10) != 0) {
             play();
         }
     } else {
@@ -282,11 +282,15 @@ int Player::seek(double seek_position) {
     printf("Kit_PlayerSeekStart OK\n");
 
     printf("Kit_PlayerSeekEnd\n");
+
+    std::string msg = "Seeking... " + title + "... 0%";
+    main->getStatus()->show("Please Wait...", msg, false, true);
+
     while (Kit_PlayerSeekEnd(kit_player, position, seek_position) > 0) {
         if (flip % 30 == 0) {
             if (decoder) {
                 int progress = Kit_GetBufferBufferedSize(decoder->buffer[KIT_DEC_BUF_OUT]);
-                std::string msg = "Seeking... " + title + "... " + std::to_string(progress) + "%";
+                msg = "Seeking... " + title + "... " + std::to_string(progress) + "%";
                 main->getStatus()->show("Please Wait...", msg);
             }
             main->flip();
