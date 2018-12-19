@@ -173,6 +173,7 @@ bool Player::load(const MediaFile &file) {
         }
         menuVideoStreams = new MenuVideoSubmenu(
                 main, main->getMenuVideo()->getGlobalBounds(), "VIDEO", items, MENU_VIDEO_TYPE_VID);
+        menuVideoStreams->setSelection(MENU_VIDEO_TYPE_VID);
         menuVideoStreams->setVisibility(Visibility::Hidden, false);
         menuVideoStreams->setLayer(3);
         add(menuVideoStreams);
@@ -186,7 +187,9 @@ bool Player::load(const MediaFile &file) {
                 fps = (float) av_q2d(decoder->format_ctx->streams[video_streams.getCurrent()]->r_frame_rate);
             }
         }
-        audio = new C2DAudio(playerInfo.audio.output.samplerate, fps);
+        // TODO: < 48000 not working fine on switch, check sdl2/libsamplerate
+        //audio = new C2DAudio(playerInfo.audio.output.samplerate, fps);
+        audio = new C2DAudio(48000, fps);
         // audios menu options
         std::vector<MenuItem> items;
         for (auto &stream : file.media.audios) {
@@ -194,6 +197,7 @@ bool Player::load(const MediaFile &file) {
         }
         menuAudioStreams = new MenuVideoSubmenu(
                 main, main->getMenuVideo()->getGlobalBounds(), "AUDIO", items, MENU_VIDEO_TYPE_AUD);
+        menuAudioStreams->setSelection(MENU_VIDEO_TYPE_AUD);
         menuAudioStreams->setVisibility(Visibility::Hidden, false);
         menuAudioStreams->setLayer(3);
         add(menuAudioStreams);
@@ -218,6 +222,7 @@ bool Player::load(const MediaFile &file) {
         }
         menuSubtitlesStreams = new MenuVideoSubmenu(
                 main, main->getMenuVideo()->getGlobalBounds(), "SUBTITLES", items, MENU_VIDEO_TYPE_SUB);
+        menuSubtitlesStreams->setSelection(MENU_VIDEO_TYPE_SUB);
         menuSubtitlesStreams->setVisibility(Visibility::Hidden, false);
         menuSubtitlesStreams->setLayer(3);
         add(menuSubtitlesStreams);
@@ -243,69 +248,6 @@ bool Player::load(const MediaFile &file) {
     setVisibility(Visibility::Visible);
 
     return true;
-}
-
-void Player::play() {
-
-    int flip = 0;
-    auto *decoder = (Kit_Decoder *) kit_player->decoders[0];
-    if (!decoder) {
-        decoder = (Kit_Decoder *) kit_player->decoders[1];
-    }
-
-    loading = true;
-
-    while (Kit_PlayerPlay(kit_player) > 0) {
-        if (flip % 30 == 0) {
-            if (decoder) {
-                int progress = Kit_GetBufferBufferedSize(decoder->buffer[KIT_DEC_BUF_OUT]);
-                std::string msg = "Loading... " + title + "... " + std::to_string(progress) + "%";
-                main->getStatus()->show("Please Wait...", msg);
-            }
-            main->flip();
-        }
-        flip++;
-    }
-
-    loading = false;
-}
-
-int Player::seek(double seek_position) {
-
-    int flip = 0;
-    double position = Kit_GetPlayerPosition(kit_player);
-    auto *decoder = (Kit_Decoder *) kit_player->decoders[0];
-    if (!decoder) {
-        decoder = (Kit_Decoder *) kit_player->decoders[1];
-    }
-
-    loading = true;
-
-    if (Kit_PlayerSeekStart(kit_player, position, seek_position) != 0) {
-        main->getStatus()->show("Error...", Kit_GetError());
-        loading = false;
-        return -1;
-    }
-
-    std::string msg = "Seeking... " + title + "... 0%";
-    main->getStatus()->show("Please Wait...", msg, false, true);
-
-    while (Kit_PlayerSeekEnd(kit_player, position, seek_position) > 0) {
-        if (flip % 30 == 0) {
-            if (decoder) {
-                int progress = Kit_GetBufferBufferedSize(decoder->buffer[KIT_DEC_BUF_OUT]);
-                msg = "Seeking... " + title + "... " + std::to_string(progress) + "%";
-                main->getStatus()->show("Please Wait...", msg);
-            }
-            main->flip();
-        }
-        flip++;
-    }
-
-    kit_player->state = KIT_PLAYING;
-    loading = false;
-
-    return 0;
 }
 
 bool Player::onInput(c2d::Input::Player *players) {
@@ -450,10 +392,12 @@ void Player::setAudioStream(int streamId) {
 void Player::setSubtitleStream(int streamId) {
 
     if (streamId == subtitles_streams.getCurrent()) {
-        main->getStatus()->show("Info...", "Selected subtitles stream already set");
         if (streamId > -1) {
+            config->setStream(OPT_STREAM_SUB, streamId);
             textureSub->setVisibility(Visibility::Visible);
             show_subtitles = true;
+        } else {
+            main->getStatus()->show("Info...", "Selected subtitles stream already set");
         }
         return;
     }
@@ -473,6 +417,69 @@ void Player::setSubtitleStream(int streamId) {
             textureSub->setVisibility(Visibility::Hidden);
         }
     }
+}
+
+void Player::play() {
+
+    int flip = 0;
+    auto *decoder = (Kit_Decoder *) kit_player->decoders[0];
+    if (!decoder) {
+        decoder = (Kit_Decoder *) kit_player->decoders[1];
+    }
+
+    loading = true;
+
+    while (Kit_PlayerPlay(kit_player) > 0) {
+        if (flip % 30 == 0) {
+            if (decoder) {
+                int progress = Kit_GetBufferBufferedSize(decoder->buffer[KIT_DEC_BUF_OUT]);
+                std::string msg = "Loading... " + title + "... " + std::to_string(progress) + "%";
+                main->getStatus()->show("Please Wait...", msg);
+            }
+            main->flip();
+        }
+        flip++;
+    }
+
+    loading = false;
+}
+
+int Player::seek(double seek_position) {
+
+    int flip = 0;
+    double position = Kit_GetPlayerPosition(kit_player);
+    auto *decoder = (Kit_Decoder *) kit_player->decoders[0];
+    if (!decoder) {
+        decoder = (Kit_Decoder *) kit_player->decoders[1];
+    }
+
+    loading = true;
+
+    if (Kit_PlayerSeekStart(kit_player, position, seek_position) != 0) {
+        main->getStatus()->show("Error...", Kit_GetError());
+        loading = false;
+        return -1;
+    }
+
+    std::string msg = "Seeking... " + title + "... 0%";
+    main->getStatus()->show("Please Wait...", msg, false, true);
+
+    while (Kit_PlayerSeekEnd(kit_player, position, seek_position) > 0) {
+        if (flip % 30 == 0) {
+            if (decoder) {
+                int progress = Kit_GetBufferBufferedSize(decoder->buffer[KIT_DEC_BUF_OUT]);
+                msg = "Seeking... " + title + "... " + std::to_string(progress) + "%";
+                main->getStatus()->show("Please Wait...", msg);
+            }
+            main->flip();
+        }
+        flip++;
+    }
+
+    kit_player->state = KIT_PLAYING;
+    loading = false;
+
+    return 0;
 }
 
 bool Player::isPlaying() {

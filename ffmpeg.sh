@@ -12,6 +12,7 @@ source /opt/devkitpro/switchvars.sh
     --disable-programs --disable-debug --disable-doc
     #TODO: --enable-encoder=png
 
+    #TODO: fix configure
     sed 's/#define HAVE_INET_ATON 0/#define HAVE_INET_ATON 1/g' -i config.h
     sed 's/#define HAVE_GETADDRINFO 0/#define HAVE_GETADDRINFO 1/g' -i config.h
     sed 's/#include <sys\/poll.h>/#include <poll.h>/g' -i libavformat/rtpproto.c

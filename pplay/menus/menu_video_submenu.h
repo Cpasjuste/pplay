@@ -20,6 +20,8 @@ public:
 
     bool onInput(c2d::Input::Player *players) override;
 
+    void setSelection(int streamType);
+
     int type;
     Highlight *highlight_selection;
 
