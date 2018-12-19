@@ -186,7 +186,7 @@ bool Player::load(const MediaFile &file) {
                 fps = (float) av_q2d(decoder->format_ctx->streams[video_streams.getCurrent()]->r_frame_rate);
             }
         }
-        audio = new C2DAudio(48000, fps);
+        audio = new C2DAudio(playerInfo.audio.output.samplerate, fps);
         // audios menu options
         std::vector<MenuItem> items;
         for (auto &stream : file.media.audios) {
