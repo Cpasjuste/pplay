@@ -48,9 +48,9 @@ bool Player::load(const MediaFile &file) {
         return false;
     }
 
-    // default buffer, "VeryHigh"
-    Kit_SetHint(KIT_HINT_VIDEO_BUFFER_FRAMES, 256);
-    Kit_SetHint(KIT_HINT_AUDIO_BUFFER_FRAMES, 2048);
+    // default buffer, "Medium"
+    Kit_SetHint(KIT_HINT_VIDEO_BUFFER_FRAMES, 64);
+    Kit_SetHint(KIT_HINT_AUDIO_BUFFER_FRAMES, 512);
     Kit_SetHint(KIT_HINT_SUBTITLE_BUFFER_FRAMES, 64);
     std::string buffering = main->getConfig()->getOption(OPT_BUFFER)->getString();
     if (Utility::toLower(buffering) == "low") {
@@ -62,6 +62,9 @@ bool Player::load(const MediaFile &file) {
     } else if (Utility::toLower(buffering) == "high") {
         Kit_SetHint(KIT_HINT_VIDEO_BUFFER_FRAMES, 128);
         Kit_SetHint(KIT_HINT_AUDIO_BUFFER_FRAMES, 1024);
+    } else if (Utility::toLower(buffering) == "veryhigh") {
+        Kit_SetHint(KIT_HINT_VIDEO_BUFFER_FRAMES, 256);
+        Kit_SetHint(KIT_HINT_AUDIO_BUFFER_FRAMES, 2048);
     }
     printf("Player::load: buffering = %s (video=%i, audio=%i)\n", buffering.c_str(),
            Kit_GetHint(KIT_HINT_VIDEO_BUFFER_FRAMES), Kit_GetHint(KIT_HINT_AUDIO_BUFFER_FRAMES));
