@@ -88,8 +88,9 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
 
     // a messagebox...
     float w = getSize().x / 2;
-    float h = getSize().y / 2;
-    messageBox = new MessageBox({w, h, w, h}, getInput(), getFont(), getFontSize(Main::FontSize::Medium));
+    float h = getSize().y / 3;
+    messageBox = new MessageBox({getSize().x / 2, getSize().y / 2, w, h},
+                                getInput(), getFont(), getFontSize(Main::FontSize::Medium));
     messageBox->setOrigin(Origin::Center);
     messageBox->setFillColor(COLOR_BG);
     messageBox->setAlpha(200);
@@ -134,12 +135,6 @@ bool Main::onInput(c2d::Input::Player *players) {
                 return true;
             }
         }
-#if 0
-        if (menu_main->getMenuButton()->getGlobalBounds().contains(players[0].touch)) {
-            menu_main->setVisibility(Visibility::Visible, true);
-            return;
-        }
-#endif
     }
 
     return Renderer::onInput(players);
@@ -151,6 +146,7 @@ void Main::show(MenuType type) {
     if (player->isPlaying() && player->isFullscreen()) {
         player->setFullscreen(false);
     }
+
     filerSdmc->setVisibility(type == MenuType::Home ? Visibility::Visible : Visibility::Hidden);
     filerHttp->setVisibility(type == MenuType::Home ? Visibility::Hidden : Visibility::Visible);
     filer = type == MenuType::Home ? filerSdmc : filerHttp;
@@ -162,8 +158,7 @@ void Main::show(MenuType type) {
         }
     } else {
         if (!filer->getDir(config->getOption(OPT_NETWORK)->getString())) {
-            std::string err = ((FilerHttp *) filerHttp)->getError();
-            messageBox->show("Oups", "Could not browse directory:\n" + err, "OK");
+            messageBox->show("OOPS", ((FilerHttp *) filerHttp)->getError(), "OK");
             show(MenuType::Home);
         } else {
             filer->clearHistory();

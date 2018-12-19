@@ -1,13 +1,13 @@
 TODO
 ====
 
-- allow ui rendering/flip when buffering media (partially done, do the same for seeking?)
 - add status bar (time, battery)
 - handle more than menu height in subtitles selection
 
 DONE
 ====
 
+- player: allow ui rendering/flip when buffering media (partially done, do the same for seeking?)
 - player: save per media settings (progress, selected streams..)
 - player: set audio fps from media info
 - pplay: define 2 or 3 font size for backing

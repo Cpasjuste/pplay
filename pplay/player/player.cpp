@@ -9,6 +9,7 @@
 #include "base64.h"
 #include "player.h"
 #include "player_osd.h"
+#include "utility.h"
 #include "gradient_rectangle.h"
 #include "kitchensink/internal/kitdecoder.h"
 
@@ -223,14 +224,21 @@ bool Player::load(const MediaFile &file) {
     }
 
     // preload/cache some frames, resume playback if needed
+    loading = true;
     if (config->getPosition() > 10) {
-        Kit_SetClockSync(kit_player);
-        if (seek(config->getPosition() - 10) != 0) {
+        std::string msg = "Resume playback at " + pplay::Utility::formatTime(config->getPosition()) + " ?";
+        if (main->getMessageBox()->show("RESUME", msg, "RESUME", "RESTART") == MessageBox::LEFT) {
+            Kit_SetClockSync(kit_player);
+            if (seek(config->getPosition() - 10) != 0) {
+                play();
+            }
+        } else {
             play();
         }
     } else {
         play();
     }
+    loading = false;
 
     setVisibility(Visibility::Visible);
 
@@ -273,15 +281,11 @@ int Player::seek(double seek_position) {
 
     loading = true;
 
-    printf("Kit_PlayerSeekStart\n");
     if (Kit_PlayerSeekStart(kit_player, position, seek_position) != 0) {
         main->getStatus()->show("Error...", Kit_GetError());
         loading = false;
         return -1;
     }
-    printf("Kit_PlayerSeekStart OK\n");
-
-    printf("Kit_PlayerSeekEnd\n");
 
     std::string msg = "Seeking... " + title + "... 0%";
     main->getStatus()->show("Please Wait...", msg, false, true);
@@ -297,7 +301,6 @@ int Player::seek(double seek_position) {
         }
         flip++;
     }
-    printf("Kit_PlayerSeekEnd OK\n");
 
     kit_player->state = KIT_PLAYING;
     loading = false;
