@@ -14,6 +14,9 @@ Usage
 
 Notes
 ----
+- You should really use an NSP HBL (HomeBrew Loader) or any other way to unleash all switch memory 
+to launch pPlay, else you'll have some memory problems/crashes. 
+
 - pPlay should be able to play most media. While 720p should be mostly fine, 
 1080p support can vary with medias and bit rates. If so (audio de-sync for example), 
 increasing buffering can help in most situation. This can be done in the main menu (left).
