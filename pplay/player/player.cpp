@@ -6,7 +6,6 @@
 #include <iomanip>
 
 #include "main.h"
-#include "base64.h"
 #include "player.h"
 #include "player_osd.h"
 #include "utility.h"
@@ -100,12 +99,10 @@ bool Player::load(const MediaFile &file) {
     snprintf(state->subtitle_font_path, 511, "%sskin/font.ttf",
              getMain()->getIo()->getDataReadPath().c_str());
 
-    // get media config
     title = file.name;
-    std::string cfgPath =
-            main->getIo()->getDataWritePath() + "cache/"
-            + base64_encode((const unsigned char *) file.path.c_str(),
-                            (unsigned int) file.path.length()) + ".cfg";
+    // get media config (info)
+    std::string hash = std::to_string(std::hash<std::string>()(file.path));
+    std::string cfgPath = main->getIo()->getDataWritePath() + "cache/" + hash + ".cfg";
     config = new MediaConfig(cfgPath);
     if (video_streams.size > 0) {
         if (config->getStream(OPT_STREAM_VID) > -1) {

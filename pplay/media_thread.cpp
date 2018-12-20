@@ -12,7 +12,6 @@ int ffmpeg_main(int argc, const char **argv);
 #include <algorithm>
 #include "main.h"
 #include "media_thread.h"
-#include "base64.h"
 #include "utility.h"
 
 #if 0
@@ -28,19 +27,18 @@ static void dump_metadata(const std::string &desc, AVDictionary *dic) {
 static const MediaInfo get_media_info(MediaThread *mediaThread, const c2d::Io::File &file) {
 
     MediaInfo media;
-    std::string mediaPath = file.path;
-    std::string cachePath = mediaThread->getMediaCachePath(mediaPath);
+    std::string cachePath = mediaThread->getMediaCachePath(file);
     printf("get_media_info: %s => %s\n", file.name.c_str(), cachePath.c_str());
     mediaThread->getMain()->getStatus()->show("Scanning...", file.name, true);
 
     // open
     AVFormatContext *ctx = nullptr;
     printf("get_media_info: avformat_open_input\n");
-    int res = avformat_open_input(&ctx, mediaPath.c_str(), nullptr, nullptr);
+    int res = avformat_open_input(&ctx, file.path.c_str(), nullptr, nullptr);
     if (res != 0) {
         char err_str[256];
         av_strerror(res, err_str, 255);
-        printf("get_media_info: unable to open '%s': %s\n", mediaPath.c_str(), err_str);
+        printf("get_media_info: unable to open '%s': %s\n", file.path.c_str(), err_str);
         mediaThread->getMain()->getStatus()->show("Error...", err_str, false, false);
         // cache an "unknow" media file so we don't try that file again
         media.serialize(cachePath);
@@ -52,7 +50,7 @@ static const MediaInfo get_media_info(MediaThread *mediaThread, const c2d::Io::F
     if (res < 0) {
         char err_str[256];
         av_strerror(res, err_str, 255);
-        printf("get_media_info: unable to parse '%s': %s\n", mediaPath.c_str(), err_str);
+        printf("get_media_info: unable to parse '%s': %s\n", file.path.c_str(), err_str);
         mediaThread->getMain()->getStatus()->show("Error...", err_str, false, false);
         avformat_close_input(&ctx);
         // cache an "unknow" media file so we don't try that file again
@@ -62,7 +60,7 @@ static const MediaInfo get_media_info(MediaThread *mediaThread, const c2d::Io::F
 
     AVDictionaryEntry *language, *title = av_dict_get(ctx->metadata, "title", nullptr, 0);
     media.title = title ? title->value : "N/A";
-    media.path = mediaPath;
+    media.path = file.path;
     media.bit_rate = (int) ctx->bit_rate;
     media.duration = ctx->duration / AV_TIME_BASE;
     printf("get_media_info: stream count: %i\n", ctx->nb_streams);
@@ -182,7 +180,7 @@ const MediaInfo MediaThread::getMediaInfo(const c2d::Io::File &file, bool fromCa
     MediaInfo media;
 
     if (pplay::Utility::isMedia(file)) {
-        std::string cachePath = getMediaCachePath(file.path);
+        std::string cachePath = getMediaCachePath(file);
         if (main->getIo()->exist(cachePath)) {
             //printf("getMediaInfo::deserialize: %s\n", file.name.c_str());
             media.deserialize(cachePath);
@@ -211,43 +209,13 @@ const MediaInfo MediaThread::getMediaInfo(const c2d::Io::File &file, bool fromCa
     return media;
 }
 
-#if 0
-// medias info is now cached in filer(sdmc/http)
-void MediaThread::cacheDir(const std::string &dir) {
-
-    if (!cache) {
-        return;
-    }
-
-    SDL_LockMutex(mutex);
-
-    std::vector<c2d::Io::File> files = main->getIo()->getDirList(dir, true);
-    for (c2d::Io::File &file : files) {
-        if (pplay::Utility::isMedia(file)) {
-            std::string cachePath = getMediaCachePath(file.path);
-            if (!main->getIo()->exist(cachePath)) {
-                auto f = find_if(mediaList.begin(), mediaList.end(), [&file](const c2d::Io::File &obj) {
-                    return obj.path == file.path;
-                });
-                if (f == mediaList.end()) {
-                    mediaList.emplace_back(file);
-                }
-            }
-        }
-    }
-
-    SDL_UnlockMutex(mutex);
-}
-#endif
-
 Main *MediaThread::getMain() {
     return main;
 }
 
-const std::string MediaThread::getMediaCachePath(const std::string &mediaPath) const {
-    std::string path = cachePath +
-                       base64_encode((const unsigned char *) mediaPath.c_str(),
-                                     (unsigned int) mediaPath.length());
+const std::string MediaThread::getMediaCachePath(const c2d::Io::File &file) const {
+    std::string hash = std::to_string(std::hash<std::string>()(file.path));
+    std::string path = cachePath + hash;
     return path;
 }
 

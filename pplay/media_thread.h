@@ -23,7 +23,7 @@ public:
 
     Main *getMain();
 
-    const std::string getMediaCachePath(const std::string &mediaPath) const;
+    const std::string getMediaCachePath(const c2d::Io::File &file) const;
 
     const MediaInfo getMediaInfo(const c2d::Io::File &file, bool fromCache = false);
 
