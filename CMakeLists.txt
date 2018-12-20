@@ -30,6 +30,7 @@ set(PPLAY_INC
         pplay/filers
         pplay/menus
         pplay/player
+        pplay/ftplib
         #pplay/fftools
         SDL_kitchensink/include
         SDL_kitchensink/include/kitchensink
@@ -41,6 +42,7 @@ file(GLOB PPLAY_SRC
         pplay/menus/*.c*
         pplay/player/*.c*
         pplay/Browser/*.c*
+        pplay/ftplib/*.c*
         #pplay/fftools/*.c*
         SDL_kitchensink/src/*.c*
         SDL_kitchensink/src/internal/*.c*

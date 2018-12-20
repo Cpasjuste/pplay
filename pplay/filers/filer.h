@@ -43,6 +43,8 @@ private:
 
     friend class FilerHttp;
 
+    friend class FilerFtp;
+
     virtual void enter(int index);
 
     virtual void exit();

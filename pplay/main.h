@@ -7,7 +7,6 @@
 
 #include "cross2d/c2d.h"
 #include "filers/filer.h"
-#include "filers/filer_http.h"
 #include "player/player.h"
 #include "config.h"
 #include "media_thread.h"
@@ -99,6 +98,7 @@ private:
     PPLAYConfig *config = nullptr;
     Filer *filerSdmc = nullptr;
     Filer *filerHttp = nullptr;
+    Filer *filerFtp = nullptr;
     Filer *filer = nullptr;
     Player *player = nullptr;
     MenuMain *menu_main = nullptr;

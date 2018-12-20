@@ -10,6 +10,8 @@ extern "C" {
 
 #include "main.h"
 #include "filers/filer_sdmc.h"
+#include "filers/filer_http.h"
+#include "filers/filer_ftp.h"
 #include "menus/menu_main.h"
 #include "menus/menu_video.h"
 
@@ -57,6 +59,10 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     filerHttp->setLayer(1);
     filerHttp->setVisibility(Visibility::Hidden);
     add(filerHttp);
+    filerFtp = new FilerFtp(this, filerRect);
+    filerFtp->setLayer(1);
+    filerFtp->setVisibility(Visibility::Hidden);
+    add(filerFtp);
     filer = filerSdmc;
     filer->getDir(config->getOption(OPT_LAST_PATH)->getString());
 
