@@ -1180,7 +1180,7 @@ const std::vector<c2d::Io::File> FtpDirList(const char *p, netbuf *nControl) {
                 name.erase(name.size() - 1);
             }
             std::string path = p;
-            if (path.back() != '/') {
+            if (!path.empty() && '/' != path.back()) {
                 path += "/";
             }
             c2d::Io::Type type = fp.flagtrycwd == 1 ? c2d::Io::Type::Directory : c2d::Io::Type::File;

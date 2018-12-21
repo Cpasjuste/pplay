@@ -56,10 +56,9 @@ void Filer::setSelection(int index) {
         } else {
             // load media info, set file
             int idx = index_start + i;
-            if (main->getMediaThread()->isCaching()) {
-                if (files[idx].type == Io::Type::File && !files[idx].getMedia().isLoaded()) {
-                    files[idx].media = main->getMediaThread()->getMediaInfo(files[idx]);
-                }
+            // media info only cached in FilerSdmc now..
+            if (files[idx].type == Io::Type::File && !files[idx].getMedia().isLoaded()) {
+                files[idx].media = main->getMediaThread()->getMediaInfo(files[idx], true);
             }
             items[i]->setFile(files[idx]);
             items[i]->setVisibility(Visibility::Visible);

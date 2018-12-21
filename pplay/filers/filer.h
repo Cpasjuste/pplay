@@ -31,7 +31,9 @@ public:
 
     virtual void setSelection(int index);
 
-    void clearHistory();
+    virtual void clearHistory();
+
+    virtual const std::string getError() { return ""; };
 
     bool onInput(c2d::Input::Player *players) override;
 

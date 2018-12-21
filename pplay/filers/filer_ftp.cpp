@@ -12,6 +12,24 @@ using namespace c2d;
 
 #define TIMEOUT 3
 
+static size_t find_Nth(const std::string &str, unsigned n, const std::string &find) {
+
+    size_t pos = std::string::npos, from = 0;
+    unsigned i = 0;
+
+    if (0 == n) {
+        return std::string::npos;
+    }
+
+    while (i < n) {
+        pos = str.find(find, from);
+        if (std::string::npos == pos) { break; }
+        from = pos + 1;
+        ++i;
+    }
+    return pos;
+}
+
 FilerFtp::FilerFtp(Main *main, const FloatRect &rect) : Filer(main, "", rect) {
     FtpInit();
 }
@@ -20,14 +38,31 @@ bool FilerFtp::getDir(const std::string &p) {
 
     printf("getDir(%s)\n", p.c_str());
 
-    std::string srv_address = main->getConfig()->getOption(OPT_NETWORK)->getString();
+    // split user/pwd/host/port/path
+    // TODO: check for nullptr etc..
+    size_t colon_2 = find_Nth(p, 2, ":");
+    size_t colon_3 = p.find_last_of(':');
+    size_t at = p.find_last_of('@');
+    size_t last_slash = find_Nth(p, 3, "/");
+    std::string user = p.substr(6, colon_2 - 6);
+    std::string pwd = p.substr(colon_2 + 1, at - colon_2 - 1);
+    std::string host = p.substr(at + 1, colon_3 - at - 1);
+    std::string port = p.substr(colon_3 + 1, p.find('/', colon_3) - (colon_3 + 1));
+    std::string host_port = host + ":" + port;
+    std::string new_path = p.substr(last_slash, p.length() - last_slash);
+    if (Utility::startWith(new_path, "/")) {
+        new_path.erase(0, 1);
+    }
 
-    if (!FtpConnect(srv_address.c_str(), &ftp_con)) {
+    //printf("user: %s, pwd: %s, host: %s, port: %s, path: %s\n",
+    //       user.c_str(), pwd.c_str(), host.c_str(), port.c_str(), new_path.c_str());
+
+    if (!FtpConnect(host_port.c_str(), &ftp_con)) {
         error = "Could not connect to ftp server";
         return false;
     }
 
-    if (!FtpLogin("cpasjuste", "test", ftp_con)) {
+    if (!FtpLogin(user.c_str(), pwd.c_str(), ftp_con)) {
         error = "Could not connect to ftp server";
         FtpQuit(ftp_con);
         return false;
@@ -36,8 +71,11 @@ bool FilerFtp::getDir(const std::string &p) {
     item_index = 0;
     files.clear();
     path = p;
+    if (!Utility::endsWith(path, "/")) {
+        path += "/";
+    }
 
-    std::vector<Io::File> _files = FtpDirList("dev/videos", ftp_con);
+    std::vector<Io::File> _files = FtpDirList(new_path.c_str(), ftp_con);
     _files.insert(_files.begin(), Io::File("..", "..", Io::Type::Directory, 0, COLOR_BLUE));
 
     _files.erase(std::remove_if(_files.begin(), _files.end(), [](Io::File file) {
@@ -46,10 +84,9 @@ bool FilerFtp::getDir(const std::string &p) {
 
     for (auto &file : _files) {
         if (file.path != "..") {
-            file.path = std::string("ftp://") + "cpasjuste" + ":" + "test" + srv_address + "/" + file.path;
+            file.path = path + file.name;
         }
-        bool fromCache = main->getMediaThread()->isCaching() == 0;
-        files.emplace_back(file, main->getMediaThread()->getMediaInfo(file, fromCache));
+        files.emplace_back(file);
     }
 
     FtpQuit(ftp_con);
@@ -60,36 +97,25 @@ bool FilerFtp::getDir(const std::string &p) {
 void FilerFtp::enter(int prev_index) {
 
     MediaFile file = getSelection();
-    bool success;
 
     if (file.name == "..") {
         exit();
         return;
     }
 
-    if (path == "/") {
-        success = getDir(path + file.name);
-    } else {
-        success = getDir(path + "/" + file.name);
-    }
-    if (success) {
+    if (getDir(file.path)) {
         Filer::enter(prev_index);
     }
 }
 
 void FilerFtp::exit() {
 
-    std::string path_new = path;
-
-    if (path_new == "/" || path_new.find('/') == std::string::npos) {
+    if (item_index_prev.empty()) {
         return;
     }
 
+    std::string path_new = Utility::removeLastSlash(path);
     while (path_new.back() != '/') {
-        path_new.erase(path_new.size() - 1);
-    }
-
-    if (path_new.size() > 1 && Utility::endsWith(path_new, "/")) {
         path_new.erase(path_new.size() - 1);
     }
 

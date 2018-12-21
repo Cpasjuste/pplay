@@ -39,8 +39,8 @@ private:
 
     Main *main;
     std::string cachePath;
-    SDL_Thread *thread;
-    SDL_mutex *mutex;
+    SDL_Thread *thread = nullptr;
+    SDL_mutex *mutex = nullptr;
     bool running = true;
     bool cache = true;
 };

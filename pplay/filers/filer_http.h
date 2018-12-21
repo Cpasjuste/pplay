@@ -20,7 +20,7 @@ public:
 
     bool getDir(const std::string &path) override;
 
-    const std::string getError();
+    const std::string getError() override;
 
 private:
 

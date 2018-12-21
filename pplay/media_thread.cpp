@@ -29,7 +29,7 @@ static const MediaInfo get_media_info(MediaThread *mediaThread, const c2d::Io::F
     MediaInfo media;
     std::string cachePath = mediaThread->getMediaCachePath(file);
     printf("get_media_info: %s => %s\n", file.name.c_str(), cachePath.c_str());
-    mediaThread->getMain()->getStatus()->show("Scanning...", file.name, true);
+    mediaThread->getMain()->getStatus()->show("Scanning...", file.name, true, true);
 
     // open
     AVFormatContext *ctx = nullptr;
@@ -165,7 +165,6 @@ MediaThread::MediaThread(Main *m, const std::string &cp) {
     main = m;
     cachePath = cp;
     cache = main->getConfig()->getOption(OPT_CACHE_MEDIA_INFO)->getInteger() == 1;
-    printf("CAHCE: %i\n", cache == 1);
 
     avformat_network_init();
 
@@ -237,11 +236,8 @@ MediaThread::~MediaThread() {
 
     running = false;
     if (cache) {
-        printf("~Media: wait thread...\n");
         SDL_WaitThread(thread, &ret);
-        //SDL_DetachThread(thread);
         SDL_DestroyMutex(mutex);
-        printf("~Media: done...\n");
     }
 
     avformat_network_deinit();

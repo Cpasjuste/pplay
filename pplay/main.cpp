@@ -169,22 +169,41 @@ void Main::show(MenuType type) {
         player->setFullscreen(false);
     }
 
-    filerSdmc->setVisibility(type == MenuType::Home ? Visibility::Visible : Visibility::Hidden);
-    filerHttp->setVisibility(type == MenuType::Home ? Visibility::Hidden : Visibility::Visible);
-    filer = type == MenuType::Home ? filerSdmc : filerHttp;
     if (type == MenuType::Home) {
+        filerSdmc->setVisibility(Visibility::Visible);
+        filerHttp->setVisibility(Visibility::Hidden);
+        filerFtp->setVisibility(Visibility::Hidden);
+        filer = filerSdmc;
         if (!filer->getDir(config->getOption(OPT_HOME_PATH)->getString())) {
             if (filer->getDir("/")) {
                 filer->clearHistory();
             }
         }
+        return;
+    }
+
+    filerSdmc->setVisibility(Visibility::Hidden);
+
+    std::string net_path = config->getOption(OPT_NETWORK)->getString();
+    if (Utility::startWith(net_path, "http:")) {
+        filerFtp->setVisibility(Visibility::Hidden);
+        filerHttp->setVisibility(Visibility::Visible);
+        filer = filerHttp;
+    } else if (Utility::startWith(net_path, "ftp:")) {
+        filerHttp->setVisibility(Visibility::Hidden);
+        filerFtp->setVisibility(Visibility::Visible);
+        filer = filerFtp;
     } else {
-        if (!filer->getDir(config->getOption(OPT_NETWORK)->getString())) {
-            messageBox->show("OOPS", ((FilerHttp *) filerHttp)->getError(), "OK");
-            show(MenuType::Home);
-        } else {
-            filer->clearHistory();
-        }
+        messageBox->show("OOPS", "NETWORK path is wrong (see pplay.cfg)", "OK");
+        show(MenuType::Home);
+        return;
+    }
+
+    if (!filer->getDir(net_path)) {
+        messageBox->show("OOPS", filer->getError(), "OK");
+        show(MenuType::Home);
+    } else {
+        filer->clearHistory();
     }
 }
 
