@@ -245,6 +245,10 @@ bool Player::load(const MediaFile &file) {
     }
     loading = false;
 
+#ifdef __SWITCH__
+    appletSetMediaPlaybackStateForApplication(true);
+#endif
+
     setVisibility(Visibility::Visible);
 
     return true;
@@ -636,6 +640,10 @@ void Player::stop() {
         title.clear();
 
         setCpuClock(CpuClock::Min);
+
+#ifdef __SWITCH__
+        appletSetMediaPlaybackStateForApplication(false);
+#endif
     }
 
     stopped = true;
@@ -643,7 +651,7 @@ void Player::stop() {
 
 void Player::setCpuClock(const CpuClock &clock) {
 #ifdef __SWITCH__
-    if(main->getConfig()->getOption(OPT_CPU_BOOST)->getString() == "Enabled") {
+    if (main->getConfig()->getOption(OPT_CPU_BOOST)->getString() == "Enabled") {
         if (clock == CpuClock::Min) {
             if (SwitchSys::getClock(SwitchSys::Module::Cpu) != SwitchSys::getClockStock(SwitchSys::Module::Cpu)) {
                 int clock_old = SwitchSys::getClock(SwitchSys::Module::Cpu);
