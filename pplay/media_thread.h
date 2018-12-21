@@ -25,7 +25,7 @@ public:
 
     const std::string getMediaCachePath(const c2d::Io::File &file) const;
 
-    const MediaInfo getMediaInfo(const c2d::Io::File &file, bool fromCache = false);
+    const MediaInfo getMediaInfo(const c2d::Io::File &file, bool fromCache = false, bool now = false);
 
     SDL_mutex *getMutex();
 

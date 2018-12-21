@@ -174,7 +174,7 @@ MediaThread::MediaThread(Main *m, const std::string &cp) {
     }
 }
 
-const MediaInfo MediaThread::getMediaInfo(const c2d::Io::File &file, bool fromCache) {
+const MediaInfo MediaThread::getMediaInfo(const c2d::Io::File &file, bool fromCache, bool now) {
 
     MediaInfo media;
 
@@ -189,7 +189,7 @@ const MediaInfo MediaThread::getMediaInfo(const c2d::Io::File &file, bool fromCa
                 return media;
             }
             // scan media file
-            if (cache) {
+            if (cache && !now) {
                 // media info not yet available, cache for later use
                 SDL_LockMutex(mutex);
                 auto f = find_if(mediaList.begin(), mediaList.end(), [&file](const c2d::Io::File &obj) {

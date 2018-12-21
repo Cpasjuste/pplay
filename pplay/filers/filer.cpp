@@ -113,10 +113,8 @@ bool Filer::onInput(c2d::Input::Player *players) {
         } else if (pplay::Utility::isMedia(getSelection())) {
             std::string msg = "Loading..." + getSelection().name;
             main->getStatus()->show("Please Wait...", msg, true, true);
-            if (!main->getMediaThread()->isCaching()) {
-                if (!files[item_index].media.isLoaded()) {
-                    files[item_index].setMedia(main->getMediaThread()->getMediaInfo(files[item_index]));
-                }
+            if (!files[item_index].media.isLoaded()) {
+                files[item_index].setMedia(main->getMediaThread()->getMediaInfo(files[item_index], false, true));
             }
             if (main->getPlayer()->load(files[item_index])) {
                 main->getPlayer()->setFullscreen(true);
