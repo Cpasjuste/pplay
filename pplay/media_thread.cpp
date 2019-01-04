@@ -29,7 +29,7 @@ static const MediaInfo get_media_info(MediaThread *mediaThread, const c2d::Io::F
     MediaInfo media;
     std::string cachePath = mediaThread->getMediaCachePath(file);
     printf("get_media_info: %s => %s\n", file.name.c_str(), cachePath.c_str());
-    mediaThread->getMain()->getStatus()->show("Scanning...", file.name, true, true);
+    mediaThread->getMain()->getStatus()->show("Scanning...", file.name, true);
 
     // open
     AVFormatContext *ctx = nullptr;
@@ -39,7 +39,7 @@ static const MediaInfo get_media_info(MediaThread *mediaThread, const c2d::Io::F
         char err_str[256];
         av_strerror(res, err_str, 255);
         printf("get_media_info: unable to open '%s': %s\n", file.path.c_str(), err_str);
-        mediaThread->getMain()->getStatus()->show("Error...", err_str, false, false);
+        mediaThread->getMain()->getStatus()->show("Error...", err_str, false);
         // cache an "unknow" media file so we don't try that file again
         media.serialize(cachePath);
         return media;
@@ -51,7 +51,7 @@ static const MediaInfo get_media_info(MediaThread *mediaThread, const c2d::Io::F
         char err_str[256];
         av_strerror(res, err_str, 255);
         printf("get_media_info: unable to parse '%s': %s\n", file.path.c_str(), err_str);
-        mediaThread->getMain()->getStatus()->show("Error...", err_str, false, false);
+        mediaThread->getMain()->getStatus()->show("Error...", err_str, false);
         avformat_close_input(&ctx);
         // cache an "unknow" media file so we don't try that file again
         media.serialize(cachePath);
