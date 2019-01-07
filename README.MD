@@ -14,8 +14,8 @@ Usage
 
 Notes
 ----
-- You should really use an NSP HBL (HomeBrew Loader) or any other way to unleash all switch memory 
-to launch pPlay, else you'll have some memory problems/crashes: https://gbatemp.net/threads/homebrew-menu-loader-legal-nsp.518433/
+- You should really use an NSP HBL (HomeBrew Loader) to unleash all switch memory to launch pPlay, else you'll have some memory problems/crashes: https://gbatemp.net/threads/homebrew-menu-loader-legal-nsp.518433/
+<br>Alternatively if you are using Atmosphere, you can press (R) when launching a game, it will load HBL with all memory unlocked.
 
 - pPlay should be able to play most media. While 720p should be mostly fine, 
 1080p support can vary with medias and bit rates. If so (audio de-sync for example), 
