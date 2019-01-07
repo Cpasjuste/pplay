@@ -85,6 +85,10 @@ public:
 
     void quit();
 
+#ifndef NDEBUG
+    c2d::Text *debugText = nullptr;
+#endif
+
 private:
 
     bool onInput(c2d::Input::Player *players) override;

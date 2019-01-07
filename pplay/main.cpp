@@ -105,6 +105,12 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     messageBox->getTitleText()->setOutlineThickness(0);
     messageBox->getMessageText()->setOutlineThickness(0);
     add(messageBox);
+
+#ifndef NDEBUG
+    debugText = new Text("DEBUG: ", getFontSize(Main::FontSize::Medium), getFont());
+    debugText->setLayer(1000);
+    add(debugText);
+#endif
 }
 
 Main::~Main() {

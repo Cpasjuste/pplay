@@ -285,6 +285,23 @@ bool Player::onInput(c2d::Input::Player *players) {
 
 void Player::onDraw(c2d::Transform &transform) {
 
+#ifndef NDEBUG
+    if (kit_player) {
+        std::string v_buf_in = "video: in = ", v_buf_out = "out = ", a_buf_in = "audio: in = ", a_buf_out = "out: ";
+        auto *v_dec = (Kit_Decoder *) kit_player->decoders[0];
+        if (v_dec) {
+            v_buf_in += std::to_string(Kit_GetBufferBufferedSize(v_dec->buffer[KIT_DEC_BUF_IN]));
+            v_buf_out += std::to_string(Kit_GetBufferBufferedSize(v_dec->buffer[KIT_DEC_BUF_OUT]));
+        }
+        auto *a_dec = (Kit_Decoder *) kit_player->decoders[1];
+        if (a_dec) {
+            a_buf_in += std::to_string(Kit_GetBufferBufferedSize(a_dec->buffer[KIT_DEC_BUF_IN]));
+            a_buf_out += std::to_string(Kit_GetBufferBufferedSize(a_dec->buffer[KIT_DEC_BUF_OUT]));
+        }
+        main->debugText->setString(v_buf_in + "\t" + v_buf_out + "\n" + a_buf_in + "\t" + a_buf_out);
+    }
+#endif
+
     if (loading || isStopped()) {
         Rectangle::onDraw(transform);
         return;
