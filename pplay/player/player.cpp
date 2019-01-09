@@ -559,6 +559,7 @@ void Player::setFullscreen(bool fs) {
             menuSubtitlesStreams->setVisibility(Visibility::Hidden, true);
         }
         main->getFiler()->setVisibility(Visibility::Visible, true);
+        main->getTitle()->setVisibility(Visibility::Visible, true);
     } else {
         if (texture) {
             texture->hideGradients();
@@ -566,6 +567,7 @@ void Player::setFullscreen(bool fs) {
         tweenPosition->play(TweenDirection::Forward);
         tweenScale->play(TweenDirection::Forward);
         main->getFiler()->setVisibility(Visibility::Hidden, true);
+        main->getTitle()->setVisibility(Visibility::Hidden, true);
     }
 }
 

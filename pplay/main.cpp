@@ -66,6 +66,13 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     filer = filerSdmc;
     filer->getDir(config->getOption(OPT_LAST_PATH)->getString());
 
+    // title image
+    title = new C2DTexture(getIo()->getDataReadPath() + "skin/pplay.png");
+    title->setOrigin(Origin::BottomRight);
+    title->setPosition(getSize().x - 16, getSize().y - 16);
+    title->add(new TweenAlpha(0, 255, 0.5f));
+    add(title);
+
     // ffmpeg player
     player = new Player(this);
     add(player);
@@ -272,6 +279,10 @@ float Main::getScaling() {
 
 unsigned int Main::getFontSize(FontSize fontSize) {
     return (unsigned int) ((float) fontSize * scaling);
+}
+
+c2d::Texture *Main::getTitle() {
+    return title;
 }
 
 int main() {

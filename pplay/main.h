@@ -71,6 +71,8 @@ public:
 
     Filer *getFiler();
 
+    c2d::Texture *getTitle();
+
     PPLAYConfig *getConfig();
 
     c2d::Font *getFont() override;
@@ -104,6 +106,7 @@ private:
     Filer *filerHttp = nullptr;
     Filer *filerFtp = nullptr;
     Filer *filer = nullptr;
+    c2d::C2DTexture *title = nullptr;
     Player *player = nullptr;
     MenuMain *menu_main = nullptr;
     MenuVideo *menu_video = nullptr;
