@@ -24,12 +24,12 @@ static void dump_metadata(const std::string &desc, AVDictionary *dic) {
 }
 #endif
 
-static const MediaInfo get_media_info(MediaThread *mediaThread, const c2d::Io::File &file) {
+static const MediaInfo get_media_info(MediaThread *mediaThread, const c2d::Io::File &file, bool threaded) {
 
     MediaInfo media;
     std::string cachePath = mediaThread->getMediaCachePath(file);
     printf("get_media_info: %s => %s\n", file.name.c_str(), cachePath.c_str());
-    mediaThread->getMain()->getStatus()->show("Scanning...", file.name, true);
+    mediaThread->getMain()->getStatus()->show("Scanning...", file.name, true, !threaded);
 
     // open
     AVFormatContext *ctx = nullptr;
@@ -39,7 +39,7 @@ static const MediaInfo get_media_info(MediaThread *mediaThread, const c2d::Io::F
         char err_str[256];
         av_strerror(res, err_str, 255);
         printf("get_media_info: unable to open '%s': %s\n", file.path.c_str(), err_str);
-        mediaThread->getMain()->getStatus()->show("Error...", err_str, false);
+        mediaThread->getMain()->getStatus()->show("Error...", err_str, false, !threaded);
         // cache an "unknow" media file so we don't try that file again
         media.serialize(cachePath);
         return media;
@@ -51,7 +51,7 @@ static const MediaInfo get_media_info(MediaThread *mediaThread, const c2d::Io::F
         char err_str[256];
         av_strerror(res, err_str, 255);
         printf("get_media_info: unable to parse '%s': %s\n", file.path.c_str(), err_str);
-        mediaThread->getMain()->getStatus()->show("Error...", err_str, false);
+        mediaThread->getMain()->getStatus()->show("Error...", err_str, false, !threaded);
         avformat_close_input(&ctx);
         // cache an "unknow" media file so we don't try that file again
         media.serialize(cachePath);
@@ -147,7 +147,7 @@ static int media_info_thread(void *ptr) {
             continue;
         }
 
-        get_media_info(mediaThread, mediaThread->mediaList[0]);
+        get_media_info(mediaThread, mediaThread->mediaList[0], true);
 
         // remove from list
         SDL_LockMutex(mediaThread->getMutex());
@@ -200,7 +200,7 @@ const MediaInfo MediaThread::getMediaInfo(const c2d::Io::File &file, bool fromCa
                 }
                 SDL_UnlockMutex(mutex);
             } else {
-                return get_media_info(this, file);
+                return get_media_info(this, file, false);
             }
         }
     }
