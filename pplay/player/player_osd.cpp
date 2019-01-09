@@ -152,6 +152,7 @@ bool PlayerOSD::onInput(c2d::Input::Player *players) {
 
     if (main->getPlayer()->isStopped() || !main->getPlayer()->isFullscreen()) {
         setVisibility(Visibility::Hidden, true);
+        main->getStatusBar()->setVisibility(Visibility::Hidden, true);
         return true;
     }
 
@@ -159,6 +160,7 @@ bool PlayerOSD::onInput(c2d::Input::Player *players) {
 
     if ((keys & Input::Key::Up) || keys & Input::Key::Fire2) {
         setVisibility(Visibility::Hidden, true);
+        main->getStatusBar()->setVisibility(Visibility::Hidden, true);
     } else if (keys & Input::Key::Left) {
         index--;
         if (index < 0) {

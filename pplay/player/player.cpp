@@ -272,6 +272,7 @@ bool Player::onInput(c2d::Input::Player *players) {
     if ((keys & Input::Key::Fire1) || (keys & Input::Key::Down)) {
         if (!osd->isVisible()) {
             osd->setVisibility(Visibility::Visible, true);
+            main->getStatusBar()->setVisibility(Visibility::Visible, true);
         }
     } else if (keys & c2d::Input::Key::Left || keys & Input::Key::Fire2) {
         setFullscreen(false);
@@ -560,6 +561,7 @@ void Player::setFullscreen(bool fs) {
         }
         main->getFiler()->setVisibility(Visibility::Visible, true);
         main->getTitle()->setVisibility(Visibility::Visible, true);
+        main->getStatusBar()->setVisibility(Visibility::Visible, true);
     } else {
         if (texture) {
             texture->hideGradients();
@@ -568,6 +570,7 @@ void Player::setFullscreen(bool fs) {
         tweenScale->play(TweenDirection::Forward);
         main->getFiler()->setVisibility(Visibility::Hidden, true);
         main->getTitle()->setVisibility(Visibility::Hidden, true);
+        main->getStatusBar()->setVisibility(Visibility::Hidden, true);
     }
 }
 

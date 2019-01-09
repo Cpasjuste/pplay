@@ -14,6 +14,7 @@
 #include "menus/menu_main.h"
 #include "menus/menu_video.h"
 #include "status_box.h"
+#include "status_bar.h"
 
 #define INPUT_DELAY 500
 #define ICON_SIZE 24
@@ -81,6 +82,8 @@ public:
 
     StatusBox *getStatus();
 
+    StatusBar *getStatusBar();
+
     float getScaling();
 
     unsigned int getFontSize(FontSize fontSize);
@@ -106,7 +109,8 @@ private:
     Filer *filerHttp = nullptr;
     Filer *filerFtp = nullptr;
     Filer *filer = nullptr;
-    c2d::C2DTexture *title = nullptr;
+    StatusBar *statusBar = nullptr;
+    c2d::Texture *title = nullptr;
     Player *player = nullptr;
     MenuMain *menu_main = nullptr;
     MenuVideo *menu_video = nullptr;

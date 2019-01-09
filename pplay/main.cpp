@@ -66,6 +66,11 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     filer = filerSdmc;
     filer->getDir(config->getOption(OPT_LAST_PATH)->getString());
 
+    // status bar
+    statusBar = new StatusBar(this);
+    statusBar->setLayer(10);
+    add(statusBar);
+
     // title image
     title = new C2DTexture(getIo()->getDataReadPath() + "skin/pplay.png");
     title->setOrigin(Origin::BottomRight);
@@ -283,6 +288,10 @@ unsigned int Main::getFontSize(FontSize fontSize) {
 
 c2d::Texture *Main::getTitle() {
     return title;
+}
+
+StatusBar *Main::getStatusBar() {
+    return statusBar;
 }
 
 int main() {
