@@ -246,7 +246,7 @@ bool Player::load(const MediaFile &file) {
     loading = false;
 
 #ifdef __SWITCH__
-    appletSetMediaPlaybackStateForApplication(true);
+    appletSetMediaPlaybackState(true);
 #endif
 
     setVisibility(Visibility::Visible);
@@ -659,7 +659,7 @@ void Player::stop() {
         setCpuClock(CpuClock::Min);
 
 #ifdef __SWITCH__
-        appletSetMediaPlaybackStateForApplication(false);
+        appletSetMediaPlaybackState(false);
 #endif
     }
 
