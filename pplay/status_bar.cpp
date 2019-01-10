@@ -2,7 +2,10 @@
 // Created by cpasjuste on 09/01/19.
 //
 
+#include <sstream>
+#include <iomanip>
 #include <time.h>
+
 #include "cross2d/c2d.h"
 #include "status_bar.h"
 #include "main.h"
@@ -54,7 +57,7 @@ public:
     RectangleShape *percentRect = nullptr;
 };
 
-StatusBar::StatusBar(Main *main) : GradientRectangle({0, 0, main->getSize().x, 32}) {
+StatusBar::StatusBar(Main *main) : GradientRectangle({0, 0, main->getSize().x, 32 * main->getScaling()}) {
 
 #ifdef __SWITCH__
     psmInitialize();
@@ -85,9 +88,10 @@ void StatusBar::onDraw(c2d::Transform &transform) {
 
     time(&time_raw);
     time_struct = localtime(&time_raw);
-    timeText->setString(
-            std::to_string(time_struct->tm_hour) + ":" +
-            std::to_string(time_struct->tm_min));
+    std::ostringstream oss;
+    oss << std::setfill('0') << std::setw(2) << time_struct->tm_hour << ":";
+    oss << std::setfill('0') << std::setw(2) << time_struct->tm_min;
+    timeText->setString(oss.str());
 
     Sprite::onDraw(transform);
 }
