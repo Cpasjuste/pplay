@@ -47,6 +47,8 @@ bool Player::load(const MediaFile &file) {
         return false;
     }
 
+    Kit_SetHint(KIT_HINT_THREAD_COUNT, 2);
+
     // default buffer, "Medium"
     Kit_SetHint(KIT_HINT_VIDEO_BUFFER_FRAMES, 64);
     Kit_SetHint(KIT_HINT_AUDIO_BUFFER_FRAMES, 512);

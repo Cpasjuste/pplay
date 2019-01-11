@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0)
 
 # pplay version
 set(VERSION_MAJOR "1")
-set(VERSION_MINOR "2")
+set(VERSION_MINOR "3")
 set(PROJECT_AUTHOR "Cpasjuste")
 set(TITLE_ID "PPLAY0001")
 
@@ -13,7 +13,7 @@ set(BUILD_WINDOWS OFF CACHE BOOL "Build with Windows support (MSYS/MinGW")
 set(BUILD_VITA OFF CACHE BOOL "Build with PSP2 support")
 set(BUILD_PS3 OFF CACHE BOOL "Build with PS3 support")
 set(BUILD_3DS OFF CACHE BOOL "Build with 3DS support")
-set(BUILD_SWITCH OFF CACHE BOOL "Build with NX (SWITCH) support")
+set(BUILD_SWITCH ON CACHE BOOL "Build with NX (SWITCH) support")
 
 include(libcross2d/Toolchain.cmake)
 add_subdirectory(libcross2d)
@@ -68,7 +68,7 @@ if (BUILD_SWITCH)
     # SWITCH PLATORM
     #####################
     list(APPEND PPLAY_INC ${DEVKITPRO}/portlibs/switch/include/SDL2)
-    #list(APPEND PPLAY_LDFLAGS pthread)
+    list(APPEND PPLAY_LDFLAGS pthread)
 elseif (BUILD_LINUX)
     #####################
     # LINUX PLATORM

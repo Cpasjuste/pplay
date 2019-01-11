@@ -4,7 +4,7 @@
 
 #ifdef __SWITCH__
 extern "C" {
-//#include <pthread.h>
+#include <pthread.h>
 }
 #endif
 
@@ -306,6 +306,7 @@ int main() {
     if (appletGetOperationMode() == AppletOperationMode_Docked) {
         size = {1920, 1080};
     }
+    pthread_init();
 #endif
 
     Main *main = new Main(size);
@@ -316,8 +317,11 @@ int main() {
 
     delete (main);
 
-#if defined(__SWITCH__) && !defined(__NET_DEBUG__)
+#ifdef __SWITCH__
+#ifndef __NET_DEBUG__
     socketExit();
+#endif
+    pthread_terminate();
 #endif
 
     return 0;
