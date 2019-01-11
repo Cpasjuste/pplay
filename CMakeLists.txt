@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0)
 
 # pplay version
 set(VERSION_MAJOR "1")
-set(VERSION_MINOR "3")
+set(VERSION_MINOR "4")
 set(PROJECT_AUTHOR "Cpasjuste")
 set(TITLE_ID "PPLAY0001")
 

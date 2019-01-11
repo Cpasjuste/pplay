@@ -135,6 +135,7 @@ void PlayerOSD::onDraw(c2d::Transform &transform) {
 
     if (clock.getElapsedTime().asSeconds() >= OSD_HIDE_TIME) {
         setVisibility(Visibility::Hidden, true);
+        main->getStatusBar()->setVisibility(Visibility::Hidden, true);
     }
 
     if (main->getPlayer()->isPlaying()) {
