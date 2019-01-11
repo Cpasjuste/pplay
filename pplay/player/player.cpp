@@ -49,9 +49,9 @@ bool Player::load(const MediaFile &file) {
 
     Kit_SetHint(KIT_HINT_THREAD_COUNT, 2);
 
-    // default buffer, "Medium"
-    Kit_SetHint(KIT_HINT_VIDEO_BUFFER_FRAMES, 64);
-    Kit_SetHint(KIT_HINT_AUDIO_BUFFER_FRAMES, 512);
+    // default buffer, "Low"
+    Kit_SetHint(KIT_HINT_VIDEO_BUFFER_FRAMES, 3);
+    Kit_SetHint(KIT_HINT_AUDIO_BUFFER_FRAMES, 64);
     Kit_SetHint(KIT_HINT_SUBTITLE_BUFFER_FRAMES, 64);
     std::string buffering = main->getConfig()->getOption(OPT_BUFFER)->getString();
     if (Utility::toLower(buffering) == "low") {
