@@ -208,3 +208,9 @@ bool PlayerOSD::onInput(c2d::Input::Player *players) {
 
     return true;
 }
+
+void PlayerOSD::reset() {
+    btn_play->setVisibility(Visibility::Hidden);
+    buttons.at((int) ButtonID::Pause)->setVisibility(Visibility::Visible);
+    clock.restart();
+}

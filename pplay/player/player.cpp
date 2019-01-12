@@ -662,6 +662,7 @@ void Player::stop() {
         subtitles_streams.reset();
         show_subtitles = false;
         title.clear();
+        osd->reset();
 
         setCpuClock(CpuClock::Min);
 

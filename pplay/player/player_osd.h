@@ -24,6 +24,8 @@ public:
 
     explicit PlayerOSD(Main *main);
 
+    void reset();
+
     void setVisibility(c2d::Visibility visibility, bool tweenPlay = true) override;
 
 private:
