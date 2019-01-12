@@ -238,7 +238,6 @@ void Main::quit() {
     }
 
     player->stop();
-
     running = false;
 }
 
@@ -318,10 +317,10 @@ int main() {
     delete (main);
 
 #ifdef __SWITCH__
+    pthread_terminate();
 #ifndef __NET_DEBUG__
     socketExit();
 #endif
-    pthread_terminate();
 #endif
 
     return 0;
