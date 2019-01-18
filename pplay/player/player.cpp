@@ -189,9 +189,7 @@ bool Player::load(const MediaFile &file) {
                 fps = (float) av_q2d(decoder->format_ctx->streams[video_streams.getCurrent()]->r_frame_rate);
             }
         }
-        // TODO: < 48000 not working fine on switch, check sdl2/libsamplerate
-        //audio = new C2DAudio(playerInfo.audio.output.samplerate, fps);
-        audio = new C2DAudio(48000, fps);
+        audio = new C2DAudio(playerInfo.audio.output.samplerate, fps);
         // audios menu options
         std::vector<MenuItem> items;
         for (auto &stream : file.media.audios) {
