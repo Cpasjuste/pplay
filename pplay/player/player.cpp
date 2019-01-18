@@ -207,10 +207,10 @@ bool Player::load(const MediaFile &file) {
     if (subtitles_streams.size > 0) {
         textureSub = new SubtitlesTexture();
         textureSub->setFilter(Texture::Filter::Point);
+        add(textureSub);
         if (!show_subtitles) {
             textureSub->setVisibility(Visibility::Hidden);
         }
-        add(textureSub);
         // subtitles menu options
         std::vector<MenuItem> items;
         items.emplace_back("None", "", MenuItem::Position::Top, -1);
@@ -508,6 +508,7 @@ int Player::seek(double seek_position) {
 
     kit_player->state = KIT_PLAYING;
     loading = false;
+    osd->reset();
 
     return 0;
 }
