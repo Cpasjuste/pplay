@@ -149,11 +149,12 @@ bool Player::load(const MediaFile &file) {
 
     // get some information
     Kit_GetPlayerInfo(kit_player, &playerInfo);
-    printf("Player::load: Video(%s, %s): %i x %i , Audio(%s): %i hz\n",
+    printf("Player::load: Video(%s, %s): %i x %i , Audio(%s): %i @ %i hz\n",
            playerInfo.video.codec.name,
            SDL_GetPixelFormatName(playerInfo.video.output.format),
            playerInfo.video.output.width, playerInfo.video.output.height,
            playerInfo.audio.codec.name,
+           playerInfo.audio.output.format,
            playerInfo.audio.output.samplerate);
 
     // get a decoder handle for audio fps and buffering status

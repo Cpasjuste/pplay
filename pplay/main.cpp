@@ -2,18 +2,48 @@
 // Created by cpasjuste on 02/10/18.
 //
 
-#ifdef __SWITCH__
-extern "C" {
-#include <pthread.h>
-}
-#endif
-
 #include "main.h"
 #include "filers/filer_sdmc.h"
 #include "filers/filer_http.h"
 #include "filers/filer_ftp.h"
 #include "menus/menu_main.h"
 #include "menus/menu_video.h"
+
+#ifdef __SWITCH__
+extern "C" {
+#include <pthread.h>
+}
+
+static AppletHookCookie applet_hook_cookie;
+
+static void on_applet_hook(AppletHookType hook, void *arg) {
+
+    Main *main = (Main *) arg;
+
+    switch (hook) {
+        case AppletHookType_OnExitRequest:
+            main->quit();
+            break;
+        case AppletHookType_OnFocusState:
+            if (appletGetFocusState() == AppletFocusState_Focused) {
+                if (main->getPlayer()->isPaused()) {
+                    main->getPlayer()->resume();
+                }
+            } else {
+                if (main->getPlayer()->isPlaying()) {
+                    main->getPlayer()->pause();
+                }
+            }
+            break;
+        case AppletHookType_OnPerformanceMode:
+            break;
+
+        default:
+            break;
+    }
+}
+
+#endif
 
 using namespace c2d;
 using namespace c2d::config;
@@ -310,6 +340,12 @@ int main() {
 
     Main *main = new Main(size);
 
+#ifdef __SWITCH__
+    appletLockExit();
+    appletHook(&applet_hook_cookie, on_applet_hook, main);
+    appletSetFocusHandlingMode(AppletFocusHandlingMode_NoSuspend);
+#endif
+
     while (main->isRunning()) {
         main->flip();
     }
@@ -317,6 +353,8 @@ int main() {
     delete (main);
 
 #ifdef __SWITCH__
+    appletUnhook(&applet_hook_cookie);
+    appletUnlockExit();
     pthread_terminate();
 #ifndef __NET_DEBUG__
     socketExit();
