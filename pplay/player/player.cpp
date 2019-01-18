@@ -208,10 +208,6 @@ bool Player::load(const MediaFile &file) {
     if (subtitles_streams.size > 0) {
         textureSub = new SubtitlesTexture();
         textureSub->setFilter(Texture::Filter::Point);
-        void *buf;
-        textureSub->lock(nullptr, &buf, nullptr);
-        memset(buf, 0, 1024 * 1024 * 4);
-        textureSub->unlock();
         if (!show_subtitles) {
             textureSub->setVisibility(Visibility::Hidden);
         }

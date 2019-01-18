@@ -5,13 +5,14 @@
 #ifndef PPLAY_SUBTITLES_TEXTURE_H
 #define PPLAY_SUBTITLES_TEXTURE_H
 
-#define ATLAS_MAX 256
+#define ATLAS_SIZE 2048
+#define ATLAS_MAX 512
 
 class SubtitlesTexture : public c2d::C2DTexture {
 
 public:
 
-    explicit SubtitlesTexture(const c2d::Vector2f &size = c2d::Vector2f(1024, 1024),
+    explicit SubtitlesTexture(const c2d::Vector2f &size = c2d::Vector2f(ATLAS_SIZE, ATLAS_SIZE),
                               c2d::Texture::Format format = c2d::Texture::Format::RGBA8);
 
     ~SubtitlesTexture() override;
