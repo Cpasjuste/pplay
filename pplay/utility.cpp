@@ -33,6 +33,7 @@ bool Utility::isMedia(const c2d::Io::File &file) {
             || c2d::Utility::endsWith(file.name, ".mpg", false)
             || c2d::Utility::endsWith(file.name, ".mts", false)
             || c2d::Utility::endsWith(file.name, ".ogg", false)
+            || c2d::Utility::endsWith(file.name, ".rmvb", false)
             || c2d::Utility::endsWith(file.name, ".swf", false)
             || c2d::Utility::endsWith(file.name, ".ts", false)
             || c2d::Utility::endsWith(file.name, ".vob", false)
