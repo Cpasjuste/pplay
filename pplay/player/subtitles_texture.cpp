@@ -19,7 +19,7 @@ SubtitlesTexture::SubtitlesTexture(const Vector2f &size, Texture::Format format)
     sprite->setTexture(this);
 }
 
-void SubtitlesTexture::onDraw(c2d::Transform &transform) {
+void SubtitlesTexture::onDraw(c2d::Transform &transform, bool draw) {
 
     for (int i = 0; i < rects_count; i++) {
         sprite->setPosition(rects_dst[i].x, rects_dst[i].y);

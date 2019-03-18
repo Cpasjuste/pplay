@@ -47,7 +47,7 @@ bool Player::load(const MediaFile &file) {
         return false;
     }
 
-    Kit_SetHint(KIT_HINT_THREAD_COUNT, 2);
+    Kit_SetHint(KIT_HINT_THREAD_COUNT, 4);
 
     // default buffer, "Low"
     Kit_SetHint(KIT_HINT_VIDEO_BUFFER_FRAMES, 3);
@@ -281,7 +281,7 @@ bool Player::onInput(c2d::Input::Player *players) {
 }
 
 
-void Player::onDraw(c2d::Transform &transform) {
+void Player::onDraw(c2d::Transform &transform, bool draw) {
 
 #ifndef NDEBUG
     if (kit_player) {

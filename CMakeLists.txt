@@ -58,7 +58,7 @@ set(PPLAY_CFLAGS
         -D__VERSION_MAJOR__=${VERSION_MAJOR}
         -D__VERSION_MINOR__=${VERSION_MINOR})
 
-set(PPLAY_LDFLAGS swscale swresample avformat avfilter avcodec avutil ass fribidi curl png z m)
+set(PPLAY_LDFLAGS swscale swresample avformat avfilter avcodec avutil ass fribidi curl pthread png z m)
 
 #####################
 # PLATORM SPECIFIC
@@ -68,13 +68,13 @@ if (BUILD_SWITCH)
     # SWITCH PLATORM
     #####################
     list(APPEND PPLAY_INC ${DEVKITPRO}/portlibs/switch/include/SDL2)
-    list(APPEND PPLAY_LDFLAGS pthread)
+    list(APPEND PPLAY_LDFLAGS mbedtls mbedcrypto mbedx509)
 elseif (BUILD_LINUX)
     #####################
     # LINUX PLATORM
     #####################
     list(APPEND PPLAY_INC /usr/include/SDL2)
-    list(APPEND PPLAY_LDFLAGS pthread lzma)
+    list(APPEND PPLAY_LDFLAGS lzma)
 endif ()
 
 #####################

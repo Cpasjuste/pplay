@@ -73,7 +73,7 @@ void StatusBox::hide() {
     infinite = false;
 }
 
-void StatusBox::onDraw(c2d::Transform &transform) {
+void StatusBox::onDraw(c2d::Transform &transform, bool draw) {
 
     if (isVisible() && !infinite && clock->getElapsedTime().asSeconds() > 2) {
         setVisibility(Visibility::Hidden, true);

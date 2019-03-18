@@ -10,9 +10,6 @@
 #include "menus/menu_video.h"
 
 #ifdef __SWITCH__
-extern "C" {
-#include <pthread.h>
-}
 
 static AppletHookCookie applet_hook_cookie;
 
@@ -53,7 +50,6 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     setClearColor(Color::Black);
 
     // configure input
-    getInput()->setRepeatEnable(true);
     getInput()->setRepeatDelay(INPUT_DELAY);
 
     // create a timer
@@ -194,7 +190,7 @@ bool Main::onInput(c2d::Input::Player *players) {
     return Renderer::onInput(players);
 }
 
-void Main::onDraw(c2d::Transform &transform) {
+void Main::onDraw(c2d::Transform &transform, bool draw) {
 
     unsigned int keys = getInput()->getKeys(0);
 
@@ -335,7 +331,6 @@ int main() {
     if (appletGetOperationMode() == AppletOperationMode_Docked) {
         size = {1920, 1080};
     }
-    pthread_init();
 #endif
 
     Main *main = new Main(size);
@@ -355,7 +350,6 @@ int main() {
 #ifdef __SWITCH__
     appletUnhook(&applet_hook_cookie);
     appletUnlockExit();
-    pthread_terminate();
 #ifndef __NET_DEBUG__
     socketExit();
 #endif
