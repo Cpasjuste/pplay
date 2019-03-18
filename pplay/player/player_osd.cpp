@@ -126,7 +126,7 @@ void PlayerOSD::setVisibility(c2d::Visibility visibility, bool tweenPlay) {
     C2DObject::setVisibility(visibility, tweenPlay);
 }
 
-void PlayerOSD::onDraw(c2d::Transform &transform) {
+void PlayerOSD::onDraw(c2d::Transform &transform, bool draw) {
 
     if (main->getPlayer()->isStopped() || !main->getPlayer()->isFullscreen()) {
         setVisibility(Visibility::Hidden, false);

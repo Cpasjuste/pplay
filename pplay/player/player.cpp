@@ -47,6 +47,9 @@ bool Player::load(const MediaFile &file) {
         return false;
     }
 
+    // thread count
+    Kit_SetHint(KIT_HINT_THREAD_COUNT, 4);
+
     // default buffer, "Medium"
     Kit_SetHint(KIT_HINT_VIDEO_BUFFER_FRAMES, 64);
     Kit_SetHint(KIT_HINT_AUDIO_BUFFER_FRAMES, 512);
@@ -284,7 +287,7 @@ bool Player::onInput(c2d::Input::Player *players) {
 }
 
 
-void Player::onDraw(c2d::Transform &transform) {
+void Player::onDraw(c2d::Transform &transform, bool draw) {
 
 #ifndef NDEBUG
     if (kit_player) {

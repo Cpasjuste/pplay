@@ -42,7 +42,7 @@ public:
         add(percentRect);
     }
 
-    void onDraw(c2d::Transform &transform) override {
+    void onDraw(c2d::Transform &transform, bool draw = true) override {
 
         unsigned int percent = 100;
 #ifdef __SWITCH__
@@ -81,7 +81,7 @@ StatusBar::StatusBar(Main *main) : GradientRectangle({0, 0, main->getSize().x, 3
     add(timeText);
 }
 
-void StatusBar::onDraw(c2d::Transform &transform) {
+void StatusBar::onDraw(c2d::Transform &transform, bool draw) {
 
     time_t time_raw;
     struct tm *time_struct;

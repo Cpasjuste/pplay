@@ -19,7 +19,7 @@ public:
 
     ~StatusBar() override;
 
-    void onDraw(c2d::Transform &transform) override;
+    void onDraw(c2d::Transform &transform, bool draw = true) override;
 
     Battery *battery = nullptr;
     c2d::Text *timeText = nullptr;

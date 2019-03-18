@@ -13,7 +13,7 @@ set(BUILD_WINDOWS OFF CACHE BOOL "Build with Windows support (MSYS/MinGW")
 set(BUILD_VITA OFF CACHE BOOL "Build with PSP2 support")
 set(BUILD_PS3 OFF CACHE BOOL "Build with PS3 support")
 set(BUILD_3DS OFF CACHE BOOL "Build with 3DS support")
-set(BUILD_SWITCH OFF CACHE BOOL "Build with NX (SWITCH) support")
+set(BUILD_SWITCH ON CACHE BOOL "Build with NX (SWITCH) support")
 
 include(libcross2d/Toolchain.cmake)
 add_subdirectory(libcross2d)
@@ -58,7 +58,7 @@ set(PPLAY_CFLAGS
         -D__VERSION_MAJOR__=${VERSION_MAJOR}
         -D__VERSION_MINOR__=${VERSION_MINOR})
 
-set(PPLAY_LDFLAGS swscale swresample avformat avfilter avcodec avutil ass fribidi curl png z m)
+set(PPLAY_LDFLAGS swscale swresample avformat avfilter avcodec avutil ass fribidi curl png z m pthread)
 
 #####################
 # PLATORM SPECIFIC
@@ -68,7 +68,7 @@ if (BUILD_SWITCH)
     # SWITCH PLATORM
     #####################
     list(APPEND PPLAY_INC ${DEVKITPRO}/portlibs/switch/include/SDL2)
-    #list(APPEND PPLAY_LDFLAGS pthread)
+    list(APPEND PPLAY_LDFLAGS mbedtls mbedcrypto mbedx509)
 elseif (BUILD_LINUX)
     #####################
     # LINUX PLATORM

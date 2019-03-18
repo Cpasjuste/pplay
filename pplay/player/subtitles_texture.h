@@ -22,7 +22,7 @@ public:
 
     SDL_Rect *getRectsDst();
 
-    void onDraw(c2d::Transform &transform) override;
+    void onDraw(c2d::Transform &transform, bool draw = true) override;
 
 private:
 

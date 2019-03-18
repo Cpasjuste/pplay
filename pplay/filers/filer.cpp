@@ -76,7 +76,7 @@ void Filer::setSelection(int index) {
     }
 }
 
-void Filer::onDraw(c2d::Transform &transform) {
+void Filer::onDraw(c2d::Transform &transform, bool draw) {
 
     setSelection(item_index);
     Rectangle::onDraw(transform);

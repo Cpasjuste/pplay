@@ -23,7 +23,6 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     setClearColor(Color::Black);
 
     // configure input
-    getInput()->setRepeatEnable(true);
     getInput()->setRepeatDelay(INPUT_DELAY);
 
     // create a timer
@@ -164,7 +163,7 @@ bool Main::onInput(c2d::Input::Player *players) {
     return Renderer::onInput(players);
 }
 
-void Main::onDraw(c2d::Transform &transform) {
+void Main::onDraw(c2d::Transform &transform, bool draw) {
 
     unsigned int keys = getInput()->getKeys(0);
 
