@@ -18,7 +18,7 @@ set(BUILD_SWITCH ON CACHE BOOL "Build with NX (SWITCH) support")
 include(libcross2d/Toolchain.cmake)
 add_subdirectory(libcross2d)
 
-add_definitions(-DKIT_VERSION_MAJOR=1 -DKIT_VERSION_MINOR=0 -DKIT_VERSION_PATCH=6)
+#add_definitions()
 
 project(pplay)
 
@@ -32,9 +32,7 @@ set(PPLAY_INC
         pplay/player
         pplay/ftplib
         #pplay/fftools
-        SDL_kitchensink/include
-        SDL_kitchensink/include/kitchensink
-        SDL_kitchensink/include/kitchensink/internal)
+        )
 
 file(GLOB PPLAY_SRC
         pplay/*.c*
@@ -44,13 +42,6 @@ file(GLOB PPLAY_SRC
         pplay/Browser/*.c*
         pplay/ftplib/*.c*
         #pplay/fftools/*.c*
-        SDL_kitchensink/src/*.c*
-        SDL_kitchensink/src/internal/*.c*
-        SDL_kitchensink/src/internal/audio/*.c*
-        SDL_kitchensink/src/internal/subtitle/*.c*
-        SDL_kitchensink/src/internal/subtitle/renderers/*.c*
-        SDL_kitchensink/src/internal/utils/*.c*
-        SDL_kitchensink/src/internal/video/*.c*
         )
 
 set(PPLAY_CFLAGS
