@@ -1,6 +1,3 @@
 [submodule "libcross2d"]
 	path = libcross2d
 	url = git@github.com:Cpasjuste/libcross2d.git
-[submodule "SDL_kitchensink"]
-	path = SDL_kitchensink
-	url = git@github.com:Cpasjuste/SDL_kitchensink.git
