@@ -3,7 +3,7 @@
 //
 
 #include "main.h"
-#include "config.h"
+#include "pplay_config.h"
 
 using namespace c2d;
 

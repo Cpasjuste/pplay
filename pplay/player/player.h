@@ -5,10 +5,9 @@
 #ifndef PPLAY_PLAYER_H
 #define PPLAY_PLAYER_H
 
-extern "C" {
-#include "kitchensink/kitchensink.h"
-#include "kitchensink/internal/kitlibstate.h"
-}
+//#include "libmpv/client.h"
+//#include "libmpv/render_gl.h"
+//#include "libmpv/opengl_cb.h"
 
 #include "menus/menu_video_submenu.h"
 #include "video_texture.h"
@@ -102,7 +101,7 @@ public:
 
     PlayerOSD *getOSD();
 
-    Kit_Player *getKitPlayer();
+    //Kit_Player *getKitPlayer();
 
     MenuVideoSubmenu *getMenuVideoStreams();
 
@@ -139,14 +138,18 @@ private:
     // player
     VideoTexture *texture = nullptr;
     SubtitlesTexture *textureSub = nullptr;
-    Kit_Source *source = nullptr;
-    Kit_Player *kit_player = nullptr;
-    Kit_PlayerInfo playerInfo;
     Stream video_streams;
     Stream audio_streams;
     Stream subtitles_streams;
+
+    //Kit_Source *source = nullptr;
+    //Kit_Player *kit_player = nullptr;
+    //Kit_PlayerInfo playerInfo;
+
     // audio
-    c2d::C2DAudio *audio = nullptr;
+    //c2d::C2DAudio *audio = nullptr;
+
+    //mpv_handle *mpv_handle;
 
     MediaConfig *config = nullptr;
 

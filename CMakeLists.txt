@@ -1,5 +1,21 @@
 cmake_minimum_required(VERSION 3.0)
-#set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_VERBOSE_MAKEFILE ON)
+
+# delete cmake cache folder before changing this option
+set(BUILD_LINUX ON CACHE BOOL "Build with SDL2 support")
+set(BUILD_WINDOWS OFF CACHE BOOL "Build with Windows support (MSYS/MinGW")
+set(BUILD_VITA OFF CACHE BOOL "Build with PSP2 support")
+set(BUILD_PS3 OFF CACHE BOOL "Build with PS3 support")
+set(BUILD_3DS OFF CACHE BOOL "Build with 3DS support")
+set(BUILD_SWITCH OFF CACHE BOOL "Build with NX (SWITCH) support")
+
+add_subdirectory(libcross2d)
+
+##############
+# pplay
+##############
+
+project(pplay)
 
 # pplay version
 set(VERSION_MAJOR "1")
@@ -7,24 +23,6 @@ set(VERSION_MINOR "5")
 set(PROJECT_AUTHOR "Cpasjuste")
 set(TITLE_ID "PPLAY0001")
 
-# delete cmake cache folder before changing this option
-set(BUILD_LINUX OFF CACHE BOOL "Build with SDL2 support")
-set(BUILD_WINDOWS OFF CACHE BOOL "Build with Windows support (MSYS/MinGW")
-set(BUILD_VITA OFF CACHE BOOL "Build with PSP2 support")
-set(BUILD_PS3 OFF CACHE BOOL "Build with PS3 support")
-set(BUILD_3DS OFF CACHE BOOL "Build with 3DS support")
-set(BUILD_SWITCH ON CACHE BOOL "Build with NX (SWITCH) support")
-
-include(libcross2d/Toolchain.cmake)
-add_subdirectory(libcross2d)
-
-#add_definitions()
-
-project(pplay)
-
-##############
-# pplay
-##############
 set(PPLAY_INC
         pplay
         pplay/filers
@@ -47,9 +45,17 @@ file(GLOB PPLAY_SRC
 set(PPLAY_CFLAGS
         -D__PPLAY__
         -D__VERSION_MAJOR__=${VERSION_MAJOR}
-        -D__VERSION_MINOR__=${VERSION_MINOR})
+        -D__VERSION_MINOR__=${VERSION_MINOR}
+        -DM_PI=3.14159265358979323846
+        -DM_SQRT2=1.41421356237309504880
+        )
 
-set(PPLAY_LDFLAGS swscale swresample avformat avfilter avcodec avutil ass fribidi curl pthread png z m)
+set(PPLAY_LDFLAGS swscale swresample avformat avfilter avcodec avutil ass fribidi pthread curl m z)
+
+##############
+# mpv
+##############
+add_subdirectory(mpv)
 
 #####################
 # PLATORM SPECIFIC

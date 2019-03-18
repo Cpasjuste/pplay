@@ -8,7 +8,7 @@
 #include "cross2d/c2d.h"
 #include "filers/filer.h"
 #include "player/player.h"
-#include "config.h"
+#include "pplay_config.h"
 #include "media_thread.h"
 #include "menus/menu.h"
 #include "menus/menu_main.h"

@@ -139,8 +139,11 @@ void PlayerOSD::onDraw(c2d::Transform &transform, bool draw) {
     }
 
     if (main->getPlayer()->isPlaying()) {
+#if 0
+        // TODO: update to mpv
         position = (float) Kit_GetPlayerPosition(main->getPlayer()->getKitPlayer());
         duration = (float) Kit_GetPlayerDuration(main->getPlayer()->getKitPlayer());
+#endif
         progress->setProgress(position / duration);
         progress_text->setString(pplay::Utility::formatTime(position));
         duration_text->setString(pplay::Utility::formatTime(duration));

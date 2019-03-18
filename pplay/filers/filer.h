@@ -8,7 +8,7 @@
 #include "cross2d/c2d.h"
 
 #include "outline_rect.h"
-#include "config.h"
+#include "pplay_config.h"
 #include "filer_item.h"
 #include "media_file.h"
 #include "highlight.h"

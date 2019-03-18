@@ -10,7 +10,6 @@
 #include "player_osd.h"
 #include "utility.h"
 #include "gradient_rectangle.h"
-#include "kitchensink/internal/kitdecoder.h"
 
 using namespace c2d;
 
@@ -39,6 +38,7 @@ bool Player::load(const MediaFile &file) {
     stop();
     stopped = false;
 
+#if 0
     // avformat_network_init/deinit handled in media info thread
     int err = Kit_Init(KIT_INIT_ASS);
     if (err != 0) {
@@ -100,6 +100,7 @@ bool Player::load(const MediaFile &file) {
     Kit_LibraryState *state = Kit_GetLibraryState();
     snprintf(state->subtitle_font_path, 511, "%sskin/font.ttf",
              getMain()->getIo()->getDataReadPath().c_str());
+#endif
 
     title = file.name;
     // get media config (info)
@@ -130,6 +131,7 @@ bool Player::load(const MediaFile &file) {
         }
     }
 
+#if 0
     // create the player
     kit_player = Kit_CreatePlayer(
             source,
@@ -143,10 +145,12 @@ bool Player::load(const MediaFile &file) {
         stop();
         return false;
     }
+#endif
 
     // we should be good to go, set cpu speed if needed
     setCpuClock(CpuClock::Max);
 
+#if 0
     // get some information
     Kit_GetPlayerInfo(kit_player, &playerInfo);
     printf("Player::load: Video(%s, %s): %i x %i , Audio(%s): %i @ %i hz\n",
@@ -240,6 +244,7 @@ bool Player::load(const MediaFile &file) {
     } else {
         play();
     }
+#endif
     loading = false;
 
 #ifdef __SWITCH__
@@ -284,6 +289,7 @@ bool Player::onInput(c2d::Input::Player *players) {
 void Player::onDraw(c2d::Transform &transform, bool draw) {
 
 #ifndef NDEBUG
+#if 0
     if (kit_player) {
         std::string v_buf_in = "video: in = ", v_buf_out = "out = ", a_buf_in = "audio: in = ", a_buf_out = "out: ";
         auto *v_dec = (Kit_Decoder *) kit_player->decoders[0];
@@ -298,6 +304,7 @@ void Player::onDraw(c2d::Transform &transform, bool draw) {
         }
         main->debugText->setString(v_buf_in + "\t" + v_buf_out + "\n" + a_buf_in + "\t" + a_buf_out);
     }
+#endif
 #endif
 
     if (loading || isStopped()) {
@@ -317,7 +324,7 @@ void Player::onDraw(c2d::Transform &transform, bool draw) {
     //////////////////
     /// step ffmpeg
     //////////////////
-
+#if 0
     /// audio
     if (audio && audio_streams.size > 0) {
         int queued = audio->getQueuedSize();
@@ -366,12 +373,13 @@ void Player::onDraw(c2d::Transform &transform, bool draw) {
             textureSub->unlock();
         }
     }
-
+#endif
     Rectangle::onDraw(transform);
 }
 
 void Player::setVideoStream(int streamId) {
 
+#if 0
     if (streamId == video_streams.getCurrent()) {
         main->getStatus()->show("Info...", "Selected video stream already set");
         return;
@@ -389,10 +397,12 @@ void Player::setVideoStream(int streamId) {
             texture->setVisibility(Visibility::Hidden);
         }
     }
+#endif
 }
 
 void Player::setAudioStream(int streamId) {
 
+#if 0
     if (streamId == audio_streams.getCurrent()) {
         main->getStatus()->show("Info...", "Selected audio stream already set");
         return;
@@ -406,10 +416,12 @@ void Player::setAudioStream(int streamId) {
     } else {
         audio_streams.current = -1;
     }
+#endif
 }
 
 void Player::setSubtitleStream(int streamId) {
 
+#if 0
     if (streamId == subtitles_streams.getCurrent()) {
         if (streamId > -1) {
             if (kit_player->decoders[2] && textureSub) {
@@ -447,10 +459,12 @@ void Player::setSubtitleStream(int streamId) {
             textureSub->setVisibility(Visibility::Hidden);
         }
     }
+#endif
 }
 
 void Player::play() {
 
+#if 0
     int flip = 0;
     auto *decoder = (Kit_Decoder *) kit_player->decoders[0];
     if (!decoder) {
@@ -470,12 +484,13 @@ void Player::play() {
         }
         flip++;
     }
-
+#endif
     loading = false;
 }
 
 int Player::seek(double seek_position) {
 
+#if 0
     int flip = 0;
     double position = Kit_GetPlayerPosition(kit_player);
     auto *decoder = (Kit_Decoder *) kit_player->decoders[0];
@@ -509,20 +524,23 @@ int Player::seek(double seek_position) {
     kit_player->state = KIT_PLAYING;
     loading = false;
     osd->reset();
-
+#endif
     return 0;
 }
 
 bool Player::isPlaying() {
 
+#if 0
     return kit_player != nullptr
            && Kit_GetPlayerState(kit_player) == KIT_PLAYING;
+#endif
 }
 
 bool Player::isPaused() {
-
+#if 0
     return kit_player != nullptr
            && Kit_GetPlayerState(kit_player) == KIT_PAUSED;
+#endif
 }
 
 bool Player::isStopped() {
@@ -574,19 +592,21 @@ void Player::setFullscreen(bool fs) {
 
 void Player::pause() {
 
+#if 0
     if (isPlaying()) {
         Kit_PlayerPause(kit_player);
     }
-
+#endif
     setCpuClock(CpuClock::Min);
 }
 
 void Player::resume() {
 
+#if 0
     if (isPaused()) {
         Kit_PlayerPlay(kit_player);
     }
-
+#endif
     setCpuClock(CpuClock::Max);
 }
 
@@ -596,6 +616,7 @@ void Player::stop() {
 
     if (!stopped) {
 
+#if 0
         /// Kit
         if (kit_player) {
             // save position in stream
@@ -659,7 +680,7 @@ void Player::stop() {
         show_subtitles = false;
         title.clear();
         osd->reset();
-
+#endif
         setCpuClock(CpuClock::Min);
 
 #ifdef __SWITCH__
@@ -718,9 +739,11 @@ Player::Stream *Player::getSubtitlesStreams() {
     return &subtitles_streams;
 }
 
+#if 0
 Kit_Player *Player::getKitPlayer() {
     return kit_player;
 }
+#endif
 
 const std::string &Player::getTitle() const {
     return title;
