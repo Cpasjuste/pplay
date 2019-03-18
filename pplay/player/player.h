@@ -5,9 +5,9 @@
 #ifndef PPLAY_PLAYER_H
 #define PPLAY_PLAYER_H
 
-//#include "libmpv/client.h"
-//#include "libmpv/render_gl.h"
-//#include "libmpv/opengl_cb.h"
+#include "../mpv/libmpv/client.h"
+#include "../mpv/libmpv/render_gl.h"
+#include "../mpv/libmpv/opengl_cb.h"
 
 #include "menus/menu_video_submenu.h"
 #include "video_texture.h"
@@ -149,7 +149,9 @@ private:
     // audio
     //c2d::C2DAudio *audio = nullptr;
 
-    //mpv_handle *mpv_handle;
+    mpv_handle *mpv;
+    mpv_opengl_cb_context *mpv_gl;
+    bool mpv_available = false;
 
     MediaConfig *config = nullptr;
 

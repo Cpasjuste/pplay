@@ -13,6 +13,19 @@
 
 using namespace c2d;
 
+static void *get_proc_address_mpv(void *fn_ctx, const char *name) {
+    return SDL_GL_GetProcAddress(name);
+}
+
+static bool mpv_refresh = false;
+
+static void on_mpv_redraw(void *ctx) {
+    //SDL_Event event = {.type = wakeup_on_mpv_redraw};
+    //SDL_PushEvent(&event);
+    printf("on_mpv_redraw\n");
+    mpv_refresh = true;
+}
+
 Player::Player(Main *_main) : Rectangle(_main->getSize()) {
 
     main = _main;
@@ -31,12 +44,38 @@ Player::Player(Main *_main) : Rectangle(_main->getSize()) {
     add(osd);
 
     setVisibility(Visibility::Hidden);
+
+    // MPV INIT
+    mpv = mpv_create();
+    if (!mpv) {
+        printf("error: mpv_create\n");
+        return;
+    }
+
+    mpv_set_option_string(mpv, "terminal", "yes");
+    mpv_set_option_string(mpv, "msg-level", "all=v");
+    mpv_set_option_string(mpv, "vd-lavc-threads", "4");
+    mpv_set_option_string(mpv, "vd-lavc-dr", "yes");
+    //mpv_set_option_string(mpv, "vd-lavc-fast", "yes");
+
+    int res = mpv_initialize(mpv);
+    if (res) {
+        printf("error: mpv_initialize: %s\n", mpv_error_string(res));
+        return;
+    }
+
+    //mpv_opengl_cb_context *mpv_gl = (mpv_opengl_cb_context *) mpv_get_sub_api(mpv, MPV_SUB_API_OPENGL_CB);
+    //mpv_opengl_cb_init_gl(mpv_gl, nullptr, get_proc_address_mpv, nullptr);
+    //mpv_opengl_cb_set_update_callback(mpv_gl, on_mpv_redraw, nullptr);
+
+    mpv_available = true;
 }
 
 bool Player::load(const MediaFile &file) {
 
     stop();
     stopped = false;
+    loading = true;
 
 #if 0
     // avformat_network_init/deinit handled in media info thread
@@ -245,6 +284,20 @@ bool Player::load(const MediaFile &file) {
         play();
     }
 #endif
+
+    mpv_opengl_cb_context *mpv_gl = (mpv_opengl_cb_context *) mpv_get_sub_api(mpv, MPV_SUB_API_OPENGL_CB);
+    mpv_opengl_cb_init_gl(mpv_gl, nullptr, get_proc_address_mpv, nullptr);
+    mpv_opengl_cb_set_update_callback(mpv_gl, on_mpv_redraw, nullptr);
+
+    const char *cmd[] = {"loadfile", file.path.c_str(), nullptr};
+    int res = mpv_command(mpv, cmd);
+    if (res != 0) {
+        main->getStatus()->show("Error...", "Could not play file:\n\n", mpv_error_string(res));
+        printf("Player::load: unable to create player: %s\n", mpv_error_string(res));
+        stop();
+        return false;
+    }
+
     loading = false;
 
 #ifdef __SWITCH__
@@ -308,7 +361,7 @@ void Player::onDraw(c2d::Transform &transform, bool draw) {
 #endif
 
     if (loading || isStopped()) {
-        Rectangle::onDraw(transform);
+        Rectangle::onDraw(transform, draw);
         return;
     }
 
@@ -317,13 +370,22 @@ void Player::onDraw(c2d::Transform &transform, bool draw) {
         if (isFullscreen()) {
             setFullscreen(false);
         }
-        Rectangle::onDraw(transform);
+        Rectangle::onDraw(transform, draw);
         return;
     }
 
     //////////////////
     /// step ffmpeg
     //////////////////
+    if (mpv_gl && mpv_refresh) {
+        mpv_opengl_cb_draw(mpv_gl, 0, (int) getSize().x, (int) (getSize().y));
+        mpv_refresh = false;
+        printf("SDL_GL_SwapWindow\n");
+    }
+
+    SDL_GL_SwapWindow(((SDL2Renderer *) getMain())->getWindow());
+    mpv_opengl_cb_report_flip(mpv_gl, 0);
+
 #if 0
     /// audio
     if (audio && audio_streams.size > 0) {
@@ -364,7 +426,7 @@ void Player::onDraw(c2d::Transform &transform, bool draw) {
         texture->setScale(scale);
     }
 
-    /// Subtitles
+    /// Subtitlesmpv_handle
     if (show_subtitles && subtitles_streams.size > 0) {
         int count = Kit_GetPlayerSubtitleDataRaw(
                 kit_player, textureSub->pixels, textureSub->getRectsSrc(), textureSub->getRectsDst(), ATLAS_MAX);
@@ -374,7 +436,7 @@ void Player::onDraw(c2d::Transform &transform, bool draw) {
         }
     }
 #endif
-    Rectangle::onDraw(transform);
+    Rectangle::onDraw(transform, draw);
 }
 
 void Player::setVideoStream(int streamId) {
@@ -534,6 +596,7 @@ bool Player::isPlaying() {
     return kit_player != nullptr
            && Kit_GetPlayerState(kit_player) == KIT_PLAYING;
 #endif
+    return mpv_available;
 }
 
 bool Player::isPaused() {

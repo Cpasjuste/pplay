@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 # delete cmake cache folder before changing this option
 set(BUILD_LINUX ON CACHE BOOL "Build with SDL2 support")
@@ -50,7 +50,7 @@ set(PPLAY_CFLAGS
         -DM_SQRT2=1.41421356237309504880
         )
 
-set(PPLAY_LDFLAGS swscale swresample avformat avfilter avcodec avutil ass fribidi pthread curl m z)
+set(PPLAY_LDFLAGS curl)
 
 ##############
 # mpv
@@ -65,7 +65,7 @@ if (BUILD_SWITCH)
     # SWITCH PLATORM
     #####################
     list(APPEND PPLAY_INC ${DEVKITPRO}/portlibs/switch/include/SDL2)
-    list(APPEND PPLAY_LDFLAGS mbedtls mbedcrypto mbedx509)
+    list(APPEND PPLAY_LDFLAGS)
 elseif (BUILD_LINUX)
     #####################
     # LINUX PLATORM
@@ -81,7 +81,7 @@ add_executable(${CMAKE_PROJECT_NAME}.elf ${PPLAY_SRC})
 target_include_directories(${CMAKE_PROJECT_NAME}.elf PRIVATE ${PPLAY_INC})
 target_compile_options(${CMAKE_PROJECT_NAME}.elf PRIVATE ${PPLAY_CFLAGS})
 target_compile_options(${CMAKE_PROJECT_NAME}.elf PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>)
-target_link_libraries(${CMAKE_PROJECT_NAME}.elf cross2d ${PPLAY_LDFLAGS})
+target_link_libraries(${CMAKE_PROJECT_NAME}.elf cross2d mpv ${PPLAY_LDFLAGS})
 
 #####################
 # targets

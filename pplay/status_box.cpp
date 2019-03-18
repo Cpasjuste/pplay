@@ -88,7 +88,7 @@ void StatusBox::onDraw(c2d::Transform &transform, bool draw) {
     }
 
     SDL_LockMutex(mutex);
-    C2DObject::onDraw(transform);
+    C2DObject::onDraw(transform, draw);
     SDL_UnlockMutex(mutex);
 }
 

@@ -79,7 +79,7 @@ void Filer::setSelection(int index) {
 void Filer::onDraw(c2d::Transform &transform, bool draw) {
 
     setSelection(item_index);
-    Rectangle::onDraw(transform);
+    Rectangle::onDraw(transform, draw);
 }
 
 bool Filer::onInput(c2d::Input::Player *players) {

@@ -51,7 +51,7 @@ public:
         float width = ((float) percent / 100) * (getSize().x - 2);
         percentRect->setSize(std::min(width, getSize().x - 4), percentRect->getSize().y);
         percentRect->setFillColor(percent > 15 ? COLOR_FONT : Color::Red);
-        RectangleShape::onDraw(transform);
+        RectangleShape::onDraw(transform, draw);
     }
 
     RectangleShape *percentRect = nullptr;
@@ -93,7 +93,7 @@ void StatusBar::onDraw(c2d::Transform &transform, bool draw) {
     oss << std::setfill('0') << std::setw(2) << time_struct->tm_min;
     timeText->setString(oss.str());
 
-    Sprite::onDraw(transform);
+    Sprite::onDraw(transform, draw);
 }
 
 StatusBar::~StatusBar() {

@@ -149,7 +149,7 @@ void PlayerOSD::onDraw(c2d::Transform &transform, bool draw) {
         duration_text->setString(pplay::Utility::formatTime(duration));
     }
 
-    C2DObject::onDraw(transform);
+    C2DObject::onDraw(transform, draw);
 }
 
 bool PlayerOSD::onInput(c2d::Input::Player *players) {
