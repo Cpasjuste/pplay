@@ -42,7 +42,7 @@ public:
         add(percentRect);
     }
 
-    void onDraw(c2d::Transform &transform, bool draw = true) override {
+    void onDraw(c2d::Transform &transform, bool draw) override {
 
         unsigned int percent = 100;
 #ifdef __SWITCH__

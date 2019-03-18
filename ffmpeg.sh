@@ -14,3 +14,4 @@ source /opt/devkitpro/switchvars.sh
 
     #TODO: fix configure
     sed 's/#define HAVE_INET_ATON 0/#define HAVE_INET_ATON 1/g' -i config.h
+

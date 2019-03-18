@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0)
 
 # pplay version
 set(VERSION_MAJOR "1")
-set(VERSION_MINOR "2")
+set(VERSION_MINOR "5")
 set(PROJECT_AUTHOR "Cpasjuste")
 set(TITLE_ID "PPLAY0001")
 
@@ -58,7 +58,7 @@ set(PPLAY_CFLAGS
         -D__VERSION_MAJOR__=${VERSION_MAJOR}
         -D__VERSION_MINOR__=${VERSION_MINOR})
 
-set(PPLAY_LDFLAGS swscale swresample avformat avfilter avcodec avutil ass fribidi curl png z m pthread)
+set(PPLAY_LDFLAGS swscale swresample avformat avfilter avcodec avutil ass fribidi curl pthread png z m)
 
 #####################
 # PLATORM SPECIFIC
@@ -74,7 +74,7 @@ elseif (BUILD_LINUX)
     # LINUX PLATORM
     #####################
     list(APPEND PPLAY_INC /usr/include/SDL2)
-    list(APPEND PPLAY_LDFLAGS pthread lzma)
+    list(APPEND PPLAY_LDFLAGS lzma)
 endif ()
 
 #####################

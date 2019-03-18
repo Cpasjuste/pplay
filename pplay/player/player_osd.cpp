@@ -135,6 +135,7 @@ void PlayerOSD::onDraw(c2d::Transform &transform, bool draw) {
 
     if (clock.getElapsedTime().asSeconds() >= OSD_HIDE_TIME) {
         setVisibility(Visibility::Hidden, true);
+        main->getStatusBar()->setVisibility(Visibility::Hidden, true);
     }
 
     if (main->getPlayer()->isPlaying()) {
@@ -206,4 +207,10 @@ bool PlayerOSD::onInput(c2d::Input::Player *players) {
     }
 
     return true;
+}
+
+void PlayerOSD::reset() {
+    btn_play->setVisibility(Visibility::Hidden);
+    buttons.at((int) ButtonID::Pause)->setVisibility(Visibility::Visible);
+    clock.restart();
 }

@@ -47,12 +47,11 @@ bool Player::load(const MediaFile &file) {
         return false;
     }
 
-    // thread count
     Kit_SetHint(KIT_HINT_THREAD_COUNT, 4);
 
-    // default buffer, "Medium"
-    Kit_SetHint(KIT_HINT_VIDEO_BUFFER_FRAMES, 64);
-    Kit_SetHint(KIT_HINT_AUDIO_BUFFER_FRAMES, 512);
+    // default buffer, "Low"
+    Kit_SetHint(KIT_HINT_VIDEO_BUFFER_FRAMES, 3);
+    Kit_SetHint(KIT_HINT_AUDIO_BUFFER_FRAMES, 64);
     Kit_SetHint(KIT_HINT_SUBTITLE_BUFFER_FRAMES, 64);
     std::string buffering = main->getConfig()->getOption(OPT_BUFFER)->getString();
     if (Utility::toLower(buffering) == "low") {
@@ -150,11 +149,12 @@ bool Player::load(const MediaFile &file) {
 
     // get some information
     Kit_GetPlayerInfo(kit_player, &playerInfo);
-    printf("Player::load: Video(%s, %s): %i x %i , Audio(%s): %i hz\n",
+    printf("Player::load: Video(%s, %s): %i x %i , Audio(%s): %i @ %i hz\n",
            playerInfo.video.codec.name,
            SDL_GetPixelFormatName(playerInfo.video.output.format),
            playerInfo.video.output.width, playerInfo.video.output.height,
            playerInfo.audio.codec.name,
+           playerInfo.audio.output.format,
            playerInfo.audio.output.samplerate);
 
     // get a decoder handle for audio fps and buffering status
@@ -190,9 +190,7 @@ bool Player::load(const MediaFile &file) {
                 fps = (float) av_q2d(decoder->format_ctx->streams[video_streams.getCurrent()]->r_frame_rate);
             }
         }
-        // TODO: < 48000 not working fine on switch, check sdl2/libsamplerate
-        //audio = new C2DAudio(playerInfo.audio.output.samplerate, fps);
-        audio = new C2DAudio(48000, fps);
+        audio = new C2DAudio(playerInfo.audio.output.samplerate, fps);
         // audios menu options
         std::vector<MenuItem> items;
         for (auto &stream : file.media.audios) {
@@ -209,14 +207,10 @@ bool Player::load(const MediaFile &file) {
     if (subtitles_streams.size > 0) {
         textureSub = new SubtitlesTexture();
         textureSub->setFilter(Texture::Filter::Point);
-        void *buf;
-        textureSub->lock(nullptr, &buf, nullptr);
-        memset(buf, 0, 1024 * 1024 * 4);
-        textureSub->unlock();
+        add(textureSub);
         if (!show_subtitles) {
             textureSub->setVisibility(Visibility::Hidden);
         }
-        add(textureSub);
         // subtitles menu options
         std::vector<MenuItem> items;
         items.emplace_back("None", "", MenuItem::Position::Top, -1);
@@ -514,6 +508,7 @@ int Player::seek(double seek_position) {
 
     kit_player->state = KIT_PLAYING;
     loading = false;
+    osd->reset();
 
     return 0;
 }
@@ -663,6 +658,7 @@ void Player::stop() {
         subtitles_streams.reset();
         show_subtitles = false;
         title.clear();
+        osd->reset();
 
         setCpuClock(CpuClock::Min);
 
