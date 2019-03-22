@@ -28,13 +28,14 @@ MenuVideoSubmenu::MenuVideoSubmenu(
 
 void MenuVideoSubmenu::setSelection(int streamType) {
 
+    // TODO
     int stream_id = -1;
     if (streamType == MENU_VIDEO_TYPE_VID) {
-        stream_id = main->getPlayer()->getVideoStreams()->getCurrent();
+        //stream_id = main->getPlayer()->getVideoStreams()->getCurrent();
     } else if (streamType == MENU_VIDEO_TYPE_AUD) {
-        stream_id = main->getPlayer()->getAudioStreams()->getCurrent();
+        //stream_id = main->getPlayer()->getAudioStreams()->getCurrent();
     } else if (streamType == MENU_VIDEO_TYPE_SUB && main->getPlayer()->isSubtitlesEnabled()) {
-        stream_id = main->getPlayer()->getSubtitlesStreams()->getCurrent();
+        //stream_id = main->getPlayer()->getSubtitlesStreams()->getCurrent();
     }
 
     for (auto &button : buttons) {

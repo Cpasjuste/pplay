@@ -7,7 +7,7 @@
 
 #include "gradient_rectangle.h"
 
-class VideoTexture : public c2d::C2DTexture {
+class VideoTexture : public c2d::GLTextureBuffer {
 
 public:
 

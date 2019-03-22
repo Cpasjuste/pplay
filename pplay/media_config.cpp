@@ -12,7 +12,7 @@ MediaConfig::MediaConfig(const std::string &path, int version) : Config("PPLAY",
     addOption({OPT_STREAM_VID, -1});
     addOption({OPT_STREAM_AUD, -1});
     addOption({OPT_STREAM_SUB, -1});
-    addOption({OPT_POSITION, (float) 0});
+    addOption({OPT_POSITION, (int) 0});
 
     // load the configuration from file, overwriting default values
     load();
@@ -29,11 +29,11 @@ void MediaConfig::setStream(const std::string &optName, int stream) {
     save();
 }
 
-float MediaConfig::getPosition() {
-    return getOption(OPT_POSITION)->getFloat();
+int MediaConfig::getPosition() {
+    return getOption(OPT_POSITION)->getInteger();
 }
 
-void MediaConfig::setPosition(float position) {
-    getOption(OPT_POSITION)->setFloat(position);
+void MediaConfig::setPosition(int position) {
+    getOption(OPT_POSITION)->setInteger(position);
     save();
 }

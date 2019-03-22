@@ -17,15 +17,6 @@ static void *get_proc_address_mpv(void *fn_ctx, const char *name) {
     return SDL_GL_GetProcAddress(name);
 }
 
-static bool mpv_refresh = false;
-
-static void on_mpv_redraw(void *ctx) {
-    //SDL_Event event = {.type = wakeup_on_mpv_redraw};
-    //SDL_PushEvent(&event);
-    printf("on_mpv_redraw\n");
-    mpv_refresh = true;
-}
-
 Player::Player(Main *_main) : Rectangle(_main->getSize()) {
 
     main = _main;
@@ -39,36 +30,47 @@ Player::Player(Main *_main) : Rectangle(_main->getSize()) {
     tweenScale = new TweenScale({0.6f, 0.6f}, {1.0f, 1.0f}, 0.5f);
     add(tweenScale);
 
-    osd = new PlayerOSD(main);
-    osd->setLayer(3);
-    add(osd);
-
     setVisibility(Visibility::Hidden);
 
     // MPV INIT
-    mpv = mpv_create();
-    if (!mpv) {
+    mpv.handle = mpv_create();
+    if (!mpv.handle) {
         printf("error: mpv_create\n");
         return;
     }
 
-    mpv_set_option_string(mpv, "terminal", "yes");
-    mpv_set_option_string(mpv, "msg-level", "all=v");
-    mpv_set_option_string(mpv, "vd-lavc-threads", "4");
-    mpv_set_option_string(mpv, "vd-lavc-dr", "yes");
-    //mpv_set_option_string(mpv, "vd-lavc-fast", "yes");
+    mpv_set_option_string(mpv.handle, "terminal", "yes");
+    mpv_set_option_string(mpv.handle, "msg-level", "all=v");
+    mpv_set_option_string(mpv.handle, "vd-lavc-threads", "4");
+    mpv_set_option_string(mpv.handle, "vd-lavc-dr", "yes");
+    mpv_set_option_string(mpv.handle, "vd-lavc-fast", "yes");
 
-    int res = mpv_initialize(mpv);
+    int res = mpv_initialize(mpv.handle);
     if (res) {
         printf("error: mpv_initialize: %s\n", mpv_error_string(res));
         return;
     }
 
-    //mpv_opengl_cb_context *mpv_gl = (mpv_opengl_cb_context *) mpv_get_sub_api(mpv, MPV_SUB_API_OPENGL_CB);
-    //mpv_opengl_cb_init_gl(mpv_gl, nullptr, get_proc_address_mpv, nullptr);
-    //mpv_opengl_cb_set_update_callback(mpv_gl, on_mpv_redraw, nullptr);
+    mpv_opengl_init_params gl_init_params{get_proc_address_mpv, nullptr, nullptr};
+    mpv_render_param params[]{
+            {MPV_RENDER_PARAM_API_TYPE,           const_cast<char *>(MPV_RENDER_API_TYPE_OPENGL)},
+            {MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, &gl_init_params},
+            {MPV_RENDER_PARAM_INVALID,            nullptr}
+    };
 
-    mpv_available = true;
+    if (mpv_render_context_create(&mpv.ctx, mpv.handle, params) < 0) {
+        printf("error: mpv_render_context_create: %s\n", mpv_error_string(res));
+        return;
+    }
+
+    mpv.available = true;
+    // MPV INIT
+
+    texture = new VideoTexture(main->getSize());
+    add(texture);
+
+    osd = new PlayerOSD(main);
+    add(osd);
 }
 
 bool Player::load(const MediaFile &file) {
@@ -78,16 +80,6 @@ bool Player::load(const MediaFile &file) {
     loading = true;
 
 #if 0
-    // avformat_network_init/deinit handled in media info thread
-    int err = Kit_Init(KIT_INIT_ASS);
-    if (err != 0) {
-        printf("Player::load: unable to initialize Kitchensink: %s\n", Kit_GetError());
-        stop();
-        return false;
-    }
-
-    Kit_SetHint(KIT_HINT_THREAD_COUNT, 4);
-
     // default buffer, "Low"
     Kit_SetHint(KIT_HINT_VIDEO_BUFFER_FRAMES, 3);
     Kit_SetHint(KIT_HINT_AUDIO_BUFFER_FRAMES, 64);
@@ -142,49 +134,37 @@ bool Player::load(const MediaFile &file) {
 #endif
 
     title = file.name;
+
     // get media config (info)
     std::string hash = std::to_string(std::hash<std::string>()(file.path));
     std::string cfgPath = main->getIo()->getDataWritePath() + "cache/" + hash + ".cfg";
     config = new MediaConfig(cfgPath);
-    if (video_streams.size > 0) {
+
+    if (!file.media.videos.empty()) {
         if (config->getStream(OPT_STREAM_VID) > -1) {
-            video_streams.setCurrent(config->getStream(OPT_STREAM_VID));
+            //video_streams.setCurrent(config->getStream(OPT_STREAM_VID));
         } else {
-            config->setStream(OPT_STREAM_VID, video_streams.getCurrent());
-        }
-    }
-    if (audio_streams.size > 0) {
-        if (config->getStream(OPT_STREAM_AUD) > -1) {
-            audio_streams.setCurrent(config->getStream(OPT_STREAM_AUD));
-        } else {
-            config->setStream(OPT_STREAM_AUD, audio_streams.getCurrent());
-        }
-    }
-    if (subtitles_streams.size > 0) {
-        if (config->getStream(OPT_STREAM_SUB) > -1) {
-            subtitles_streams.setCurrent(config->getStream(OPT_STREAM_SUB));
-            show_subtitles = true;
-        } else {
-            // we need to init Kit_Player with a subtitle track, else it won't work
-            subtitles_streams.current = 0;
+            //config->setStream(OPT_STREAM_VID, video_streams.getCurrent());
         }
     }
 
-#if 0
-    // create the player
-    kit_player = Kit_CreatePlayer(
-            source,
-            video_streams.getCurrent(),
-            audio_streams.getCurrent(),
-            subtitles_streams.getCurrent(),
-            (int) getSize().x, (int) getSize().y);
-    if (!kit_player) {
-        main->getStatus()->show("Error...", Kit_GetError());
-        printf("Player::load: unable to create player: %s\n", Kit_GetError());
-        stop();
-        return false;
+    if (!file.media.audios.empty()) {
+        if (config->getStream(OPT_STREAM_AUD) > -1) {
+            //audio_streams.setCurrent(config->getStream(OPT_STREAM_AUD));
+        } else {
+            //config->setStream(OPT_STREAM_AUD, audio_streams.getCurrent());
+        }
     }
-#endif
+
+    if (!file.media.subtitles.empty()) {
+        if (config->getStream(OPT_STREAM_SUB) > -1) {
+            //subtitles_streams.setCurrent(config->getStream(OPT_STREAM_SUB));
+            show_subtitles = true;
+        } else {
+            //config->setStream(OPT_STREAM_AUD, subtitles_streams.getCurrent());
+            show_subtitles = false;
+        }
+    }
 
     // we should be good to go, set cpu speed if needed
     setCpuClock(CpuClock::Max);
@@ -267,37 +247,65 @@ bool Player::load(const MediaFile &file) {
         menuSubtitlesStreams->setLayer(3);
         add(menuSubtitlesStreams);
     }
-
-    // preload/cache some frames, resume playback if needed
-    loading = true;
-    if (config->getPosition() > 10) {
-        std::string msg = "Resume playback at " + pplay::Utility::formatTime(config->getPosition()) + " ?";
-        if (main->getMessageBox()->show("RESUME", msg, "RESUME", "RESTART") == MessageBox::LEFT) {
-            Kit_SetClockSync(kit_player);
-            if (seek(config->getPosition() - 10) != 0) {
-                play();
-            }
-        } else {
-            play();
-        }
-    } else {
-        play();
-    }
 #endif
 
-    mpv_opengl_cb_context *mpv_gl = (mpv_opengl_cb_context *) mpv_get_sub_api(mpv, MPV_SUB_API_OPENGL_CB);
-    mpv_opengl_cb_init_gl(mpv_gl, nullptr, get_proc_address_mpv, nullptr);
-    mpv_opengl_cb_set_update_callback(mpv_gl, on_mpv_redraw, nullptr);
+    /*
+    if (!file.media.videos.empty()) {
+        // videos menu options
+        std::vector<MenuItem> items;
+        for (auto &stream : file.media.videos) {
+            items.emplace_back("Lang: " + stream.language, "", MenuItem::Position::Top, stream.id);
+        }
+        menuVideoStreams = new MenuVideoSubmenu(
+                main, main->getMenuVideo()->getGlobalBounds(), "VIDEO", items, MENU_VIDEO_TYPE_VID);
+        menuVideoStreams->setSelection(MENU_VIDEO_TYPE_VID);
+        menuVideoStreams->setVisibility(Visibility::Hidden, false);
+        menuVideoStreams->setLayer(3);
+        add(menuVideoStreams);
+    }
+    */
 
     const char *cmd[] = {"loadfile", file.path.c_str(), nullptr};
-    int res = mpv_command(mpv, cmd);
+    int res = mpv_command(mpv.handle, cmd);
     if (res != 0) {
         main->getStatus()->show("Error...", "Could not play file:\n\n", mpv_error_string(res));
         printf("Player::load: unable to create player: %s\n", mpv_error_string(res));
         stop();
         return false;
     }
+    pause();
 
+    return true;
+}
+
+void Player::onLoadedEvent() {
+
+    // load subtitles tracks
+    mpv_node node;
+    mpv_get_property(mpv.handle, "track-list", MPV_FORMAT_NODE, &node);
+    if (node.format == MPV_FORMAT_NODE_ARRAY) {
+        for (int i = 0; i < node.u.list->num; i++) {
+            if (node.u.list->values[i].format == MPV_FORMAT_NODE_MAP) {
+                for (int n = 0; n < node.u.list->values[i].u.list->num; n++) {
+                    if (strcmp(node.u.list->values[i].u.list->keys[n], "type") == 0) {
+                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_STRING) {
+                            //track.type = node.u.list->values[i].u.list->values[n].u.string;
+                            printf("TRACK TYPE: %s\n", node.u.list->values[i].u.list->values[n].u.string);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (config->getPosition() > 0) {
+        std::string msg = "Resume playback at " + pplay::Utility::formatTime(config->getPosition()) + " ?";
+        if (main->getMessageBox()->show("RESUME", msg, "RESUME", "RESTART") == MessageBox::LEFT) {
+            seek(config->getPosition());
+        }
+    }
+
+    resume();
     loading = false;
 
 #ifdef __SWITCH__
@@ -305,8 +313,62 @@ bool Player::load(const MediaFile &file) {
 #endif
 
     setVisibility(Visibility::Visible);
+}
 
-    return true;
+void Player::onUpdate() {
+
+    // handle mpv events
+    if (mpv.available) {
+        mpv_event *event = mpv_wait_event(mpv.handle, 0);
+        if (event) {
+            switch (event->event_id) {
+                case MPV_EVENT_FILE_LOADED:
+                    printf("MPV_EVENT_FILE_LOADED\n");
+                    onLoadedEvent();
+                    break;
+                case MPV_EVENT_NONE:
+                    break;
+            }
+        }
+    }
+}
+
+void Player::onDraw(c2d::Transform &transform, bool draw) {
+
+    if (loading || isStopped()) {
+        Rectangle::onDraw(transform, draw);
+        return;
+    }
+
+    /*
+    if (!isPlaying() && !isPaused()) {
+        stop();
+        if (isFullscreen()) {
+            setFullscreen(false);
+        }
+        Rectangle::onDraw(transform, draw);
+        return;
+    }
+    */
+
+    //////////////////
+    /// step ffmpeg
+    //////////////////
+    if (mpv.available) {
+        int flip_y{0};
+        mpv_opengl_fbo fbo{
+                .fbo = texture->fbo,
+                .w = (int) texture->getSize().x, .h = (int) texture->getSize().y,
+                .internal_format = GL_RGBA8};
+        mpv_render_param r_params[] = {
+                {MPV_RENDER_PARAM_OPENGL_FBO, &fbo},
+                {MPV_RENDER_PARAM_FLIP_Y,     &flip_y},
+                {MPV_RENDER_PARAM_INVALID,    nullptr}
+        };
+        mpv_render_context_render(mpv.ctx, r_params);
+    }
+
+    Rectangle::onDraw(transform, draw);
 }
 
 bool Player::onInput(c2d::Input::Player *players) {
@@ -338,109 +400,7 @@ bool Player::onInput(c2d::Input::Player *players) {
     return true;
 }
 
-
-void Player::onDraw(c2d::Transform &transform, bool draw) {
-
-#ifndef NDEBUG
-#if 0
-    if (kit_player) {
-        std::string v_buf_in = "video: in = ", v_buf_out = "out = ", a_buf_in = "audio: in = ", a_buf_out = "out: ";
-        auto *v_dec = (Kit_Decoder *) kit_player->decoders[0];
-        if (v_dec) {
-            v_buf_in += std::to_string(Kit_GetBufferBufferedSize(v_dec->buffer[KIT_DEC_BUF_IN]));
-            v_buf_out += std::to_string(Kit_GetBufferBufferedSize(v_dec->buffer[KIT_DEC_BUF_OUT]));
-        }
-        auto *a_dec = (Kit_Decoder *) kit_player->decoders[1];
-        if (a_dec) {
-            a_buf_in += std::to_string(Kit_GetBufferBufferedSize(a_dec->buffer[KIT_DEC_BUF_IN]));
-            a_buf_out += std::to_string(Kit_GetBufferBufferedSize(a_dec->buffer[KIT_DEC_BUF_OUT]));
-        }
-        main->debugText->setString(v_buf_in + "\t" + v_buf_out + "\n" + a_buf_in + "\t" + a_buf_out);
-    }
-#endif
-#endif
-
-    if (loading || isStopped()) {
-        Rectangle::onDraw(transform, draw);
-        return;
-    }
-
-    if (!isPlaying() && !isPaused()) {
-        stop();
-        if (isFullscreen()) {
-            setFullscreen(false);
-        }
-        Rectangle::onDraw(transform, draw);
-        return;
-    }
-
-    //////////////////
-    /// step ffmpeg
-    //////////////////
-    if (mpv_gl && mpv_refresh) {
-        mpv_opengl_cb_draw(mpv_gl, 0, (int) getSize().x, (int) (getSize().y));
-        mpv_refresh = false;
-        printf("SDL_GL_SwapWindow\n");
-    }
-
-    SDL_GL_SwapWindow(((SDL2Renderer *) getMain())->getWindow());
-    mpv_opengl_cb_report_flip(mpv_gl, 0);
-
-#if 0
-    /// audio
-    if (audio && audio_streams.size > 0) {
-        int queued = audio->getQueuedSize();
-        if (queued < audio->getBufferSize()) {
-            int need = audio->getBufferSize() - queued;
-            while (need > 0) {
-                int ret = Kit_GetPlayerAudioData(
-                        kit_player, (unsigned char *) audio->getBuffer(), audio->getBufferSize());
-                need -= ret;
-                if (ret > 0) {
-                    audio->play(audio->getBuffer(), ret);
-                } else {
-                    break;
-                }
-            }
-        }
-    }
-
-    /// video
-    if (texture && video_streams.size > 0) {
-        void *video_data;
-        texture->lock(nullptr, &video_data, nullptr);
-        if (Kit_GetPlayerVideoDataRaw(kit_player, video_data)) {
-            texture->unlock();
-        }
-        // scaling
-        Vector2f max_scale = {
-                getSize().x / texture->getTextureRect().width,
-                getSize().y / texture->getTextureRect().height};
-        Vector2f scale = {max_scale.y, max_scale.y};
-        if (scale.x > max_scale.x) {
-            scale.x = scale.y = max_scale.x;
-        }
-        // TODO: set position to top right
-        texture->setOrigin(Origin::Center);
-        texture->setPosition(getSize().x / 2.0f, getSize().y / 2.0f);
-        texture->setScale(scale);
-    }
-
-    /// Subtitlesmpv_handle
-    if (show_subtitles && subtitles_streams.size > 0) {
-        int count = Kit_GetPlayerSubtitleDataRaw(
-                kit_player, textureSub->pixels, textureSub->getRectsSrc(), textureSub->getRectsDst(), ATLAS_MAX);
-        textureSub->setRectsCount(count);
-        if (count > 0) {
-            textureSub->unlock();
-        }
-    }
-#endif
-    Rectangle::onDraw(transform, draw);
-}
-
 void Player::setVideoStream(int streamId) {
-
 #if 0
     if (streamId == video_streams.getCurrent()) {
         main->getStatus()->show("Info...", "Selected video stream already set");
@@ -463,7 +423,6 @@ void Player::setVideoStream(int streamId) {
 }
 
 void Player::setAudioStream(int streamId) {
-
 #if 0
     if (streamId == audio_streams.getCurrent()) {
         main->getStatus()->show("Info...", "Selected audio stream already set");
@@ -482,7 +441,6 @@ void Player::setAudioStream(int streamId) {
 }
 
 void Player::setSubtitleStream(int streamId) {
-
 #if 0
     if (streamId == subtitles_streams.getCurrent()) {
         if (streamId > -1) {
@@ -524,33 +482,10 @@ void Player::setSubtitleStream(int streamId) {
 #endif
 }
 
-void Player::play() {
-
-#if 0
-    int flip = 0;
-    auto *decoder = (Kit_Decoder *) kit_player->decoders[0];
-    if (!decoder) {
-        decoder = (Kit_Decoder *) kit_player->decoders[1];
-    }
-
-    loading = true;
-
-    while (Kit_PlayerPlay(kit_player) > 0) {
-        if (flip % 30 == 0) {
-            if (decoder) {
-                int progress = Kit_GetBufferBufferedSize(decoder->buffer[KIT_DEC_BUF_OUT]);
-                std::string msg = "Loading... " + title + "... " + std::to_string(progress) + "%";
-                main->getStatus()->show("Please Wait...", msg);
-            }
-            main->flip();
-        }
-        flip++;
-    }
-#endif
-    loading = false;
-}
-
 int Player::seek(double seek_position) {
+
+    std::string cmd = "no-osd seek " + std::to_string(seek_position);
+    mpv_command_string(mpv.handle, cmd.c_str());
 
 #if 0
     int flip = 0;
@@ -592,18 +527,24 @@ int Player::seek(double seek_position) {
 
 bool Player::isPlaying() {
 
-#if 0
-    return kit_player != nullptr
-           && Kit_GetPlayerState(kit_player) == KIT_PLAYING;
-#endif
-    return mpv_available;
+    int res = -1;
+
+    if (mpv.available) {
+        mpv_get_property(mpv.handle, "core-idle", MPV_FORMAT_FLAG, &res);
+    }
+
+    return res == 0;
 }
 
 bool Player::isPaused() {
-#if 0
-    return kit_player != nullptr
-           && Kit_GetPlayerState(kit_player) == KIT_PAUSED;
-#endif
+
+    int res = -1;
+
+    if (mpv.available) {
+        mpv_get_property(mpv.handle, "pause", MPV_FORMAT_FLAG, &res);
+    }
+
+    return res == 1;
 }
 
 bool Player::isStopped() {
@@ -655,21 +596,19 @@ void Player::setFullscreen(bool fs) {
 
 void Player::pause() {
 
-#if 0
-    if (isPlaying()) {
-        Kit_PlayerPause(kit_player);
+    if (mpv.available) {
+        mpv_command_string(mpv.handle, "set pause yes");
     }
-#endif
+
     setCpuClock(CpuClock::Min);
 }
 
 void Player::resume() {
 
-#if 0
-    if (isPaused()) {
-        Kit_PlayerPlay(kit_player);
+    if (mpv.available) {
+        mpv_command_string(mpv.handle, "set pause no");
     }
-#endif
+
     setCpuClock(CpuClock::Max);
 }
 
@@ -679,73 +618,48 @@ void Player::stop() {
 
     if (!stopped) {
 
-#if 0
-        /// Kit
-        if (kit_player) {
-            // save position in stream
-            if (config) {
-                if (Kit_GetPlayerPosition(kit_player) < Kit_GetPlayerDuration(kit_player) - 5) {
-                    config->setPosition((float) Kit_GetPlayerPosition(kit_player));
-                } else {
-                    config->setPosition(0);
-                }
-            }
-            Kit_ClosePlayer(kit_player);
-            kit_player = nullptr;
+        if (mpv.available) {
+            mpv_command_string(mpv.handle, "stop");
         }
-        if (source) {
-            Kit_CloseSource(source);
-            source = nullptr;
-        }
-        Kit_Quit();
 
-        /// Audio
-        if (audio) {
-            audio->pause(1);
-            delete (audio);
-            audio = nullptr;
+        // save position in stream
+        if (config) {
+            long position = getPlaybackPosition();
+            if (position > 5) {
+                config->setPosition((int) position - 5);
+            } else {
+                config->setPosition(0);
+            }
+            delete (config);
+            config = nullptr;
         }
+
+        show_subtitles = false;
+        title.clear();
+        osd->reset();
+
+#if 0
+        // Audio
         if (menuAudioStreams) {
             delete (menuAudioStreams);
             menuAudioStreams = nullptr;
         }
-
-
-        /// Video
-        if (texture) {
-            delete (texture);
-            texture = nullptr;
-        }
+        // Video
         if (menuVideoStreams) {
             delete (menuVideoStreams);
             menuVideoStreams = nullptr;
         }
-
-        /// Subtitles
-        if (textureSub) {
-            delete (textureSub);
-            textureSub = nullptr;
-        }
+        // Subtitles
         if (menuSubtitlesStreams) {
             delete (menuSubtitlesStreams);
             menuSubtitlesStreams = nullptr;
         }
 
-        /// media configuration
-        if (config) {
-            delete (config);
-            config = nullptr;
-        }
-
         video_streams.reset();
         audio_streams.reset();
         subtitles_streams.reset();
-        show_subtitles = false;
-        title.clear();
-        osd->reset();
 #endif
         setCpuClock(CpuClock::Min);
-
 #ifdef __SWITCH__
         appletSetMediaPlaybackState(false);
 #endif
@@ -774,6 +688,22 @@ void Player::setCpuClock(const CpuClock &clock) {
 #endif
 }
 
+long Player::getPlaybackDuration() {
+    long duration = 0;
+    if (mpv.available) {
+        mpv_get_property(mpv.handle, "duration", MPV_FORMAT_INT64, &duration);
+    }
+    return duration;
+}
+
+long Player::getPlaybackPosition() {
+    long position = 0;
+    if (mpv.available) {
+        mpv_get_property(mpv.handle, "playback-time", MPV_FORMAT_INT64, &position);
+    }
+    return position;
+}
+
 Main *Player::getMain() {
     return main;
 }
@@ -790,6 +720,7 @@ MenuVideoSubmenu *Player::getMenuSubtitlesStreams() {
     return menuSubtitlesStreams;
 }
 
+/*
 Player::Stream *Player::getVideoStreams() {
     return &video_streams;
 }
@@ -801,12 +732,7 @@ Player::Stream *Player::getAudioStreams() {
 Player::Stream *Player::getSubtitlesStreams() {
     return &subtitles_streams;
 }
-
-#if 0
-Kit_Player *Player::getKitPlayer() {
-    return kit_player;
-}
-#endif
+*/
 
 const std::string &Player::getTitle() const {
     return title;
@@ -823,3 +749,4 @@ bool Player::isLoading() {
 bool Player::isSubtitlesEnabled() {
     return show_subtitles;
 }
+

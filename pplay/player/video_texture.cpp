@@ -7,7 +7,7 @@
 
 using namespace c2d;
 
-VideoTexture::VideoTexture(const c2d::Vector2f &size) : C2DTexture(size, Format::RGBA8) {
+VideoTexture::VideoTexture(const c2d::Vector2f &size) : GLTextureBuffer(size, Format::RGBA8) {
 
     float l_width = getSize().x / 5;
     rectLeft = new GradientRectangle({(l_width / 2) - 2, size.y / 2, l_width, size.y});
@@ -28,11 +28,6 @@ VideoTexture::VideoTexture(const c2d::Vector2f &size) : C2DTexture(size, Format:
     rectBottomTween = new TweenAlpha(0, 255, 0.5f);
     rectBottom->add(rectBottomTween);
     add(rectBottom);
-
-    void *buf;
-    lock(nullptr, &buf, nullptr);
-    memset(buf, 0, (size_t) (int) size.x * (int) size.y * 4);
-    unlock();
 }
 
 void VideoTexture::hideGradients() {

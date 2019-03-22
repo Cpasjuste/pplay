@@ -24,9 +24,9 @@ public:
 
     void setStream(const std::string &optName, int stream);
 
-    float getPosition();
+    int getPosition();
 
-    void setPosition(float position);
+    void setPosition(int position);
 };
 
 #endif //MEDIA_CONFIG_H

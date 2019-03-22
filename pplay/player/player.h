@@ -7,7 +7,6 @@
 
 #include "../mpv/libmpv/client.h"
 #include "../mpv/libmpv/render_gl.h"
-#include "../mpv/libmpv/opengl_cb.h"
 
 #include "menus/menu_video_submenu.h"
 #include "video_texture.h"
@@ -24,6 +23,7 @@ class Player : public c2d::Rectangle {
 
 public:
 
+    /*
     class Stream {
     public:
         Stream() {
@@ -57,6 +57,7 @@ public:
         int size = 0;
         int current = 0;
     };
+    */
 
     enum class CpuClock {
         Min = 0,
@@ -97,11 +98,13 @@ public:
 
     void setCpuClock(const CpuClock &clock);
 
+    long getPlaybackDuration();
+
+    long getPlaybackPosition();
+
     Main *getMain();
 
     PlayerOSD *getOSD();
-
-    //Kit_Player *getKitPlayer();
 
     MenuVideoSubmenu *getMenuVideoStreams();
 
@@ -109,11 +112,11 @@ public:
 
     MenuVideoSubmenu *getMenuSubtitlesStreams();
 
-    Stream *getVideoStreams();
+    //Stream *getVideoStreams();
 
-    Stream *getAudioStreams();
+    //Stream *getAudioStreams();
 
-    Stream *getSubtitlesStreams();
+    //Stream *getSubtitlesStreams();
 
     const std::string &getTitle() const;
 
@@ -121,9 +124,11 @@ public:
 
 private:
 
+    void onUpdate() override;
+
     void onDraw(c2d::Transform &transform, bool draw = true) override;
 
-    void play();
+    void onLoadedEvent();
 
     // ui
     Main *main = nullptr;
@@ -137,21 +142,16 @@ private:
 
     // player
     VideoTexture *texture = nullptr;
-    SubtitlesTexture *textureSub = nullptr;
-    Stream video_streams;
-    Stream audio_streams;
-    Stream subtitles_streams;
+    //Stream video_streams;
+    //Stream audio_streams;
+    //Stream subtitles_streams;
 
-    //Kit_Source *source = nullptr;
-    //Kit_Player *kit_player = nullptr;
-    //Kit_PlayerInfo playerInfo;
-
-    // audio
-    //c2d::C2DAudio *audio = nullptr;
-
-    mpv_handle *mpv;
-    mpv_opengl_cb_context *mpv_gl;
-    bool mpv_available = false;
+    struct Mpv {
+        mpv_handle *handle = nullptr;
+        mpv_render_context *ctx = nullptr;
+        bool available = false;
+    };
+    Mpv mpv;
 
     MediaConfig *config = nullptr;
 
