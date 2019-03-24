@@ -27,7 +27,7 @@ static void on_applet_hook(AppletHookType hook, void *arg) {
                     main->getPlayer()->resume();
                 }
             } else {
-                if (main->getPlayer()->isPlaying()) {
+                if (!main->getPlayer()->isPaused()) {
                     main->getPlayer()->pause();
                 }
             }
@@ -160,10 +160,6 @@ Main::~Main() {
 
 bool Main::onInput(c2d::Input::Player *players) {
 
-    if (player->isLoading()) {
-        return true;
-    }
-
     if (messageBox->isVisible()) {
         // don't handle input if message box is visible
         return false;
@@ -209,7 +205,7 @@ void Main::onDraw(c2d::Transform &transform, bool draw) {
 // TODO: move this in menu_main
 void Main::show(MenuType type) {
 
-    if (player->isPlaying() && player->isFullscreen()) {
+    if (player->isStopped() && player->isFullscreen()) {
         player->setFullscreen(false);
     }
 

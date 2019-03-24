@@ -66,6 +66,8 @@ public:
 
     explicit Player(Main *main);
 
+    ~Player();
+
     bool load(const MediaFile &file);
 
     void pause();
@@ -76,19 +78,19 @@ public:
 
     int seek(double position);
 
-    bool isPlaying();
+    //bool isPlaying();
 
     bool isPaused();
 
     bool isStopped();
 
-    bool isLoading();
+    //bool isLoading();
 
     bool isSubtitlesEnabled();
 
     bool isFullscreen();
 
-    void setFullscreen(bool maximize);
+    void setFullscreen(bool maximize, bool hide = false);
 
     void setVideoStream(int streamId);
 
@@ -157,8 +159,7 @@ private:
 
     bool show_subtitles = false;
     bool fullscreen = false;
-    bool stopped = true;
-    bool loading = false;
+    bool isLoading = false;
 };
 
 #endif //PPLAY_PLAYER_H

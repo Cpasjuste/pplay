@@ -139,13 +139,11 @@ void PlayerOSD::onDraw(c2d::Transform &transform, bool draw) {
         main->getStatusBar()->setVisibility(Visibility::Hidden, true);
     }
 
-    if (player->isPlaying()) {
-        position = player->getPlaybackPosition();
-        duration = player->getPlaybackDuration();
-        progress->setProgress(position / duration);
-        progress_text->setString(pplay::Utility::formatTime(position));
-        duration_text->setString(pplay::Utility::formatTime(duration));
-    }
+    position = player->getPlaybackPosition();
+    duration = player->getPlaybackDuration();
+    progress->setProgress(position / duration);
+    progress_text->setString(pplay::Utility::formatTime(position));
+    duration_text->setString(pplay::Utility::formatTime(duration));
 
     C2DObject::onDraw(transform, draw);
 }
@@ -179,7 +177,7 @@ bool PlayerOSD::onInput(c2d::Input::Player *players) {
         clock.restart();
     } else if (keys & Input::Key::Fire1) {
         if (index == (int) ButtonID::Pause) {
-            bool pause = main->getPlayer()->isPlaying();
+            bool pause = !main->getPlayer()->isPaused();
             btn_play->setVisibility(pause ? Visibility::Visible : Visibility::Hidden);
             buttons.at((int) ButtonID::Pause)->setVisibility(pause ? Visibility::Hidden : Visibility::Visible);
             if (pause) {

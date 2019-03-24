@@ -84,7 +84,8 @@ void Filer::onDraw(c2d::Transform &transform, bool draw) {
 
 bool Filer::onInput(c2d::Input::Player *players) {
 
-    if (main->getMenuMain()->isMenuVisible() || main->getPlayer()->isFullscreen()) {
+    if (main->getMenuMain()->isMenuVisible()
+        || main->getPlayer()->isFullscreen()) {
         return false;
     }
 
@@ -111,15 +112,18 @@ bool Filer::onInput(c2d::Input::Player *players) {
         if (getSelection().type == Io::Type::Directory) {
             enter(item_index);
         } else if (pplay::Utility::isMedia(getSelection())) {
-            std::string msg = "Loading..." + getSelection().name;
-            main->getStatus()->show("Please Wait...", msg, true, true);
+            //std::string msg = "Loading..." + getSelection().name;
+            //main->getStatus()->show("Please Wait...", msg, true, true);
             if (!files[item_index].media.isLoaded()) {
                 files[item_index].setMedia(main->getMediaThread()->getMediaInfo(files[item_index], false, true));
             }
+            main->getPlayer()->load(files[item_index]);
+            /*
             if (main->getPlayer()->load(files[item_index])) {
                 main->getPlayer()->setFullscreen(true);
                 main->getStatus()->hide();
             }
+            */
         }
     } else if (keys & Input::Key::Fire2) {
         exit();

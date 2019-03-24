@@ -39,11 +39,16 @@ Player::Player(Main *_main) : Rectangle(_main->getSize()) {
         return;
     }
 
+    std::string mpv_home = main->getIo()->getDataWritePath() + "config";
+    printf("config: %s\n", mpv_home.c_str());
+    mpv_set_option_string(mpv.handle, "config-dir", mpv_home.c_str());
     mpv_set_option_string(mpv.handle, "terminal", "yes");
     mpv_set_option_string(mpv.handle, "msg-level", "all=v");
     mpv_set_option_string(mpv.handle, "vd-lavc-threads", "4");
     mpv_set_option_string(mpv.handle, "vd-lavc-dr", "yes");
     mpv_set_option_string(mpv.handle, "vd-lavc-fast", "yes");
+    mpv_set_option_string(mpv.handle, "audio-channels", "stereo");
+    //mpv_set_option_string(mpv.handle, "vo", "gpu");
 
     int res = mpv_initialize(mpv.handle);
     if (res) {
@@ -66,6 +71,7 @@ Player::Player(Main *_main) : Rectangle(_main->getSize()) {
     mpv.available = true;
     // MPV INIT
 
+    // TODO: create texture of video size?
     texture = new VideoTexture(main->getSize());
     add(texture);
 
@@ -73,11 +79,16 @@ Player::Player(Main *_main) : Rectangle(_main->getSize()) {
     add(osd);
 }
 
+Player::~Player() {
+    if (mpv.available) {
+        mpv_render_context_free(mpv.ctx);
+        mpv_terminate_destroy(mpv.handle);
+    }
+}
+
 bool Player::load(const MediaFile &file) {
 
-    stop();
-    stopped = false;
-    loading = true;
+    isLoading = true;
 
 #if 0
     // default buffer, "Low"
@@ -135,6 +146,7 @@ bool Player::load(const MediaFile &file) {
 
     title = file.name;
 
+#if 0
     // get media config (info)
     std::string hash = std::to_string(std::hash<std::string>()(file.path));
     std::string cfgPath = main->getIo()->getDataWritePath() + "cache/" + hash + ".cfg";
@@ -165,9 +177,7 @@ bool Player::load(const MediaFile &file) {
             show_subtitles = false;
         }
     }
-
-    // we should be good to go, set cpu speed if needed
-    setCpuClock(CpuClock::Max);
+#endif
 
 #if 0
     // get some information
@@ -265,15 +275,16 @@ bool Player::load(const MediaFile &file) {
     }
     */
 
-    const char *cmd[] = {"loadfile", file.path.c_str(), nullptr};
+    const char *cmd[] = {"loadfile", file.path.c_str(), "replace", nullptr};
     int res = mpv_command(mpv.handle, cmd);
     if (res != 0) {
-        main->getStatus()->show("Error...", "Could not play file:\n\n", mpv_error_string(res));
-        printf("Player::load: unable to create player: %s\n", mpv_error_string(res));
-        stop();
+        main->getStatus()->show("Error...", "Could not play file:\n%s\n", mpv_error_string(res));
+        printf("Player::load: could not play file:: %s\n", mpv_error_string(res));
+        isLoading = false;
         return false;
     }
-    pause();
+
+    //pause();
 
     return true;
 }
@@ -289,7 +300,6 @@ void Player::onLoadedEvent() {
                 for (int n = 0; n < node.u.list->values[i].u.list->num; n++) {
                     if (strcmp(node.u.list->values[i].u.list->keys[n], "type") == 0) {
                         if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_STRING) {
-                            //track.type = node.u.list->values[i].u.list->values[n].u.string;
                             printf("TRACK TYPE: %s\n", node.u.list->values[i].u.list->values[n].u.string);
                         }
                     }
@@ -298,24 +308,27 @@ void Player::onLoadedEvent() {
         }
     }
 
+#if 0
     if (config->getPosition() > 0) {
         std::string msg = "Resume playback at " + pplay::Utility::formatTime(config->getPosition()) + " ?";
         if (main->getMessageBox()->show("RESUME", msg, "RESUME", "RESTART") == MessageBox::LEFT) {
             seek(config->getPosition());
         }
     }
+#endif
 
     resume();
-    loading = false;
+    //loading = false;
 
 #ifdef __SWITCH__
     appletSetMediaPlaybackState(true);
 #endif
-
-    setVisibility(Visibility::Visible);
+    setFullscreen(true);
 }
 
 void Player::onUpdate() {
+
+    //TODO: cache-buffering-state
 
     // handle mpv events
     if (mpv.available) {
@@ -325,6 +338,65 @@ void Player::onUpdate() {
                 case MPV_EVENT_FILE_LOADED:
                     printf("MPV_EVENT_FILE_LOADED\n");
                     onLoadedEvent();
+                    isLoading = false;
+                    main->getStatus()->hide();
+                    break;
+                case MPV_EVENT_START_FILE:
+                    printf("MPV_EVENT_START_FILE\n");
+                    isLoading = true;
+                    main->getStatus()->show("Please Wait...", "Loading..." + title, true);
+                    break;
+                case MPV_EVENT_END_FILE:
+                    printf("MPV_EVENT_END_FILE\n");
+                    if (!isLoading) {
+                        stop();
+                    }
+                    break;
+                case MPV_EVENT_SHUTDOWN:
+                    printf("MPV_EVENT_SHUTDOWN\n");
+                    break;
+                case MPV_EVENT_LOG_MESSAGE:
+                    break;
+                case MPV_EVENT_GET_PROPERTY_REPLY:
+                    break;
+                case MPV_EVENT_SET_PROPERTY_REPLY:
+                    break;
+                case MPV_EVENT_COMMAND_REPLY:
+                    break;
+                case MPV_EVENT_TRACKS_CHANGED:
+                    break;
+                case MPV_EVENT_TRACK_SWITCHED:
+                    break;
+                case MPV_EVENT_IDLE:
+                    break;
+                case MPV_EVENT_PAUSE:
+                    break;
+                case MPV_EVENT_UNPAUSE:
+                    break;
+                case MPV_EVENT_TICK:
+                    break;
+                case MPV_EVENT_SCRIPT_INPUT_DISPATCH:
+                    break;
+                case MPV_EVENT_CLIENT_MESSAGE:
+                    break;
+                case MPV_EVENT_VIDEO_RECONFIG:
+                    break;
+                case MPV_EVENT_AUDIO_RECONFIG:
+                    break;
+                case MPV_EVENT_METADATA_UPDATE:
+                    break;
+                case MPV_EVENT_SEEK:
+                    break;
+                case MPV_EVENT_PLAYBACK_RESTART:
+                    printf("MPV_EVENT_PLAYBACK_RESTART\n");
+                    break;
+                case MPV_EVENT_PROPERTY_CHANGE:
+                    break;
+                case MPV_EVENT_CHAPTER_CHANGE:
+                    break;
+                case MPV_EVENT_QUEUE_OVERFLOW:
+                    break;
+                case MPV_EVENT_HOOK:
                     break;
                 case MPV_EVENT_NONE:
                     break;
@@ -335,21 +407,10 @@ void Player::onUpdate() {
 
 void Player::onDraw(c2d::Transform &transform, bool draw) {
 
-    if (loading || isStopped()) {
+    if (isStopped()) {
         Rectangle::onDraw(transform, draw);
         return;
     }
-
-    /*
-    if (!isPlaying() && !isPaused()) {
-        stop();
-        if (isFullscreen()) {
-            setFullscreen(false);
-        }
-        Rectangle::onDraw(transform, draw);
-        return;
-    }
-    */
 
     //////////////////
     /// step ffmpeg
@@ -365,7 +426,11 @@ void Player::onDraw(c2d::Transform &transform, bool draw) {
                 {MPV_RENDER_PARAM_FLIP_Y,     &flip_y},
                 {MPV_RENDER_PARAM_INVALID,    nullptr}
         };
+
+        GLint vp[4];
+        glGetIntegerv(GL_VIEWPORT, vp);
         mpv_render_context_render(mpv.ctx, r_params);
+        glViewport(vp[0], vp[1], (GLsizei) vp[2], (GLsizei) vp[3]);
     }
 
     Rectangle::onDraw(transform, draw);
@@ -373,7 +438,8 @@ void Player::onDraw(c2d::Transform &transform, bool draw) {
 
 bool Player::onInput(c2d::Input::Player *players) {
 
-    if (main->getFiler()->isVisible()
+    if (isStopped()
+        || main->getFiler()->isVisible()
         || main->getMenuVideo()->isVisible()
         || osd->isVisible()
         || (getMenuVideoStreams() && getMenuVideoStreams()->isVisible())
@@ -487,44 +553,21 @@ int Player::seek(double seek_position) {
     std::string cmd = "no-osd seek " + std::to_string(seek_position);
     mpv_command_string(mpv.handle, cmd.c_str());
 
-#if 0
-    int flip = 0;
-    double position = Kit_GetPlayerPosition(kit_player);
-    auto *decoder = (Kit_Decoder *) kit_player->decoders[0];
-    if (!decoder) {
-        decoder = (Kit_Decoder *) kit_player->decoders[1];
-    }
-
-    loading = true;
-
-    if (Kit_PlayerSeekStart(kit_player, position, seek_position) != 0) {
-        main->getStatus()->show("Error...", Kit_GetError());
-        loading = false;
-        return -1;
-    }
-
-    std::string msg = "Seeking... " + title + "... 0%";
-    main->getStatus()->show("Please Wait...", msg, false, true);
-
-    while (Kit_PlayerSeekEnd(kit_player, position, seek_position) > 0) {
-        if (flip % 30 == 0) {
-            if (decoder) {
-                int progress = Kit_GetBufferBufferedSize(decoder->buffer[KIT_DEC_BUF_OUT]);
-                msg = "Seeking... " + title + "... " + std::to_string(progress) + "%";
-                main->getStatus()->show("Please Wait...", msg);
-            }
-            main->flip();
-        }
-        flip++;
-    }
-
-    kit_player->state = KIT_PLAYING;
-    loading = false;
-    osd->reset();
-#endif
     return 0;
 }
 
+bool Player::isStopped() {
+
+    int res = -1;
+
+    if (mpv.available) {
+        mpv_get_property(mpv.handle, "playback-abort", MPV_FORMAT_FLAG, &res);
+    }
+
+    return res == 1;
+}
+
+/*
 bool Player::isPlaying() {
 
     int res = -1;
@@ -535,6 +578,7 @@ bool Player::isPlaying() {
 
     return res == 0;
 }
+*/
 
 bool Player::isPaused() {
 
@@ -547,15 +591,11 @@ bool Player::isPaused() {
     return res == 1;
 }
 
-bool Player::isStopped() {
-    return stopped;
-}
-
 bool Player::isFullscreen() {
     return fullscreen;
 }
 
-void Player::setFullscreen(bool fs) {
+void Player::setFullscreen(bool fs, bool hide) {
 
     if (fs == fullscreen) {
         return;
@@ -564,11 +604,13 @@ void Player::setFullscreen(bool fs) {
     fullscreen = fs;
 
     if (!fullscreen) {
-        tweenPosition->play(TweenDirection::Backward);
-        tweenScale->play(TweenDirection::Backward);
-        if (texture) {
-            texture->showGradients();
+        if (hide) {
+            setVisibility(Visibility::Hidden, true);
+        } else {
+            tweenPosition->play(TweenDirection::Backward);
+            tweenScale->play(TweenDirection::Backward);
         }
+        texture->showGradients();
         main->getMenuVideo()->setVisibility(Visibility::Hidden, true);
         if (menuVideoStreams) {
             menuVideoStreams->setVisibility(Visibility::Hidden, true);
@@ -583,14 +625,11 @@ void Player::setFullscreen(bool fs) {
         main->getTitle()->setVisibility(Visibility::Visible, true);
         main->getStatusBar()->setVisibility(Visibility::Visible, true);
     } else {
-        if (texture) {
-            texture->hideGradients();
-        }
-        tweenPosition->play(TweenDirection::Forward);
-        tweenScale->play(TweenDirection::Forward);
+        texture->hideGradients();
         main->getFiler()->setVisibility(Visibility::Hidden, true);
         main->getTitle()->setVisibility(Visibility::Hidden, true);
         main->getStatusBar()->setVisibility(Visibility::Hidden, true);
+        setVisibility(Visibility::Visible, true);
     }
 }
 
@@ -614,62 +653,61 @@ void Player::resume() {
 
 void Player::stop() {
 
-    printf("Player::stop: stopped = %i\n", stopped);
+    printf("Player::stop\n");
 
-    if (!stopped) {
-
-        if (mpv.available) {
-            mpv_command_string(mpv.handle, "stop");
-        }
-
-        // save position in stream
-        if (config) {
-            long position = getPlaybackPosition();
-            if (position > 5) {
-                config->setPosition((int) position - 5);
-            } else {
-                config->setPosition(0);
-            }
-            delete (config);
-            config = nullptr;
-        }
-
-        show_subtitles = false;
-        title.clear();
-        osd->reset();
-
-#if 0
-        // Audio
-        if (menuAudioStreams) {
-            delete (menuAudioStreams);
-            menuAudioStreams = nullptr;
-        }
-        // Video
-        if (menuVideoStreams) {
-            delete (menuVideoStreams);
-            menuVideoStreams = nullptr;
-        }
-        // Subtitles
-        if (menuSubtitlesStreams) {
-            delete (menuSubtitlesStreams);
-            menuSubtitlesStreams = nullptr;
-        }
-
-        video_streams.reset();
-        audio_streams.reset();
-        subtitles_streams.reset();
-#endif
-        setCpuClock(CpuClock::Min);
-#ifdef __SWITCH__
-        appletSetMediaPlaybackState(false);
-#endif
+    if (mpv.available && !isStopped()) {
+        mpv_command_string(mpv.handle, "stop");
     }
 
-    stopped = true;
+#if 0
+    // save position in stream
+    if (config) {
+        long position = getPlaybackPosition();
+        if (position > 5) {
+            config->setPosition((int) position - 5);
+        } else {
+            config->setPosition(0);
+        }
+        delete (config);
+        config = nullptr;
+    }
+#endif
+
+    show_subtitles = false;
+    title.clear();
+    osd->reset();
+
+#if 0
+    // Audio
+    if (menuAudioStreams) {
+        delete (menuAudioStreams);
+        menuAudioStreams = nullptr;
+    }
+    // Video
+    if (menuVideoStreams) {
+        delete (menuVideoStreams);
+        menuVideoStreams = nullptr;
+    }
+    // Subtitles
+    if (menuSubtitlesStreams) {
+        delete (menuSubtitlesStreams);
+        menuSubtitlesStreams = nullptr;
+    }
+
+    video_streams.reset();
+    audio_streams.reset();
+    subtitles_streams.reset();
+#endif
+    setCpuClock(CpuClock::Min);
+#ifdef __SWITCH__
+    appletSetMediaPlaybackState(false);
+#endif
+    setFullscreen(false, true);
 }
 
 void Player::setCpuClock(const CpuClock &clock) {
 #ifdef __SWITCH__
+/*
     if (main->getConfig()->getOption(OPT_CPU_BOOST)->getString() == "Enabled") {
         if (clock == CpuClock::Min) {
             if (SwitchSys::getClock(SwitchSys::Module::Cpu) != SwitchSys::getClockStock(SwitchSys::Module::Cpu)) {
@@ -685,6 +723,7 @@ void Player::setCpuClock(const CpuClock &clock) {
                    clock_old, SwitchSys::getClock(SwitchSys::Module::Cpu));
         }
     }
+*/
 #endif
 }
 
@@ -742,9 +781,11 @@ PlayerOSD *Player::getOSD() {
     return osd;
 }
 
+/*
 bool Player::isLoading() {
     return loading;
 }
+*/
 
 bool Player::isSubtitlesEnabled() {
     return show_subtitles;
