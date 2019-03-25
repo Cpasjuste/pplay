@@ -199,7 +199,6 @@ bool PlayerOSD::onInput(c2d::Input::Player *players) {
             setVisibility(Visibility::Hidden);
             main->getStatus()->show("Info...", "Stopping playback...");
             main->getPlayer()->stop();
-            main->getPlayer()->setFullscreen(false);
         }
 
         clock.restart();
@@ -209,6 +208,8 @@ bool PlayerOSD::onInput(c2d::Input::Player *players) {
 }
 
 void PlayerOSD::reset() {
+    index = 0;
+    highlight->setPosition(buttons.at((size_t) index)->getPosition().x, 0);
     btn_play->setVisibility(Visibility::Hidden);
     buttons.at((int) ButtonID::Pause)->setVisibility(Visibility::Visible);
     clock.restart();

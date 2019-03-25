@@ -58,7 +58,7 @@ void Filer::setSelection(int index) {
             int idx = index_start + i;
             // media info only cached in FilerSdmc now..
             if (files[idx].type == Io::Type::File && !files[idx].getMedia().isLoaded()) {
-                files[idx].media = main->getMediaThread()->getMediaInfo(files[idx], true);
+                files[idx].mediaInfo = main->getMediaThread()->getMediaInfo(files[idx], true);
             }
             items[i]->setFile(files[idx]);
             items[i]->setVisibility(Visibility::Visible);
@@ -114,7 +114,7 @@ bool Filer::onInput(c2d::Input::Player *players) {
         } else if (pplay::Utility::isMedia(getSelection())) {
             //std::string msg = "Loading..." + getSelection().name;
             //main->getStatus()->show("Please Wait...", msg, true, true);
-            if (!files[item_index].media.isLoaded()) {
+            if (!files[item_index].mediaInfo.isLoaded()) {
                 files[item_index].setMedia(main->getMediaThread()->getMediaInfo(files[item_index], false, true));
             }
             main->getPlayer()->load(files[item_index]);

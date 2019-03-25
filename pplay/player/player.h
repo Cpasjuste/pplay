@@ -9,19 +9,24 @@
 #include "../mpv/libmpv/render_gl.h"
 
 #include "menus/menu_video_submenu.h"
-#include "video_texture.h"
-#include "subtitles_texture.h"
 #include "media_config.h"
-
-#define MAX_STREAM_LIST_SIZE 32
+#include "media_file.h"
 
 class Main;
 
 class PlayerOSD;
 
+class VideoTexture;
+
 class Player : public c2d::Rectangle {
 
 public:
+
+    struct Mpv {
+        mpv_handle *handle = nullptr;
+        mpv_render_context *ctx = nullptr;
+        bool available = false;
+    };
 
     /*
     class Stream {
@@ -78,15 +83,9 @@ public:
 
     int seek(double position);
 
-    //bool isPlaying();
-
     bool isPaused();
 
     bool isStopped();
-
-    //bool isLoading();
-
-    bool isSubtitlesEnabled();
 
     bool isFullscreen();
 
@@ -98,13 +97,17 @@ public:
 
     void setSubtitleStream(int streamId);
 
+    int getVideoStream();
+
+    int getAudioStream();
+
+    int getSubtitleStream();
+
     void setCpuClock(const CpuClock &clock);
 
     long getPlaybackDuration();
 
     long getPlaybackPosition();
-
-    Main *getMain();
 
     PlayerOSD *getOSD();
 
@@ -114,12 +117,6 @@ public:
 
     MenuVideoSubmenu *getMenuSubtitlesStreams();
 
-    //Stream *getVideoStreams();
-
-    //Stream *getAudioStreams();
-
-    //Stream *getSubtitlesStreams();
-
     const std::string &getTitle() const;
 
     bool onInput(c2d::Input::Player *players) override;
@@ -128,9 +125,9 @@ private:
 
     void onUpdate() override;
 
-    void onDraw(c2d::Transform &transform, bool draw = true) override;
+    void onLoadEvent();
 
-    void onLoadedEvent();
+    void onStopEvent();
 
     // ui
     Main *main = nullptr;
@@ -140,26 +137,14 @@ private:
     MenuVideoSubmenu *menuVideoStreams = nullptr;
     MenuVideoSubmenu *menuAudioStreams = nullptr;
     MenuVideoSubmenu *menuSubtitlesStreams = nullptr;
-    std::string title;
+    MediaFile file;
 
     // player
     VideoTexture *texture = nullptr;
-    //Stream video_streams;
-    //Stream audio_streams;
-    //Stream subtitles_streams;
-
-    struct Mpv {
-        mpv_handle *handle = nullptr;
-        mpv_render_context *ctx = nullptr;
-        bool available = false;
-    };
+    MediaConfig *config = nullptr;
     Mpv mpv;
 
-    MediaConfig *config = nullptr;
-
-    bool show_subtitles = false;
     bool fullscreen = false;
-    bool isLoading = false;
 };
 
 #endif //PPLAY_PLAYER_H

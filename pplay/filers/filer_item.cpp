@@ -55,7 +55,7 @@ void FilerItem::setFile(const MediaFile &file) {
 
     if (file.type == Io::Type::File) {
         std::ostringstream ossInfo;
-        ossInfo << "Duration: " << pplay::Utility::formatTime(file.media.duration)
+        ossInfo << "Duration: " << pplay::Utility::formatTime(file.mediaInfo.duration)
                 << ", Size: " << pplay::Utility::formatSize(file.size);
         textInfo->setString(ossInfo.str());
         if (!file.getMedia().videos.empty()) {

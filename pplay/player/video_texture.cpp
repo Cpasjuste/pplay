@@ -7,7 +7,9 @@
 
 using namespace c2d;
 
-VideoTexture::VideoTexture(const c2d::Vector2f &size) : GLTextureBuffer(size, Format::RGBA8) {
+VideoTexture::VideoTexture(const c2d::Vector2f &size, Player::Mpv *_mpv) : GLTextureBuffer(size, Format::RGBA8) {
+
+    mpv = _mpv;
 
     float l_width = getSize().x / 5;
     rectLeft = new GradientRectangle({(l_width / 2) - 2, size.y / 2, l_width, size.y});
@@ -38,4 +40,27 @@ void VideoTexture::hideGradients() {
 void VideoTexture::showGradients() {
     rectLeftTween->play(TweenDirection::Forward);
     rectBottomTween->play(TweenDirection::Forward);
+}
+
+void VideoTexture::onDraw(c2d::Transform &transform, bool draw) {
+
+    if (draw && mpv && mpv->available) {
+        int flip_y{0};
+        mpv_opengl_fbo mpv_fbo{
+                .fbo = fbo,
+                .w = (int) getSize().x, .h = (int) getSize().y,
+                .internal_format = GL_RGBA8};
+        mpv_render_param r_params[] = {
+                {MPV_RENDER_PARAM_OPENGL_FBO, &mpv_fbo},
+                {MPV_RENDER_PARAM_FLIP_Y,     &flip_y},
+                {MPV_RENDER_PARAM_INVALID,    nullptr}
+        };
+
+        GLint vp[4];
+        glGetIntegerv(GL_VIEWPORT, vp);
+        mpv_render_context_render(mpv->ctx, r_params);
+        glViewport(vp[0], vp[1], (GLsizei) vp[2], (GLsizei) vp[3]);
+    }
+
+    GLTextureBuffer::onDraw(transform, draw);
 }

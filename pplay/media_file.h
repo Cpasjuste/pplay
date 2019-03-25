@@ -6,7 +6,7 @@
 #define PPLAY_MEDIAFILE_H
 
 #include "cross2d/skeleton/io.h"
-#include "media.h"
+#include "media_info.h"
 
 class MediaFile : public c2d::Io::File {
 
@@ -20,18 +20,18 @@ public:
         type = file.type;
         size = file.size;
         color = file.color;
-        this->media = media;
+        this->mediaInfo = media;
     }
 
     const MediaInfo getMedia() const {
-        return media;
+        return mediaInfo;
     }
 
     void setMedia(const MediaInfo &media) {
-        this->media = media;
+        this->mediaInfo = media;
     }
 
-    MediaInfo media;
+    MediaInfo mediaInfo;
 };
 
 #endif //PPLAY_MEDIAFILE_H

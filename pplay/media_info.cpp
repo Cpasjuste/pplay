@@ -5,7 +5,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "media.h"
+#include "media_info.h"
 #include "utility.h"
 
 bool MediaInfo::serialize(const std::string &dst) {
