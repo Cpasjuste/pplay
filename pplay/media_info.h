@@ -18,9 +18,10 @@ public:
     public:
         int id;
         std::string type;
-        std::string title;
+        std::string title = "Unknown";
         std::string language;
         std::string codec;
+        int channels;
         int bit_rate;
         int sample_rate;
         int width;

@@ -4,6 +4,7 @@
 
 #include "cross2d/c2d.h"
 #include "main.h"
+#include "utility.h"
 #include "menu_main_options_submenu.h"
 
 using namespace c2d;
@@ -28,6 +29,7 @@ MenuMainOptionsSubmenu::MenuMainOptionsSubmenu(
 }
 
 void MenuMainOptionsSubmenu::setSelection(const std::string &name) {
+
     for (auto btn : buttons) {
         if (Utility::toLower(btn->item.name) == Utility::toLower(name)) {
             highlight_selection->setPosition(btn->getPosition());
@@ -36,6 +38,14 @@ void MenuMainOptionsSubmenu::setSelection(const std::string &name) {
 }
 
 void MenuMainOptionsSubmenu::onOptionSelection(MenuItem *item) {
+
+    if (option_name == OPT_CPU_BOOST) {
+        if (item->name == "Enabled") {
+            pplay::Utility::setCpuClock(pplay::Utility::CpuClock::Max);
+        } else {
+            pplay::Utility::setCpuClock(pplay::Utility::CpuClock::Min);
+        }
+    }
 
     main->getConfig()->getOption(option_name)->setString(item->name);
     main->getConfig()->save();

@@ -13,6 +13,11 @@ namespace pplay {
 
     public:
 
+        enum class CpuClock {
+            Min = 0,
+            Max = 1
+        };
+
         static bool isMedia(const c2d::Io::File &file);
 
         static std::string formatTime(double seconds);
@@ -20,6 +25,9 @@ namespace pplay {
         static std::string formatTimeShort(double seconds);
 
         static std::string formatSize(size_t size);
+
+        static void setCpuClock(const CpuClock &clock);
+
     };
 }
 

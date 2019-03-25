@@ -11,10 +11,11 @@ using namespace c2d;
 MenuMain::MenuMain(Main *main, const c2d::FloatRect &rect, const std::vector<MenuItem> &items)
         : Menu(main, rect, "PPLAY", items, true) {
 
-    // buffering options
     std::vector<MenuItem> it;
+
+    // buffering options
     it.emplace_back(OPT_CPU_BOOST, "cpu.png", MenuItem::Position::Top);
-    it.emplace_back(OPT_BUFFER, "buffering.png", MenuItem::Position::Top);
+    //it.emplace_back(OPT_BUFFER, "buffering.png", MenuItem::Position::Top);
     menuMainOptions = new MenuMainOptions(main, rect, it);
     menuMainOptions->setLayer(2);
     menuMainOptions->setVisibility(Visibility::Hidden, false);
@@ -30,6 +31,7 @@ MenuMain::MenuMain(Main *main, const c2d::FloatRect &rect, const std::vector<Men
     menuMainOptionsCpu->setSelection(main->getConfig()->getOption(OPT_CPU_BOOST)->getString());
     main->add(menuMainOptionsCpu);
 
+#if 0
     // Buffering
     it.clear();
     it.emplace_back("Low", "", MenuItem::Position::Top);
@@ -41,6 +43,7 @@ MenuMain::MenuMain(Main *main, const c2d::FloatRect &rect, const std::vector<Men
     menuMainOptionsBuffer->setVisibility(Visibility::Hidden, false);
     menuMainOptionsBuffer->setSelection(main->getConfig()->getOption(OPT_BUFFER)->getString());
     main->add(menuMainOptionsBuffer);
+#endif
 
 }
 
@@ -80,7 +83,7 @@ bool MenuMain::onInput(c2d::Input::Player *players) {
 bool MenuMain::isMenuVisible() {
     return isVisible()
            || menuMainOptions->isVisible()
-           || menuMainOptionsBuffer->isVisible()
+           //|| menuMainOptionsBuffer->isVisible()
            || menuMainOptionsCpu->isVisible();
 }
 
@@ -89,9 +92,11 @@ MenuMainOptions *MenuMain::getMenuMainOptions() {
 }
 
 MenuMainOptionsSubmenu *MenuMain::getMenuMainOptionsSubmenu(const std::string &name) {
+#if 0
     if (name == OPT_BUFFER) {
         return menuMainOptionsBuffer;
     }
+#endif
     if (name == OPT_CPU_BOOST) {
         return menuMainOptionsCpu;
     }

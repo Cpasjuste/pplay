@@ -81,6 +81,7 @@ Player::Player(Main *_main) : Rectangle(_main->getSize()) {
 
 Player::~Player() {
     if (mpv.available) {
+        mpv.available = false;
         mpv_render_context_free(mpv.ctx);
         mpv_terminate_destroy(mpv.handle);
     }
@@ -153,8 +154,25 @@ void Player::onLoadEvent() {
                         if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_STRING) {
                             stream.codec = node.u.list->values[i].u.list->values[n].u.string;
                         }
+                    } else if (key == "demux-w") {
+                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_INT64) {
+                            stream.width = (int) node.u.list->values[i].u.list->values[n].u.int64;
+                        }
+                    } else if (key == "demux-h") {
+                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_INT64) {
+                            stream.height = (int) node.u.list->values[i].u.list->values[n].u.int64;
+                        }
+                    } else if (key == "demux-samplerate") {
+                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_INT64) {
+                            stream.sample_rate = (int) node.u.list->values[i].u.list->values[n].u.int64;
+                        }
+                    } else if (key == "demux-channel-count") {
+                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_INT64) {
+                            stream.channels = (int) node.u.list->values[i].u.list->values[n].u.int64;
+                        }
                     }
                 }
+                printf("==========\n");
                 streams.push_back(stream);
             }
         }
@@ -172,12 +190,13 @@ void Player::onLoadEvent() {
 
     file.mediaInfo = mediaInfo;
 
+    TODO: fix text pos Y in cross2d?
     // create menus
     if (!file.mediaInfo.videos.empty()) {
         // videos menu options
         std::vector<MenuItem> items;
         for (auto &stream : file.mediaInfo.videos) {
-            items.emplace_back("Lang: " + stream.language, "", MenuItem::Position::Top, stream.id);
+            items.emplace_back(stream.title + "\nLanguage: " + stream.language, "", MenuItem::Position::Top, stream.id);
         }
         menuVideoStreams = new MenuVideoSubmenu(
                 main, main->getMenuVideo()->getGlobalBounds(), "VIDEO", items, MENU_VIDEO_TYPE_VID);
@@ -190,7 +209,7 @@ void Player::onLoadEvent() {
         // audios menu options
         std::vector<MenuItem> items;
         for (auto &stream : file.mediaInfo.audios) {
-            items.emplace_back("Lang: " + stream.language, "", MenuItem::Position::Top, stream.id);
+            items.emplace_back(stream.title + "\nLanguage: " + stream.language, "", MenuItem::Position::Top, stream.id);
         }
         menuAudioStreams = new MenuVideoSubmenu(
                 main, main->getMenuVideo()->getGlobalBounds(), "AUDIO", items, MENU_VIDEO_TYPE_AUD);
@@ -204,7 +223,7 @@ void Player::onLoadEvent() {
         std::vector<MenuItem> items;
         items.emplace_back("None", "", MenuItem::Position::Top, -1);
         for (auto &stream : file.mediaInfo.subtitles) {
-            items.emplace_back("Lang: " + stream.language, "", MenuItem::Position::Top, stream.id);
+            items.emplace_back(stream.title + "\nLanguage: " + stream.language, "", MenuItem::Position::Top, stream.id);
         }
         menuSubtitlesStreams = new MenuVideoSubmenu(
                 main, main->getMenuVideo()->getGlobalBounds(), "SUBTITLES", items, MENU_VIDEO_TYPE_SUB);
@@ -249,11 +268,14 @@ void Player::onStopEvent() {
         menuSubtitlesStreams = nullptr;
     }
 
-    setCpuClock(CpuClock::Min);
+    pplay::Utility::setCpuClock(pplay::Utility::CpuClock::Min);
 #ifdef __SWITCH__
     appletSetMediaPlaybackState(false);
 #endif
-    if (isStopped()) {
+
+    if (main->isExiting()) {
+        main->setRunningStop();
+    } else if (isStopped()) {
         setFullscreen(false, true);
     }
 }
@@ -363,15 +385,19 @@ bool Player::onInput(c2d::Input::Player *players) {
 }
 
 void Player::setVideoStream(int streamId) {
-    std::string cmd = "no-osd set vid " + std::to_string(streamId);
-    mpv_command_string(mpv.handle, cmd.c_str());
-    config->setStream(OPT_STREAM_VID, streamId);
+    if (streamId > -1) {
+        std::string cmd = "no-osd set vid " + std::to_string(streamId);
+        mpv_command_string(mpv.handle, cmd.c_str());
+        config->setStream(OPT_STREAM_VID, streamId);
+    }
 }
 
 void Player::setAudioStream(int streamId) {
-    std::string cmd = "no-osd set aid " + std::to_string(streamId);
-    mpv_command_string(mpv.handle, cmd.c_str());
-    config->setStream(OPT_STREAM_AUD, streamId);
+    if (streamId > -1) {
+        std::string cmd = "no-osd set aid " + std::to_string(streamId);
+        mpv_command_string(mpv.handle, cmd.c_str());
+        config->setStream(OPT_STREAM_AUD, streamId);
+    }
 }
 
 void Player::setSubtitleStream(int streamId) {
@@ -471,7 +497,7 @@ void Player::pause() {
         mpv_command_string(mpv.handle, "set pause yes");
     }
 
-    setCpuClock(CpuClock::Min);
+    pplay::Utility::setCpuClock(pplay::Utility::CpuClock::Min);
 #ifdef __SWITCH__
     appletSetMediaPlaybackState(false);
 #endif
@@ -483,7 +509,9 @@ void Player::resume() {
         mpv_command_string(mpv.handle, "set pause no");
     }
 
-    setCpuClock(CpuClock::Max);
+    if (main->getConfig()->getOption(OPT_CPU_BOOST)->getString() == "Enabled") {
+        pplay::Utility::setCpuClock(pplay::Utility::CpuClock::Max);
+    }
 #ifdef __SWITCH__
     appletSetMediaPlaybackState(true);
 #endif
@@ -505,26 +533,6 @@ void Player::stop() {
         // stop mpv playback
         mpv_command_string(mpv.handle, "stop");
     }
-}
-
-void Player::setCpuClock(const CpuClock &clock) {
-#ifdef __SWITCH__
-    if (main->getConfig()->getOption(OPT_CPU_BOOST)->getString() == "Enabled") {
-        if (clock == CpuClock::Min) {
-            if (SwitchSys::getClock(SwitchSys::Module::Cpu) != SwitchSys::getClockStock(SwitchSys::Module::Cpu)) {
-                int clock_old = SwitchSys::getClock(SwitchSys::Module::Cpu);
-                SwitchSys::setClock(SwitchSys::Module::Cpu, (int) SwitchSys::CPUClock::Stock);
-                printf("restoring cpu speed (old: %i, new: %i)\n",
-                       clock_old, SwitchSys::getClock(SwitchSys::Module::Cpu));
-            }
-        } else {
-            int clock_old = SwitchSys::getClock(SwitchSys::Module::Cpu);
-            SwitchSys::setClock(SwitchSys::Module::Cpu, (int) SwitchSys::CPUClock::Max);
-            printf("setting max cpu speed (old: %i, new: %i)\n",
-                   clock_old, SwitchSys::getClock(SwitchSys::Module::Cpu));
-        }
-    }
-#endif
 }
 
 long Player::getPlaybackDuration() {

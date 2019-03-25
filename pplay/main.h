@@ -60,7 +60,11 @@ public:
 
     void show(MenuType type);
 
+    bool isExiting();
+
     bool isRunning();
+
+    void setRunningStop();
 
     MenuMain *getMenuMain();
 
@@ -90,10 +94,6 @@ public:
 
     void quit();
 
-#ifndef NDEBUG
-    c2d::Text *debugText = nullptr;
-#endif
-
 private:
 
     bool onInput(c2d::Input::Player *players) override;
@@ -116,6 +116,8 @@ private:
     MenuVideo *menu_video = nullptr;
     MediaThread *mediaInfoThread = nullptr;
     float scaling = 1;
+
+    bool exit = false;
     bool running = true;
 };
 

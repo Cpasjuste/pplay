@@ -28,47 +28,6 @@ public:
         bool available = false;
     };
 
-    /*
-    class Stream {
-    public:
-        Stream() {
-            reset();
-        }
-
-        void reset() {
-            for (int &stream : streams) {
-                stream = -1;
-            }
-            size = 0;
-            current = 0;
-        }
-
-        void setCurrent(int streamId) {
-            for (int i = 0; i < size; i++) {
-                if (streamId == streams[i]) {
-                    current = i;
-                }
-            }
-        }
-
-        int getCurrent() {
-            if (current > -1 && current < size) {
-                return streams[current];
-            }
-            return -1;
-        }
-
-        int streams[MAX_STREAM_LIST_SIZE]{};
-        int size = 0;
-        int current = 0;
-    };
-    */
-
-    enum class CpuClock {
-        Min = 0,
-        Max = 1
-    };
-
     explicit Player(Main *main);
 
     ~Player();
@@ -102,8 +61,6 @@ public:
     int getAudioStream();
 
     int getSubtitleStream();
-
-    void setCpuClock(const CpuClock &clock);
 
     long getPlaybackDuration();
 

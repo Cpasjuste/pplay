@@ -7,6 +7,13 @@
 
 #include "cross2d/skeleton/io.h"
 #include "cross2d/skeleton/utility.h"
+
+#ifdef __SWITCH__
+
+#include "cross2d/platforms/switch/switch_sys.h"
+
+#endif
+
 #include "utility.h"
 
 using namespace pplay;
@@ -106,4 +113,23 @@ std::string Utility::formatSize(size_t size) {
 
     double size_d = (float) size + (float) rem / 1024.0;
     return convertToString(roundOff(size_d)) + " " + sizes[div];
+}
+
+void Utility::setCpuClock(const CpuClock &clock) {
+#ifdef __SWITCH__
+    if (clock == CpuClock::Min) {
+        if (c2d::SwitchSys::getClock(c2d::SwitchSys::Module::Cpu) !=
+            c2d::SwitchSys::getClockStock(c2d::SwitchSys::Module::Cpu)) {
+            int clock_old = c2d::SwitchSys::getClock(c2d::SwitchSys::Module::Cpu);
+            c2d::SwitchSys::setClock(c2d::SwitchSys::Module::Cpu, (int) c2d::SwitchSys::CPUClock::Stock);
+            printf("restoring cpu speed (old: %i, new: %i)\n",
+                   clock_old, c2d::SwitchSys::getClock(c2d::SwitchSys::Module::Cpu));
+        }
+    } else {
+        int clock_old = c2d::SwitchSys::getClock(c2d::SwitchSys::Module::Cpu);
+        c2d::SwitchSys::setClock(c2d::SwitchSys::Module::Cpu, (int) c2d::SwitchSys::CPUClock::Max);
+        printf("setting max cpu speed (old: %i, new: %i)\n",
+               clock_old, c2d::SwitchSys::getClock(c2d::SwitchSys::Module::Cpu));
+    }
+#endif
 }

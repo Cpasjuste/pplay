@@ -69,7 +69,7 @@ StatusBar::StatusBar(Main *main) : GradientRectangle({0, 0, main->getSize().x, 3
     setPosition(0, -height);
     add(new TweenPosition(getPosition(), {0, 0}, 0.5f));
 
-    battery = new Battery({main->getSize().x - 16, height / 2 + 1, (height - 16) * 2, height - 16});
+    battery = new Battery({main->getSize().x - 16, height / 2 + 1, (height - 16) * 2, height / 2});
     battery->setOrigin(Origin::Right);
     add(battery);
 

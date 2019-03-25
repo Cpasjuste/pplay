@@ -14,8 +14,8 @@ PPLAYConfig::PPLAYConfig(Main *main, int version)
     addOption({OPT_HOME_PATH, main->getIo()->getDataWritePath()});
     addOption({OPT_LAST_PATH, main->getIo()->getDataWritePath()});
     addOption({OPT_CACHE_MEDIA_INFO, (int) 1});
-    addOption({OPT_BUFFER, "Low"}); // Low, Medium, High, VeryHigh
-    addOption({OPT_CPU_BOOST, "Enabled"}); // Disabled, Enabled
+    //addOption({OPT_BUFFER, "Low"}); // Low, Medium, High, VeryHigh
+    addOption({OPT_CPU_BOOST, "Disabled"}); // Disabled, Enabled
 
     // load the configuration from file, overwriting default values
     load();
