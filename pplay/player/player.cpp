@@ -39,7 +39,7 @@ Player::Player(Main *_main) : Rectangle(_main->getSize()) {
         return;
     }
 
-    std::string mpv_home = main->getIo()->getDataWritePath() + "config";
+    std::string mpv_home = main->getIo()->getDataWritePath() + "mpv";
     printf("config: %s\n", mpv_home.c_str());
     mpv_set_option_string(mpv.handle, "config-dir", mpv_home.c_str());
     mpv_set_option_string(mpv.handle, "terminal", "yes");
