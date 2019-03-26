@@ -6,6 +6,7 @@
 #include "filers/filer_sdmc.h"
 #include "filers/filer_http.h"
 #include "filers/filer_ftp.h"
+#include "filers/filer_smb.h"
 #include "menus/menu_main.h"
 #include "menus/menu_video.h"
 
@@ -77,18 +78,26 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     mediaInfoThread = new MediaThread(this, getIo()->getDataWritePath() + "cache/");
 
     // create filers
+    // sdmc
     FloatRect filerRect = {0, 0, (getSize().x / 2) - 16, getSize().y - 32 - 64};
     filerSdmc = new FilerSdmc(this, "/", filerRect);
     filerSdmc->setLayer(1);
     add(filerSdmc);
+    // http
     filerHttp = new FilerHttp(this, filerRect);
     filerHttp->setLayer(1);
     filerHttp->setVisibility(Visibility::Hidden);
     add(filerHttp);
+    // ftp
     filerFtp = new FilerFtp(this, filerRect);
     filerFtp->setLayer(1);
     filerFtp->setVisibility(Visibility::Hidden);
     add(filerFtp);
+    // smb
+    filerSmb = new FilerSmb(this, filerRect);
+    filerSmb->setLayer(1);
+    filerSmb->setVisibility(Visibility::Hidden);
+    add(filerSmb);
     filer = filerSdmc;
     filer->getDir(config->getOption(OPT_LAST_PATH)->getString());
 
@@ -207,6 +216,7 @@ void Main::show(MenuType type) {
         filerSdmc->setVisibility(Visibility::Visible);
         filerHttp->setVisibility(Visibility::Hidden);
         filerFtp->setVisibility(Visibility::Hidden);
+        filerSmb->setVisibility(Visibility::Hidden);
         filer = filerSdmc;
         if (!filer->getDir(config->getOption(OPT_HOME_PATH)->getString())) {
             if (filer->getDir("/")) {
@@ -221,12 +231,19 @@ void Main::show(MenuType type) {
     std::string net_path = config->getOption(OPT_NETWORK)->getString();
     if (Utility::startWith(net_path, "http:")) {
         filerFtp->setVisibility(Visibility::Hidden);
+        filerSmb->setVisibility(Visibility::Hidden);
         filerHttp->setVisibility(Visibility::Visible);
         filer = filerHttp;
     } else if (Utility::startWith(net_path, "ftp:")) {
         filerHttp->setVisibility(Visibility::Hidden);
+        filerSmb->setVisibility(Visibility::Hidden);
         filerFtp->setVisibility(Visibility::Visible);
         filer = filerFtp;
+    } else if (Utility::startWith(net_path, "smb:")) {
+        filerHttp->setVisibility(Visibility::Hidden);
+        filerFtp->setVisibility(Visibility::Hidden);
+        filerSmb->setVisibility(Visibility::Visible);
+        filer = filerSmb;
     } else {
         messageBox->show("OOPS", "NETWORK path is wrong (see pplay.cfg)", "OK");
         show(MenuType::Home);

@@ -50,7 +50,7 @@ set(PPLAY_CFLAGS
         -DM_SQRT2=1.41421356237309504880
         )
 
-set(PPLAY_LDFLAGS curl)
+set(PPLAY_LDFLAGS curl dsm tasn1)
 
 ##############
 # mpv

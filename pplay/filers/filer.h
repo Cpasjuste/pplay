@@ -47,6 +47,8 @@ private:
 
     friend class FilerFtp;
 
+    friend class FilerSmb;
+
     virtual void enter(int index);
 
     virtual void exit();

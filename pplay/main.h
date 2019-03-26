@@ -108,6 +108,7 @@ private:
     Filer *filerSdmc = nullptr;
     Filer *filerHttp = nullptr;
     Filer *filerFtp = nullptr;
+    Filer *filerSmb = nullptr;
     Filer *filer = nullptr;
     StatusBar *statusBar = nullptr;
     c2d::Texture *title = nullptr;
