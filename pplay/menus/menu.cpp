@@ -24,9 +24,14 @@ MenuButton::MenuButton(Main *main, const MenuItem &item, const FloatRect &rect) 
 
     name = new Text(item.name, main->getFontSize(Main::FontSize::Medium), main->getFont());
     name->setOrigin(Origin::Left);
-    name->setPosition((ICON_SIZE + 32) * main->getScaling(), getSize().y / 2);
-    name->setWidth((getSize().x - ICON_SIZE + 32) * main->getScaling());
     name->setFillColor(COLOR_FONT);
+    if (!item.icon.empty()) {
+        name->setPosition((ICON_SIZE + 32) * main->getScaling(), getSize().y / 2);
+        name->setWidth((getSize().x - ICON_SIZE + 32) * main->getScaling());
+    } else {
+        name->setPosition(16 * main->getScaling(), getSize().y / 2);
+        name->setWidth((getSize().x - (16 * main->getScaling())) * main->getScaling());
+    }
     add(name);
 }
 
@@ -123,4 +128,9 @@ void Menu::setVisibility(c2d::Visibility visibility, bool tweenPlay) {
 
 MenuItem *Menu::getSelection() {
     return &buttons[index]->item;
+}
+
+void Menu::reset() {
+    index = 0;
+    highlight->setPosition(0, buttons[index]->getPosition().y);
 }

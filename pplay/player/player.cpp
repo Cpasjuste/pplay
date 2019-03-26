@@ -94,7 +94,7 @@ bool Player::load(const MediaFile &f) {
 
     file = f;
 
-    const char *cmd[] = {"loadfile", file.path.c_str(), "replace", "pause=yes", nullptr};
+    const char *cmd[] = {"loadfile", file.path.c_str(), "replace", "pause=yes,speed=1", nullptr};
     int res = mpv_command(mpv.handle, cmd);
     if (res != 0) {
         main->getStatus()->show("Error...", "Could not play file:\n" + std::string(mpv_error_string(res)));
@@ -172,7 +172,6 @@ void Player::onLoadEvent() {
                         }
                     }
                 }
-                printf("==========\n");
                 streams.push_back(stream);
             }
         }
@@ -190,13 +189,14 @@ void Player::onLoadEvent() {
 
     file.mediaInfo = mediaInfo;
 
-    TODO: fix text pos Y in cross2d?
     // create menus
     if (!file.mediaInfo.videos.empty()) {
         // videos menu options
         std::vector<MenuItem> items;
         for (auto &stream : file.mediaInfo.videos) {
-            items.emplace_back(stream.title + "\nLanguage: " + stream.language, "", MenuItem::Position::Top, stream.id);
+            items.emplace_back(stream.title + "\n" + stream.language + " " + stream.codec + " "
+                               + std::to_string(stream.width) + "x" + std::to_string(stream.height),
+                               "", MenuItem::Position::Top, stream.id);
         }
         menuVideoStreams = new MenuVideoSubmenu(
                 main, main->getMenuVideo()->getGlobalBounds(), "VIDEO", items, MENU_VIDEO_TYPE_VID);
@@ -209,7 +209,10 @@ void Player::onLoadEvent() {
         // audios menu options
         std::vector<MenuItem> items;
         for (auto &stream : file.mediaInfo.audios) {
-            items.emplace_back(stream.title + "\nLanguage: " + stream.language, "", MenuItem::Position::Top, stream.id);
+            items.emplace_back(stream.title + "\n" + stream.language + " "
+                               + stream.codec + " " + std::to_string(stream.channels) + "ch "
+                               + std::to_string(stream.sample_rate / 1000) + " Khz",
+                               "", MenuItem::Position::Top, stream.id);
         }
         menuAudioStreams = new MenuVideoSubmenu(
                 main, main->getMenuVideo()->getGlobalBounds(), "AUDIO", items, MENU_VIDEO_TYPE_AUD);
@@ -223,7 +226,7 @@ void Player::onLoadEvent() {
         std::vector<MenuItem> items;
         items.emplace_back("None", "", MenuItem::Position::Top, -1);
         for (auto &stream : file.mediaInfo.subtitles) {
-            items.emplace_back(stream.title + "\nLanguage: " + stream.language, "", MenuItem::Position::Top, stream.id);
+            items.emplace_back(stream.title + "\nLang: " + stream.language, "", MenuItem::Position::Top, stream.id);
         }
         menuSubtitlesStreams = new MenuVideoSubmenu(
                 main, main->getMenuVideo()->getGlobalBounds(), "SUBTITLES", items, MENU_VIDEO_TYPE_SUB);
@@ -250,6 +253,7 @@ void Player::onLoadEvent() {
 
 void Player::onStopEvent() {
 
+    main->getMenuVideo()->reset();
     osd->reset();
 
     // Audio
@@ -356,20 +360,33 @@ void Player::onUpdate() {
 
 bool Player::onInput(c2d::Input::Player *players) {
 
+    unsigned int keys = players[0].keys;
+
     if (isStopped()
         || main->getFiler()->isVisible()
         || main->getMenuVideo()->isVisible()
-        || osd->isVisible()
         || (getMenuVideoStreams() && getMenuVideoStreams()->isVisible())
         || (getMenuAudioStreams() && getMenuAudioStreams()->isVisible())
         || (getMenuSubtitlesStreams() && getMenuSubtitlesStreams()->isVisible())) {
         return C2DObject::onInput(players);
     }
 
+    if (keys & c2d::Input::Key::Fire5) {
+        setSpeed(1);
+    } else if (keys & c2d::Input::Key::Fire6) {
+        double new_speed = getSpeed() * 2;
+        if (new_speed <= 100) {
+            setSpeed(new_speed);
+        }
+    }
+
+    if (osd->isVisible()) {
+        return C2DObject::onInput(players);
+    }
+
     //////////////////
     /// handle inputs
     //////////////////
-    unsigned int keys = players[0].keys;
     if ((keys & Input::Key::Fire1) || (keys & Input::Key::Down)) {
         if (!osd->isVisible()) {
             osd->setVisibility(Visibility::Visible, true);
@@ -419,12 +436,74 @@ int Player::getSubtitleStream() {
     return config->getStream(OPT_STREAM_SUB);
 }
 
-int Player::seek(double seek_position) {
+int Player::seek(double position) {
 
-    std::string cmd = "no-osd seek " + std::to_string(seek_position) + " absolute";
+    std::string cmd = "no-osd seek " + std::to_string(position) + " absolute";
     mpv_command_string(mpv.handle, cmd.c_str());
 
     return 0;
+}
+
+void Player::setSpeed(double speed) {
+
+    std::string cmd = "set speed " + std::to_string(speed);
+    mpv_command_string(mpv.handle, cmd.c_str());
+    osd->setVisibility(Visibility::Visible, true);
+}
+
+double Player::getSpeed() {
+
+    double res = -1;
+
+    if (mpv.available) {
+        mpv_get_property(mpv.handle, "speed", MPV_FORMAT_DOUBLE, &res);
+    }
+
+    return res;
+}
+
+void Player::pause() {
+
+    if (mpv.available) {
+        mpv_command_string(mpv.handle, "set pause yes");
+    }
+
+    pplay::Utility::setCpuClock(pplay::Utility::CpuClock::Min);
+#ifdef __SWITCH__
+    appletSetMediaPlaybackState(false);
+#endif
+}
+
+void Player::resume() {
+
+    if (mpv.available) {
+        mpv_command_string(mpv.handle, "set pause no");
+    }
+
+    if (main->getConfig()->getOption(OPT_CPU_BOOST)->getString() == "Enabled") {
+        pplay::Utility::setCpuClock(pplay::Utility::CpuClock::Max);
+    }
+#ifdef __SWITCH__
+    appletSetMediaPlaybackState(true);
+#endif
+}
+
+void Player::stop() {
+
+    printf("Player::stop\n");
+    if (mpv.available && !isStopped()) {
+        // save position in stream
+        if (config) {
+            long position = getPlaybackPosition();
+            if (position > 5) {
+                config->setPosition((int) position - 5);
+            } else {
+                config->setPosition(0);
+            }
+        }
+        // stop mpv playback
+        mpv_command_string(mpv.handle, "stop");
+    }
 }
 
 bool Player::isStopped() {
@@ -491,50 +570,6 @@ void Player::setFullscreen(bool fs, bool hide) {
     }
 }
 
-void Player::pause() {
-
-    if (mpv.available) {
-        mpv_command_string(mpv.handle, "set pause yes");
-    }
-
-    pplay::Utility::setCpuClock(pplay::Utility::CpuClock::Min);
-#ifdef __SWITCH__
-    appletSetMediaPlaybackState(false);
-#endif
-}
-
-void Player::resume() {
-
-    if (mpv.available) {
-        mpv_command_string(mpv.handle, "set pause no");
-    }
-
-    if (main->getConfig()->getOption(OPT_CPU_BOOST)->getString() == "Enabled") {
-        pplay::Utility::setCpuClock(pplay::Utility::CpuClock::Max);
-    }
-#ifdef __SWITCH__
-    appletSetMediaPlaybackState(true);
-#endif
-}
-
-void Player::stop() {
-
-    printf("Player::stop\n");
-    if (mpv.available && !isStopped()) {
-        // save position in stream
-        if (config) {
-            long position = getPlaybackPosition();
-            if (position > 5) {
-                config->setPosition((int) position - 5);
-            } else {
-                config->setPosition(0);
-            }
-        }
-        // stop mpv playback
-        mpv_command_string(mpv.handle, "stop");
-    }
-}
-
 long Player::getPlaybackDuration() {
     long duration = 0;
     if (mpv.available) {
@@ -570,3 +605,4 @@ const std::string &Player::getTitle() const {
 PlayerOSD *Player::getOSD() {
     return osd;
 }
+

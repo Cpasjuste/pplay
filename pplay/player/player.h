@@ -28,9 +28,14 @@ public:
         bool available = false;
     };
 
+    enum class Direction {
+        Forward = 0,
+        Backward = 1
+    };
+
     explicit Player(Main *main);
 
-    ~Player();
+    ~Player() override;
 
     bool load(const MediaFile &file);
 
@@ -41,6 +46,10 @@ public:
     void stop();
 
     int seek(double position);
+
+    void setSpeed(double speed);
+
+    double getSpeed();
 
     bool isPaused();
 

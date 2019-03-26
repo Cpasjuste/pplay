@@ -52,6 +52,8 @@ public:
     explicit Menu(Main *main, const c2d::FloatRect &rect,
                   const std::string &title, const std::vector<MenuItem> &items, bool left);
 
+    void reset();
+
     void setVisibility(c2d::Visibility visibility, bool tweenPlay = true) override;
 
     virtual void onOptionSelection(MenuItem *item) {};
