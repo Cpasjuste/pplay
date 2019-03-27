@@ -14,21 +14,13 @@ public:
 
     MediaFile() = default;
 
-    explicit MediaFile(const c2d::Io::File &file, const MediaInfo &media = {}) {
+    explicit MediaFile(const c2d::Io::File &file, const MediaInfo &media) {
         name = file.name;
         path = file.path;
         type = file.type;
         size = file.size;
         color = file.color;
-        this->mediaInfo = media;
-    }
-
-    const MediaInfo getMedia() const {
-        return mediaInfo;
-    }
-
-    void setMedia(const MediaInfo &media) {
-        this->mediaInfo = media;
+        mediaInfo = media;
     }
 
     MediaInfo mediaInfo;

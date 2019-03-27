@@ -39,12 +39,14 @@ bool FilerSdmc::getDir(const std::string &p) {
     }), _files.end());
 
 #ifdef __SWITCH__
-    files.emplace_back(Io::File{"..", "..", Io::Type::Directory, 0, COLOR_BLUE});
+    Io::File file("..", "..", Io::Type::Directory, 0, COLOR_BLUE);
+    files.emplace_back(file, MediaInfo(file));
 #endif
     for (auto &file : _files) {
-        bool fromCache = main->getMediaThread()->isCaching() == 0;
-        files.emplace_back(file, main->getMediaThread()->getMediaInfo(file, fromCache));
+        files.emplace_back(file, MediaInfo(file));
     }
+
+    setSelection(0);
 
     return true;
 }

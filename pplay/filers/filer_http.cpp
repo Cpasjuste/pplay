@@ -41,7 +41,7 @@ bool FilerHttp::getDir(const std::string &p) {
     path = browser->unescape(browser->geturl());
 
     // add up/back ("..")
-    files.emplace_back(Io::File("..", "..", Io::Type::Directory, 0, COLOR_BLUE_LIGHT));
+    files.emplace_back(Io::File("..", "..", Io::Type::Directory, 0, COLOR_BLUE_LIGHT), MediaInfo());
 
     for (int i = 0; i < browser->links.size(); i++) {
 
@@ -63,13 +63,15 @@ bool FilerHttp::getDir(const std::string &p) {
             std::string str = browser->geturl() + browser->links[i].url();
             Io::File file(Utility::removeLastSlash(browser->links[i].name()), str, type);
             if (pplay::Utility::isMedia(file)) {
-                files.emplace_back(file);
+                files.emplace_back(file, MediaInfo(file));
             }
         } else {
-            files.emplace_back(Io::File(Utility::removeLastSlash(browser->links[i].name()),
-                                        browser->links[i].url(), type));
+            Io::File file(Utility::removeLastSlash(browser->links[i].name()), browser->links[i].url(), type);
+            files.emplace_back(file, MediaInfo(file));
         }
     }
+
+    setSelection(0);
 
     return true;
 }

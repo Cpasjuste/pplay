@@ -28,20 +28,38 @@ public:
         int height;
     };
 
-    std::string title;
+    class Playback {
+    public:
+        int vid_id = -1;
+        int aud_id = -1;
+        int sub_id = -1;
+        int position = 0;
+    };
+
+    MediaInfo() = default;
+
+    explicit MediaInfo(const c2d::Io::File &file);
+
+    void save();
+
+    // media information
+    std::string title = "Unknown";
     std::string path;
     long duration = 0;
     int bit_rate = 0;
     std::vector<Stream> videos;
     std::vector<Stream> audios;
     std::vector<Stream> subtitles;
-    int loaded = 0;
+    // media playback status
+    Playback playbackInfo;
 
-    bool isLoaded() const;
+private:
 
-    bool serialize(const std::string &dst);
+    std::string serialize_path;
 
-    bool deserialize(const std::string &src);
+    bool serialize();
+
+    bool deserialize();
 
     void debut_print();
 };

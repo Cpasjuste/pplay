@@ -23,6 +23,8 @@ public:
 
     ~Filer();
 
+    void setMediaInfo(const MediaFile &target, const MediaInfo &mediaInfo);
+
     virtual bool getDir(const std::string &path) { return false; };
 
     virtual std::string getPath();
@@ -38,8 +40,6 @@ public:
     bool onInput(c2d::Input::Player *players) override;
 
 private:
-
-    void onDraw(c2d::Transform &transform, bool draw = true) override;
 
     friend class FilerSdmc;
 

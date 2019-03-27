@@ -9,7 +9,6 @@
 #include "../mpv/libmpv/render_gl.h"
 
 #include "menus/menu_video_submenu.h"
-#include "media_config.h"
 #include "media_file.h"
 
 class Main;
@@ -26,11 +25,6 @@ public:
         mpv_handle *handle = nullptr;
         mpv_render_context *ctx = nullptr;
         bool available = false;
-    };
-
-    enum class Direction {
-        Forward = 0,
-        Backward = 1
     };
 
     explicit Player(Main *main);
@@ -71,6 +65,10 @@ public:
 
     int getSubtitleStream();
 
+    int getVideoBitrate();
+
+    int getAudioBitrate();
+
     long getPlaybackDuration();
 
     long getPlaybackPosition();
@@ -107,7 +105,6 @@ private:
 
     // player
     VideoTexture *texture = nullptr;
-    MediaConfig *config = nullptr;
     Mpv mpv;
 
     bool fullscreen = false;

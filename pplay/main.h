@@ -9,7 +9,6 @@
 #include "filers/filer.h"
 #include "player/player.h"
 #include "pplay_config.h"
-#include "media_thread.h"
 #include "menus/menu.h"
 #include "menus/menu_main.h"
 #include "menus/menu_video.h"
@@ -70,8 +69,6 @@ public:
 
     MenuVideo *getMenuVideo();
 
-    MediaThread *getMediaThread();
-
     Player *getPlayer();
 
     Filer *getFiler();
@@ -115,7 +112,6 @@ private:
     Player *player = nullptr;
     MenuMain *menu_main = nullptr;
     MenuVideo *menu_video = nullptr;
-    MediaThread *mediaInfoThread = nullptr;
     float scaling = 1;
 
     bool exit = false;

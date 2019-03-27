@@ -5,16 +5,33 @@
 #include <fstream>
 #include <iostream>
 
+#include "cross2d/c2d.h"
 #include "media_info.h"
 #include "utility.h"
 
-bool MediaInfo::serialize(const std::string &dst) {
+MediaInfo::MediaInfo(const c2d::Io::File &file) {
+
+    std::string hash = std::to_string(std::hash<std::string>()(file.path));
+    serialize_path = c2d_renderer->getIo()->getDataWritePath() + "cache/" + hash;
+
+    if (!pplay::Utility::isMedia(file)) {
+        return;
+    }
+
+    deserialize();
+}
+
+void MediaInfo::save() {
+    serialize();
+}
+
+bool MediaInfo::serialize() {
 
     int count;
     size_t size;
     std::fstream fs;
 
-    fs.open(dst, std::ios::binary | std::ios::out);
+    fs.open(serialize_path.c_str(), std::ios::binary | std::ios::out);
     if (!fs.is_open()) {
         return false;
     }
@@ -38,6 +55,12 @@ bool MediaInfo::serialize(const std::string &dst) {
     // bit rate
     fs.write((char *) &bit_rate, sizeof(bit_rate));
 
+    // media playback status
+    fs.write((char *) &playbackInfo.vid_id, sizeof(playbackInfo.vid_id));
+    fs.write((char *) &playbackInfo.aud_id, sizeof(playbackInfo.aud_id));
+    fs.write((char *) &playbackInfo.sub_id, sizeof(playbackInfo.sub_id));
+    fs.write((char *) &playbackInfo.position, sizeof(playbackInfo.position));
+
     // video streams
     count = (int) videos.size();
     fs.write((char *) &count, sizeof(count));
@@ -45,6 +68,10 @@ bool MediaInfo::serialize(const std::string &dst) {
     for (auto &stream : videos) {
         // id
         fs.write((char *) &stream.id, sizeof(stream.id));
+        // type
+        size = stream.type.size();
+        fs.write((char *) &size, sizeof(size_t));
+        fs.write((char *) stream.type.c_str(), size);
         // title
         size = stream.title.size();
         fs.write((char *) &size, sizeof(size_t));
@@ -71,6 +98,10 @@ bool MediaInfo::serialize(const std::string &dst) {
     for (auto &stream : audios) {
         // id
         fs.write((char *) &stream.id, sizeof(stream.id));
+        // type
+        size = stream.type.size();
+        fs.write((char *) &size, sizeof(size_t));
+        fs.write((char *) stream.type.c_str(), size);
         // title
         size = stream.title.size();
         fs.write((char *) &size, sizeof(size_t));
@@ -95,6 +126,10 @@ bool MediaInfo::serialize(const std::string &dst) {
     for (auto &stream : subtitles) {
         // id
         fs.write((char *) &stream.id, sizeof(stream.id));
+        // type
+        size = stream.type.size();
+        fs.write((char *) &size, sizeof(size_t));
+        fs.write((char *) stream.type.c_str(), size);
         // title
         size = stream.title.size();
         fs.write((char *) &size, sizeof(size_t));
@@ -114,18 +149,14 @@ bool MediaInfo::serialize(const std::string &dst) {
     return true;
 }
 
-bool MediaInfo::deserialize(const std::string &src) {
+bool MediaInfo::deserialize() {
 
     int count;
     char *data;
     size_t size;
     std::fstream fs;
 
-    // from here, assume the file (media information) is loaded
-    // to prevent endless loading on fail
-    loaded = 1;
-
-    fs.open(src, std::ios::binary | std::ios::in);
+    fs.open(serialize_path.c_str(), std::ios::binary | std::ios::in);
     if (!fs.is_open()) {
         return false;
     }
@@ -155,6 +186,12 @@ bool MediaInfo::deserialize(const std::string &src) {
     // bit rate
     fs.read((char *) &bit_rate, sizeof(bit_rate));
 
+    // media playback status
+    fs.read((char *) &playbackInfo.vid_id, sizeof(playbackInfo.vid_id));
+    fs.read((char *) &playbackInfo.aud_id, sizeof(playbackInfo.aud_id));
+    fs.read((char *) &playbackInfo.sub_id, sizeof(playbackInfo.sub_id));
+    fs.read((char *) &playbackInfo.position, sizeof(playbackInfo.position));
+
     // video streams
     videos.clear();
     fs.read((char *) &count, sizeof(count));
@@ -163,6 +200,12 @@ bool MediaInfo::deserialize(const std::string &src) {
         Stream stream{};
         // id
         fs.read((char *) &stream.id, sizeof(stream.id));
+        // type
+        fs.read((char *) &size, sizeof(size));
+        data = new char[size + 1];
+        fs.read(data, size);
+        data[size] = '\0';
+        stream.type = data;
         // title
         fs.read((char *) &size, sizeof(size));
         data = new char[size + 1];
@@ -201,6 +244,12 @@ bool MediaInfo::deserialize(const std::string &src) {
         Stream stream{};
         // id
         fs.read((char *) &stream.id, sizeof(stream.id));
+        // type
+        fs.read((char *) &size, sizeof(size));
+        data = new char[size + 1];
+        fs.read(data, size);
+        data[size] = '\0';
+        stream.type = data;
         // title
         fs.read((char *) &size, sizeof(size));
         data = new char[size + 1];
@@ -237,6 +286,12 @@ bool MediaInfo::deserialize(const std::string &src) {
         Stream stream{};
         // id
         fs.read((char *) &stream.id, sizeof(stream.id));
+        // type
+        fs.read((char *) &size, sizeof(size));
+        data = new char[size + 1];
+        fs.read(data, size);
+        data[size] = '\0';
+        stream.type = data;
         // title
         fs.read((char *) &size, sizeof(size));
         data = new char[size + 1];
@@ -289,8 +344,4 @@ void MediaInfo::debut_print() {
                stream.codec.c_str());
     }
     printf("===================================\n");
-}
-
-bool MediaInfo::isLoaded() const {
-    return loaded == 1;
 }

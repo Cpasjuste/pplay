@@ -86,10 +86,12 @@ bool FilerFtp::getDir(const std::string &p) {
         if (file.path != "..") {
             file.path = path + file.name;
         }
-        files.emplace_back(file);
+        files.emplace_back(file, MediaInfo(file));
     }
 
     FtpQuit(ftp_con);
+
+    setSelection(0);
 
     return true;
 }

@@ -8,6 +8,7 @@
 #include "filers/filer_ftp.h"
 #include "menus/menu_main.h"
 #include "menus/menu_video.h"
+
 #ifdef __SMB_SUPPORT__
 #include "filers/filer_smb.h"
 #endif
@@ -75,9 +76,8 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     statusBox->setLayer(10);
     add(statusBox);
 
-    // media info
+    // media information cache
     getIo()->create(getIo()->getDataWritePath() + "cache");
-    mediaInfoThread = new MediaThread(this, getIo()->getDataWritePath() + "cache/");
 
     // create filers
     // sdmc
@@ -159,7 +159,6 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
 }
 
 Main::~Main() {
-    delete (mediaInfoThread);
     delete (config);
     delete (timer);
     delete (font);
@@ -250,12 +249,12 @@ void Main::show(MenuType type) {
         filerFtp->setVisibility(Visibility::Visible);
         filer = filerFtp;
 #ifdef __SMB_SUPPORT__
-    } else if (Utility::startWith(net_path, "smb:")) {
-        filerHttp->setVisibility(Visibility::Hidden);
-        filerFtp->setVisibility(Visibility::Hidden);
-        filerSmb->setVisibility(Visibility::Visible);
-        filer = filerSmb;
-    } else {
+        } else if (Utility::startWith(net_path, "smb:")) {
+            filerHttp->setVisibility(Visibility::Hidden);
+            filerFtp->setVisibility(Visibility::Hidden);
+            filerSmb->setVisibility(Visibility::Visible);
+            filer = filerSmb;
+        } else {
 #else
     } else {
 #endif
@@ -299,10 +298,6 @@ void Main::quit() {
     } else {
         player->stop();
     }
-}
-
-MediaThread *Main::getMediaThread() {
-    return mediaInfoThread;
 }
 
 Player *Main::getPlayer() {

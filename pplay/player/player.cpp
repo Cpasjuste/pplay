@@ -85,9 +85,6 @@ Player::~Player() {
         mpv_render_context_free(mpv.ctx);
         mpv_terminate_destroy(mpv.handle);
     }
-    if (config) {
-        delete (config);
-    }
 }
 
 bool Player::load(const MediaFile &f) {
@@ -112,15 +109,6 @@ bool Player::load(const MediaFile &f) {
 
 void Player::onLoadEvent() {
 
-    // load config file
-    std::string hash = std::to_string(std::hash<std::string>()(file.path));
-    std::string cfgPath = main->getIo()->getDataWritePath() + "cache/" + hash + ".cfg";
-    if (config) {
-        delete (config);
-    }
-    config = new MediaConfig(cfgPath);
-
-    MediaInfo mediaInfo;
     std::vector<MediaInfo::Stream> streams;
 
     // load tracks
@@ -134,14 +122,7 @@ void Player::onLoadEvent() {
                     std::string key = node.u.list->values[i].u.list->keys[n];
                     if (key == "type") {
                         if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_STRING) {
-                            std::string type = node.u.list->values[i].u.list->values[n].u.string;
-                            if (type == "video") {
-                                stream.type = OPT_STREAM_VID;
-                            } else if (type == "audio") {
-                                stream.type = OPT_STREAM_AUD;
-                            } else if (type == "sub") {
-                                stream.type = OPT_STREAM_SUB;
-                            }
+                            stream.type = node.u.list->values[i].u.list->values[n].u.string;
                         }
                     } else if (key == "id") {
                         if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_INT64) {
@@ -155,7 +136,7 @@ void Player::onLoadEvent() {
                         if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_STRING) {
                             stream.language = node.u.list->values[i].u.list->values[n].u.string;
                         }
-                    } else if (key == "codec") {
+                    } else if (key == "decoder-desc") {
                         if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_STRING) {
                             stream.codec = node.u.list->values[i].u.list->values[n].u.string;
                         }
@@ -182,17 +163,23 @@ void Player::onLoadEvent() {
         }
     }
 
+    file.mediaInfo.videos.clear();
+    file.mediaInfo.audios.clear();
+    file.mediaInfo.subtitles.clear();
     for (auto &stream : streams) {
-        if (stream.type == OPT_STREAM_VID) {
-            mediaInfo.videos.push_back(stream);
-        } else if (stream.type == OPT_STREAM_AUD) {
-            mediaInfo.audios.push_back(stream);
-        } else if (stream.type == OPT_STREAM_SUB) {
-            mediaInfo.subtitles.push_back(stream);
+        if (stream.type == "video") {
+            file.mediaInfo.videos.push_back(stream);
+        } else if (stream.type == "audio") {
+            file.mediaInfo.audios.push_back(stream);
+        } else if (stream.type == "sub") {
+            file.mediaInfo.subtitles.push_back(stream);
         }
     }
 
-    file.mediaInfo = mediaInfo;
+    // update filer item
+    file.mediaInfo.duration = getPlaybackDuration();
+    file.mediaInfo.save();
+    main->getFiler()->setMediaInfo(file, file.mediaInfo);
 
     // create menus
     if (!file.mediaInfo.videos.empty()) {
@@ -241,16 +228,17 @@ void Player::onLoadEvent() {
         add(menuSubtitlesStreams);
     }
 
-    if (config->getPosition() > 0) {
-        std::string msg = "Resume playback at " + pplay::Utility::formatTime(config->getPosition()) + " ?";
+    if (file.mediaInfo.playbackInfo.position > 0) {
+        std::string msg = "Resume playback at "
+                          + pplay::Utility::formatTime(file.mediaInfo.playbackInfo.position) + " ?";
         if (main->getMessageBox()->show("RESUME", msg, "RESUME", "RESTART") == MessageBox::LEFT) {
-            seek(config->getPosition());
+            seek(file.mediaInfo.playbackInfo.position);
         }
     }
 
-    setVideoStream(config->getStream(OPT_STREAM_VID));
-    setAudioStream(config->getStream(OPT_STREAM_AUD));
-    setSubtitleStream(config->getStream(OPT_STREAM_SUB));
+    setVideoStream(file.mediaInfo.playbackInfo.vid_id);
+    setAudioStream(file.mediaInfo.playbackInfo.aud_id);
+    setSubtitleStream(file.mediaInfo.playbackInfo.sub_id);
 
     resume();
     setFullscreen(true);
@@ -258,6 +246,7 @@ void Player::onLoadEvent() {
 
 void Player::onStopEvent() {
 
+    file.mediaInfo.save();
     main->getMenuVideo()->reset();
     osd->reset();
 
@@ -304,7 +293,7 @@ void Player::onUpdate() {
                     break;
                 case MPV_EVENT_START_FILE:
                     printf("MPV_EVENT_START_FILE\n");
-                    main->getStatus()->show("Please Wait...", "Loading..." + file.name, true);
+                    main->getStatus()->show("Please Wait...", "Loading... " + file.name, true);
                     break;
                 case MPV_EVENT_END_FILE:
                     printf("MPV_EVENT_END_FILE\n");
@@ -410,7 +399,7 @@ void Player::setVideoStream(int streamId) {
     if (streamId > -1) {
         std::string cmd = "no-osd set vid " + std::to_string(streamId);
         mpv_command_string(mpv.handle, cmd.c_str());
-        config->setStream(OPT_STREAM_VID, streamId);
+        file.mediaInfo.playbackInfo.vid_id = streamId;
     }
 }
 
@@ -418,7 +407,7 @@ void Player::setAudioStream(int streamId) {
     if (streamId > -1) {
         std::string cmd = "no-osd set aid " + std::to_string(streamId);
         mpv_command_string(mpv.handle, cmd.c_str());
-        config->setStream(OPT_STREAM_AUD, streamId);
+        file.mediaInfo.playbackInfo.aud_id = streamId;
     }
 }
 
@@ -426,19 +415,19 @@ void Player::setSubtitleStream(int streamId) {
     std::string cmd = "no-osd set sid ";
     cmd += streamId == -1 ? "no" : std::to_string(streamId);
     mpv_command_string(mpv.handle, cmd.c_str());
-    config->setStream(OPT_STREAM_SUB, streamId);
+    file.mediaInfo.playbackInfo.sub_id = streamId;
 }
 
 int Player::getVideoStream() {
-    return config->getStream(OPT_STREAM_VID);
+    return file.mediaInfo.playbackInfo.vid_id;
 }
 
 int Player::getAudioStream() {
-    return config->getStream(OPT_STREAM_AUD);
+    return file.mediaInfo.playbackInfo.aud_id;
 }
 
 int Player::getSubtitleStream() {
-    return config->getStream(OPT_STREAM_SUB);
+    return file.mediaInfo.playbackInfo.sub_id;
 }
 
 int Player::seek(double position) {
@@ -497,15 +486,14 @@ void Player::stop() {
 
     printf("Player::stop\n");
     if (mpv.available && !isStopped()) {
-        // save position in stream
-        if (config) {
-            long position = getPlaybackPosition();
-            if (position > 5) {
-                config->setPosition((int) position - 5);
-            } else {
-                config->setPosition(0);
-            }
+        // save media info
+        long position = getPlaybackPosition();
+        if (position > 5) {
+            file.mediaInfo.playbackInfo.position = (int) position - 5;
+        } else {
+            file.mediaInfo.playbackInfo.position = 0;
         }
+
         // stop mpv playback
         mpv_command_string(mpv.handle, "stop");
     }
@@ -575,6 +563,22 @@ void Player::setFullscreen(bool fs, bool hide) {
     }
 }
 
+int Player::getVideoBitrate() {
+    double bitrate = 0;
+    if (mpv.available) {
+        mpv_get_property(mpv.handle, "video-bitrate", MPV_FORMAT_DOUBLE, &bitrate);
+    }
+    return (int) bitrate;
+}
+
+int Player::getAudioBitrate() {
+    double bitrate = 0;
+    if (mpv.available) {
+        mpv_get_property(mpv.handle, "audio-bitrate", MPV_FORMAT_INT64, &bitrate);
+    }
+    return (int) bitrate;
+}
+
 long Player::getPlaybackDuration() {
     long duration = 0;
     if (mpv.available) {
@@ -610,4 +614,5 @@ const std::string &Player::getTitle() const {
 PlayerOSD *Player::getOSD() {
     return osd;
 }
+
 

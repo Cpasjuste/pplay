@@ -35,6 +35,16 @@ Filer::Filer(Main *m, const std::string &path, const c2d::FloatRect &rect) : Rec
     add(new TweenAlpha(0, 255, 0.5f));
 };
 
+void Filer::setMediaInfo(const MediaFile &target, const MediaInfo &mediaInfo) {
+
+    for (int i = 0; i < files.size(); i++) {
+        if (files[i].path == target.path) {
+            files[i].mediaInfo = mediaInfo;
+        }
+    }
+    setSelection(item_index);
+}
+
 const MediaFile Filer::getSelection() const {
 
     if (!files.empty() && files.size() > (unsigned int) item_index) {
@@ -56,10 +66,6 @@ void Filer::setSelection(int index) {
         } else {
             // load media info, set file
             int idx = index_start + i;
-            // media info only cached in FilerSdmc now..
-            if (files[idx].type == Io::Type::File && !files[idx].getMedia().isLoaded()) {
-                files[idx].mediaInfo = main->getMediaThread()->getMediaInfo(files[idx], true);
-            }
             items[i]->setFile(files[idx]);
             items[i]->setVisibility(Visibility::Visible);
             // set highlight position
@@ -74,12 +80,6 @@ void Filer::setSelection(int index) {
     } else {
         highlight->setVisibility(Visibility::Visible);
     }
-}
-
-void Filer::onDraw(c2d::Transform &transform, bool draw) {
-
-    setSelection(item_index);
-    Rectangle::onDraw(transform, draw);
 }
 
 bool Filer::onInput(c2d::Input::Player *players) {
@@ -112,14 +112,16 @@ bool Filer::onInput(c2d::Input::Player *players) {
         if (getSelection().type == Io::Type::Directory) {
             enter(item_index);
         } else if (pplay::Utility::isMedia(getSelection())) {
-            if (!files[item_index].mediaInfo.isLoaded()) {
-                files[item_index].setMedia(main->getMediaThread()->getMediaInfo(files[item_index], false, true));
-            }
+            //if (!files[item_index].mediaInfo.isLoaded()) {
+            //    files[item_index].setMedia(main->getMediaThread()->getMediaInfo(files[item_index], false, true));
+            //}
             main->getPlayer()->load(files[item_index]);
         }
     } else if (keys & Input::Key::Fire2) {
         exit();
     }
+
+    setSelection(item_index);
 
     return true;
 }
@@ -148,3 +150,4 @@ std::string Filer::getPath() {
 
 Filer::~Filer() {
 }
+

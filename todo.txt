@@ -1,12 +1,13 @@
 TODO
 ====
 
-- add status bar (time, battery)
+- remove automatic media info extraction
 - handle more than menu height in subtitles selection
 
 DONE
 ====
 
+- add status bar (time, battery)
 - player: allow ui rendering/flip when buffering media (partially done, do the same for seeking?)
 - player: save per media settings (progress, selected streams..)
 - player: set audio fps from media info
