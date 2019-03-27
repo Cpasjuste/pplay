@@ -37,7 +37,7 @@ Filer::Filer(Main *m, const std::string &path, const c2d::FloatRect &rect) : Rec
 
 void Filer::setMediaInfo(const MediaFile &target, const MediaInfo &mediaInfo) {
 
-    for (int i = 0; i < files.size(); i++) {
+    for (size_t i = 0; i < files.size(); i++) {
         if (files[i].path == target.path) {
             files[i].mediaInfo = mediaInfo;
         }

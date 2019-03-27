@@ -25,3 +25,6 @@ Alternatively if you are using Atmosphere, you can press (R) when launching a ga
 you must edit the configuration file (pplay.cfg) to add your server address:
   - NETWORK = "http://samples.ffmpeg.org/";
   - NETWORK = "ftp://user:password@ip:port/";
+
+- As pPlay use [MPV](https://mpv.io/), you can put a file named "mpv.conf" in the "mpv" folder to play with. 
+See the [CONFIGURATION FILES](https://mpv.io/manual/master/#configuration-files) and [OPTIONS](https://mpv.io/manual/master/#options) sections in the [MPV](https://mpv.io/manual/master/#) manual for more informations. 

@@ -2,12 +2,12 @@ cmake_minimum_required(VERSION 3.0)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 # delete cmake cache folder before changing this option
-set(BUILD_LINUX ON CACHE BOOL "Build with SDL2 support")
+set(BUILD_LINUX OFF CACHE BOOL "Build with SDL2 support")
 set(BUILD_WINDOWS OFF CACHE BOOL "Build with Windows support (MSYS/MinGW")
 set(BUILD_VITA OFF CACHE BOOL "Build with PSP2 support")
 set(BUILD_PS3 OFF CACHE BOOL "Build with PS3 support")
 set(BUILD_3DS OFF CACHE BOOL "Build with 3DS support")
-set(BUILD_SWITCH OFF CACHE BOOL "Build with NX (SWITCH) support")
+set(BUILD_SWITCH ON CACHE BOOL "Build with NX (SWITCH) support")
 
 # needs libsmbclient port to the switch...
 set(BUILD_SMBCLIENT OFF CACHE BOOL "Build with smbclient support")
@@ -21,8 +21,8 @@ add_subdirectory(libcross2d)
 project(pplay)
 
 # pplay version
-set(VERSION_MAJOR "1")
-set(VERSION_MINOR "5")
+set(VERSION_MAJOR "2")
+set(VERSION_MINOR "0")
 set(PROJECT_AUTHOR "Cpasjuste")
 set(TITLE_ID "PPLAY0001")
 
