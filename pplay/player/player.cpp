@@ -93,8 +93,13 @@ Player::~Player() {
 bool Player::load(const MediaFile &f) {
 
     file = f;
-
-    const char *cmd[] = {"loadfile", file.path.c_str(), "replace", "pause=yes,speed=1", nullptr};
+    std::string path = file.path;
+#ifdef __SMB_SUPPORT__
+    if (Utility::startWith(path, "smb://")) {
+        std::replace(path.begin(), path.end(), '\\', '/');
+    }
+#endif
+    const char *cmd[] = {"loadfile", path.c_str(), "replace", "pause=yes,speed=1", nullptr};
     int res = mpv_command(mpv.handle, cmd);
     if (res != 0) {
         main->getStatus()->show("Error...", "Could not play file:\n" + std::string(mpv_error_string(res)));

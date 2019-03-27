@@ -2,6 +2,7 @@
 // Created by cpasjuste on 12/04/18.
 //
 
+#ifdef __SMB_SUPPORT__
 #include <iostream>
 #include <arpa/inet.h>
 
@@ -61,9 +62,12 @@ bool FilerSmb::getDir(const std::string &p) {
     if (Utility::startWith(new_path, "/")) {
         new_path.erase(0, 1);
     }
+    if (Utility::endsWith(new_path, "\\")) {
+        new_path.erase(new_path.length() - 1, 1);
+    }
 
-    printf("user: %s, pwd: %s, host: %s, path: %s\n",
-           user.c_str(), pwd.c_str(), host.c_str(), new_path.c_str());
+    //printf("user: %s, pwd: %s, host: %s, path: %s\n",
+    //       user.c_str(), pwd.c_str(), host.c_str(), new_path.c_str());
 
     inet_aton(host.c_str(), &addr.sin_addr);
 
@@ -75,7 +79,7 @@ bool FilerSmb::getDir(const std::string &p) {
     }
 
     // TODO: add domain
-    smb_session_set_creds(smb_session, "DOMAIN", user.c_str(), pwd.c_str());
+    smb_session_set_creds(smb_session, "localhost", user.c_str(), pwd.c_str());
     if (smb_session_login(smb_session) != DSM_SUCCESS) {
         error = "Could not authenticate to smb server";
         smb_session_destroy(smb_session);
@@ -103,15 +107,25 @@ bool FilerSmb::getDir(const std::string &p) {
         smb_share_list_destroy(smb_share_list);
         smb_session_destroy(smb_session);
     } else {
+        std::string share_path = new_path;
+        std::string file_path = "\\*";
+        // split real path from share if needed
+        size_t pos = new_path.find_first_of('\\');
+        if (pos != std::string::npos) {
+            share_path = new_path.substr(0, pos);
+            file_path = new_path.substr(pos, new_path.length() - pos) + "\\*";
+        }
+        printf("share: %s, path: %s\n", share_path.c_str(), file_path.c_str());
+
         // connect to share
-        smb_tid test;
-        if (smb_tree_connect(smb_session, new_path.c_str(), &test) != DSM_SUCCESS) {
+        smb_tid tid;
+        if (smb_tree_connect(smb_session, share_path.c_str(), &tid) != DSM_SUCCESS) {
             error = "Could not connect smb share";
             smb_session_destroy(smb_session);
             return false;
         }
         // list files
-        smb_files = smb_find(smb_session, test, "\\Users\\*");
+        smb_files = smb_find(smb_session, tid, file_path.c_str());
         size_t files_count = smb_stat_list_count(smb_files);
         if (files_count <= 0) {
             error = "Could not list smb files";
@@ -140,6 +154,7 @@ bool FilerSmb::getDir(const std::string &p) {
                 size_t size = smb_stat_get(smb_st, SMB_STAT_SIZE);
                 Io::Type type = smb_stat_get(smb_st, SMB_STAT_ISDIR) ? Io::Type::Directory : Io::Type::File;
                 Io::File file(name, path + name, type, size);
+                printf("file.path: %s\n", file.path.c_str());
                 files.emplace_back(file, MediaInfo{});
             }
             std::sort(files.begin(), files.end(), Io::compare);
@@ -171,7 +186,15 @@ void FilerSmb::exit() {
         return;
     }
 
-    std::string path_new = Utility::removeLastSlash(path);
+    std::string path_new = path;
+    if (Utility::endsWith(path_new, "\\")) {
+        path_new.erase(path_new.length() - 1, 1);
+    }
+
+    if (path_new.find('\\') == std::string::npos) {
+        return;
+    }
+
     while (path_new.back() != '\\') {
         path_new.erase(path_new.size() - 1);
     }
@@ -187,3 +210,4 @@ const std::string FilerSmb::getError() {
 
 FilerSmb::~FilerSmb() {
 }
+#endif // __SMB_SUPPORT__

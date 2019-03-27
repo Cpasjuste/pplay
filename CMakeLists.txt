@@ -9,6 +9,9 @@ set(BUILD_PS3 OFF CACHE BOOL "Build with PS3 support")
 set(BUILD_3DS OFF CACHE BOOL "Build with 3DS support")
 set(BUILD_SWITCH OFF CACHE BOOL "Build with NX (SWITCH) support")
 
+# needs libsmbclient port to the switch...
+set(BUILD_SMBCLIENT OFF CACHE BOOL "Build with smbclient support")
+
 add_subdirectory(libcross2d)
 
 ##############
@@ -29,7 +32,6 @@ set(PPLAY_INC
         pplay/menus
         pplay/player
         pplay/ftplib
-        #pplay/fftools
         )
 
 file(GLOB PPLAY_SRC
@@ -39,7 +41,6 @@ file(GLOB PPLAY_SRC
         pplay/player/*.c*
         pplay/Browser/*.c*
         pplay/ftplib/*.c*
-        #pplay/fftools/*.c*
         )
 
 set(PPLAY_CFLAGS
@@ -50,7 +51,12 @@ set(PPLAY_CFLAGS
         -DM_SQRT2=1.41421356237309504880
         )
 
-set(PPLAY_LDFLAGS curl dsm tasn1)
+set(PPLAY_LDFLAGS curl)
+
+if (BUILD_SMBCLIENT)
+    list(APPEND PPLAY_CFLAGS -D__SMB_SUPPORT__)
+    list(APPEND PPLAY_LDFLAGS dsm tasn1)
+endif ()
 
 ##############
 # mpv
