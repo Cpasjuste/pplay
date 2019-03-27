@@ -1,8 +1,9 @@
 pPlay
 ======
 
-pPlay is a video player for the Nintendo Switch. pPlay support most popular video formats,
-have subtitles (embedded ass) and http streaming support.
+
+pPlay is a video player for the Nintendo Switch. pPlay support most popular video format, subtitles, http and ftp streaming and more. 
+pPlay use the [MPV](https://mpv.io/) interface to handle ffmpeg interoperability, which provide a fast, stable and powerful experience.
 
 Installation 
 ----
@@ -11,30 +12,16 @@ Copy "pplay" folder to switch sdcard (/switch/pplay)
 Usage
 -----
 - Use left/right to switch menu's and windows... select a media and... have fun.
+- When playing a media, you can press the "DOWN" or "A" button to bring the UI, the "R" shoulder for fast forward ("L" button to stop).
 
 Notes
 ----
-- You should really use an NSP HBL (HomeBrew Loader) to unleash all switch memory to launch pPlay, else you'll have some memory problems/crashes: https://gbatemp.net/threads/homebrew-menu-loader-legal-nsp.518433/
-<br>Alternatively if you are using Atmosphere, you can press (R) when launching a game, it will load HBL with all memory unlocked.
+- You should either use an NSP HBL (HomeBrew Loader) to unleash all switch memory to launch pPlay.
+Alternatively if you are using Atmosphere, you can press (R) when launching a game, it will load HBL with all memory unlocked.
 
-- pPlay should be able to play most media. While 720p should be mostly fine, 
-1080p support can vary with medias and bit rates. If so (audio de-sync for example), 
-increasing buffering can help in most situation. This can be done in the main menu (left).
-Please note that increasing the buffer size will have some side effect like longer loading and seeking time,
-but also to stop a video (buffers needs to be released). This is more visible
-when using http streams, of course.
+- pPlay should be able to play most media. While 720p and 1080p medias should be fine, you can unlock all the switch cpu speed for heavy medias.
 
-- pPlay can stream media from an http server with directory listing enabled. To do so,
-you must edit the pPlay configuration file (pplay.cfg) to add your server address (NETWORK = "http://samples.ffmpeg.org/";).
-Please note that you need a good and stable network connection for this, and you will probably have
-to set buffering to "VeryHigh" for smoother experience.
-
-- pPlay will extract media information in background, but i did spot a very few files which
-make the device crash. If so, you can disable this in pPlay configuration file (pplay.cfg):
-CACHE_MEDIA_INFO = 0;
-
-- pPlay will push the cpu speed when a 1080p media is played, and restore previous speed when paused or stopped.
-This is safe but can be disabled in the main option menu (left).
-
-- Please note that there is a (big?) delay when switching video/audio/subtitles streams to see the change.
-This is worked on but in the meantime, be patient :)
+- pPlay can stream media from an http server with directory listing enabled, or an ftp server. To do so,
+you must edit the pPlay configuration file (pplay.cfg) to add your server address:
+  - NETWORK = "http://samples.ffmpeg.org/";
+  - NETWORK = "ftp://user:password@ip:port/";
