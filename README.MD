@@ -22,6 +22,6 @@ Alternatively if you are using Atmosphere, you can press (R) when launching a ga
 - pPlay should be able to play most media. While 720p and 1080p medias should be fine, you can unlock all the switch cpu speed for heavy medias.
 
 - pPlay can stream media from an http server with directory listing enabled, or an ftp server. To do so,
-you must edit the pPlay configuration file (pplay.cfg) to add your server address:
+you must edit the configuration file (pplay.cfg) to add your server address:
   - NETWORK = "http://samples.ffmpeg.org/";
   - NETWORK = "ftp://user:password@ip:port/";
