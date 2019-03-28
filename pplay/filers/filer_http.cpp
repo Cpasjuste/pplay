@@ -60,8 +60,8 @@ bool FilerHttp::getDir(const std::string &p) {
                         Io::Type::Directory : Io::Type::File;
 
         if (type == Io::Type::File) {
-            std::string str = browser->geturl() + browser->links[i].url();
-            Io::File file(Utility::removeLastSlash(browser->links[i].name()), str, type);
+            std::string file_path = browser->geturl() + browser->escape(browser->links[i].name());
+            Io::File file(browser->links[i].name(), file_path, type);
             if (pplay::Utility::isMedia(file)) {
                 files.emplace_back(file, MediaInfo(file));
             }

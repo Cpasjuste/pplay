@@ -112,9 +112,6 @@ bool Filer::onInput(c2d::Input::Player *players) {
         if (getSelection().type == Io::Type::Directory) {
             enter(item_index);
         } else if (pplay::Utility::isMedia(getSelection())) {
-            //if (!files[item_index].mediaInfo.isLoaded()) {
-            //    files[item_index].setMedia(main->getMediaThread()->getMediaInfo(files[item_index], false, true));
-            //}
             main->getPlayer()->load(files[item_index]);
         }
     } else if (keys & Input::Key::Fire2) {

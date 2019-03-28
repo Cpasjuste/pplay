@@ -96,7 +96,6 @@ bool Player::load(const MediaFile &f) {
         std::replace(path.begin(), path.end(), '\\', '/');
     }
 #endif
-    printf("loadfile: %s\n", path.c_str());
     const char *cmd[] = {"loadfile", path.c_str(), "replace", "pause=yes,speed=1", nullptr};
     int res = mpv_command(mpv.handle, cmd);
     if (res != 0) {
