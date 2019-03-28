@@ -36,7 +36,6 @@ void MenuVideo::onOptionSelection(MenuItem *item) {
         }
     } else if (item->name == "Stop") {
         main->getPlayer()->stop();
-        main->getPlayer()->setFullscreen(false);
         setVisibility(Visibility::Hidden, true);
     }
 }

@@ -246,9 +246,15 @@ void Player::onLoadEvent() {
 
 void Player::onStopEvent() {
 
+    main->getStatus()->hide();
     file.mediaInfo.save();
     main->getMenuVideo()->reset();
     osd->reset();
+
+    if (!isFullscreen()) {
+        main->getStatus()->show("Error...", "Could not load file");
+        printf("Player::load: could not load file\n");
+    }
 
     // Audio
     if (menuAudioStreams) {
@@ -298,11 +304,6 @@ void Player::onUpdate() {
                 case MPV_EVENT_END_FILE:
                     printf("MPV_EVENT_END_FILE\n");
                     onStopEvent();
-                    main->getStatus()->hide();
-                    if (!isFullscreen()) {
-                        main->getStatus()->show("Error...", "Could not load file");
-                        printf("Player::load: could not load file\n");
-                    }
                     break;
                 case MPV_EVENT_SHUTDOWN:
                     printf("MPV_EVENT_SHUTDOWN\n");
