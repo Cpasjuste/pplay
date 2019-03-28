@@ -27,12 +27,18 @@ bool FilerHttp::getDir(const std::string &p) {
 
     printf("getDir(%s)\n", p.empty() ? browser->geturl().c_str() : p.c_str());
 
-    if (!p.empty()) {
+    if (!inited) {
         browser->open(p, TIMEOUT);
+        inited = true;
     }
 
     if (browser->error() || browser->links.size() < 1) {
         printf("FilerHttp::getDir: %s\n", browser->getError().c_str());
+        main->getStatus()->show("Error...", "Could not browse this folder...\n"
+                                            "You should probably remove some special characters...");
+        if (browser->get_history().size() > 1) {
+            browser->back(TIMEOUT);
+        }
         return false;
     }
 
@@ -56,7 +62,7 @@ bool FilerHttp::getDir(const std::string &p) {
             continue;
         }
 
-        Io::Type type = Utility::endsWith(browser->links[i].url(), "/") ?
+        Io::Type type = Utility::endsWith(browser->links[i].name(), "/") ?
                         Io::Type::Directory : Io::Type::File;
 
         if (type == Io::Type::File) {
@@ -66,7 +72,7 @@ bool FilerHttp::getDir(const std::string &p) {
                 files.emplace_back(file, MediaInfo(file));
             }
         } else {
-            Io::File file(Utility::removeLastSlash(browser->links[i].name()), browser->links[i].url(), type);
+            Io::File file(Utility::removeLastSlash(browser->links[i].name()), browser->links[i].name(), type);
             files.emplace_back(file, MediaInfo(file));
         }
     }
@@ -85,7 +91,7 @@ void FilerHttp::enter(int prev_index) {
         return;
     }
 
-    browser->follow_link(browser->unescape(file.path));
+    browser->follow_link(file.path, TIMEOUT);
     if (getDir("")) {
         Filer::enter(prev_index);
     }

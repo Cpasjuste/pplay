@@ -170,7 +170,7 @@ std::string get_after_equal(std::string html_response, std::string seeking)
     replaceAll(html_lower,"\n"," ");
     replaceAll(html_response,"\n"," ");
     //replace single quote with double quote to make the search easier/faster
-    replaceAll(html_lower,"'","\"");
+    //replaceAll(html_lower,"'","\"");
 
     //2- start the search at 0 for the begining of a form
     //   until we reach stage 3 which will turn STOP

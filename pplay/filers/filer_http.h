@@ -29,6 +29,8 @@ private:
     void exit() override;
 
     Browser *browser;
+
+    bool inited = false;
 };
 
 #endif //FILER_HTTP_H
