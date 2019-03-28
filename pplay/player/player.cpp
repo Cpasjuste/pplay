@@ -96,6 +96,7 @@ bool Player::load(const MediaFile &f) {
         std::replace(path.begin(), path.end(), '\\', '/');
     }
 #endif
+    printf("loadfile: %s\n", path.c_str());
     const char *cmd[] = {"loadfile", path.c_str(), "replace", "pause=yes,speed=1", nullptr};
     int res = mpv_command(mpv.handle, cmd);
     if (res != 0) {
@@ -298,6 +299,11 @@ void Player::onUpdate() {
                 case MPV_EVENT_END_FILE:
                     printf("MPV_EVENT_END_FILE\n");
                     onStopEvent();
+                    main->getStatus()->hide();
+                    if (!isFullscreen()) {
+                        main->getStatus()->show("Error...", "Could not load file");
+                        printf("Player::load: could not load file\n");
+                    }
                     break;
                 case MPV_EVENT_SHUTDOWN:
                     printf("MPV_EVENT_SHUTDOWN\n");
