@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 # delete cmake cache folder before changing this option
-set(BUILD_LINUX OFF CACHE BOOL "Build with SDL2 support")
+set(BUILD_LINUX ON CACHE BOOL "Build with SDL2 support")
 set(BUILD_WINDOWS OFF CACHE BOOL "Build with Windows support (MSYS/MinGW")
 set(BUILD_VITA OFF CACHE BOOL "Build with PSP2 support")
 set(BUILD_PS3 OFF CACHE BOOL "Build with PS3 support")
@@ -32,6 +32,7 @@ set(PPLAY_INC
         pplay/menus
         pplay/player
         pplay/ftplib
+        pplay/scrapper
         )
 
 file(GLOB PPLAY_SRC
@@ -41,6 +42,7 @@ file(GLOB PPLAY_SRC
         pplay/player/*.c*
         pplay/Browser/*.c*
         pplay/ftplib/*.c*
+        pplay/scrapper/*.c*
         )
 
 set(PPLAY_CFLAGS
@@ -62,6 +64,11 @@ endif ()
 # mpv
 ##############
 add_subdirectory(mpv)
+
+##############
+# pscrap
+##############
+add_subdirectory(pscrap)
 
 #####################
 # PLATORM SPECIFIC
@@ -87,7 +94,7 @@ add_executable(${CMAKE_PROJECT_NAME}.elf ${PPLAY_SRC})
 target_include_directories(${CMAKE_PROJECT_NAME}.elf PRIVATE ${PPLAY_INC})
 target_compile_options(${CMAKE_PROJECT_NAME}.elf PRIVATE ${PPLAY_CFLAGS})
 target_compile_options(${CMAKE_PROJECT_NAME}.elf PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>)
-target_link_libraries(${CMAKE_PROJECT_NAME}.elf cross2d mpv ${PPLAY_LDFLAGS})
+target_link_libraries(${CMAKE_PROJECT_NAME}.elf cross2d mpv pscrap ${PPLAY_LDFLAGS})
 
 #####################
 # targets

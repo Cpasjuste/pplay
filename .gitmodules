@@ -4,3 +4,6 @@
 [submodule "mpv"]
 	path = mpv
 	url = git@github.com:Cpasjuste/mpv.git
+[submodule "pscrap"]
+	path = pscrap
+	url = git@github.com:Cpasjuste/pscrap.git
