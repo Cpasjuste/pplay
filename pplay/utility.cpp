@@ -5,8 +5,7 @@
 #include <sstream>
 #include <iomanip>
 
-#include "cross2d/skeleton/io.h"
-#include "cross2d/skeleton/utility.h"
+#include "cross2d/c2d.h"
 
 #ifdef __SWITCH__
 
@@ -17,6 +16,26 @@
 #include "utility.h"
 
 using namespace pplay;
+
+std::string Utility::getMediaInfoPath(const c2d::Io::File &file) {
+    std::string hash = std::to_string(std::hash<std::string>()(file.path));
+    return c2d_renderer->getIo()->getDataWritePath() + "cache/" + hash + ".info";
+}
+
+std::string Utility::getMediaScrapPath(const c2d::Io::File &file) {
+    std::string hash = std::to_string(std::hash<std::string>()(file.path));
+    return c2d_renderer->getIo()->getDataWritePath() + "cache/" + hash + ".scrap";
+}
+
+std::string Utility::getMediaPosterPath(const c2d::Io::File &file) {
+    std::string hash = std::to_string(std::hash<std::string>()(file.path));
+    return c2d_renderer->getIo()->getDataWritePath() + "cache/" + hash + "-poster.jpg";
+}
+
+std::string Utility::getMediaBackdropPath(const c2d::Io::File &file) {
+    std::string hash = std::to_string(std::hash<std::string>()(file.path));
+    return c2d_renderer->getIo()->getDataWritePath() + "cache/" + hash + "-backdrop.jpg";
+}
 
 bool Utility::isMedia(const c2d::Io::File &file) {
 
@@ -133,3 +152,4 @@ void Utility::setCpuClock(const CpuClock &clock) {
     }
 #endif
 }
+

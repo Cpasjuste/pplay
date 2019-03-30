@@ -24,7 +24,7 @@ Player::Player(Main *_main) : Rectangle(_main->getSize()) {
     setOrigin(Origin::TopRight);
 
     tweenPosition = new TweenPosition(
-            {main->getSize().x - 32, 32},
+            {main->getSize().x, 32},
             {main->getSize().x, 0}, 0.5f);
     add(tweenPosition);
     tweenScale = new TweenScale({0.6f, 0.6f}, {1.0f, 1.0f}, 0.5f);
@@ -507,7 +507,7 @@ void Player::stop() {
 
 bool Player::isStopped() {
 
-    int res = -1;
+    int res = 1;
 
     if (mpv.available) {
         mpv_get_property(mpv.handle, "playback-abort", MPV_FORMAT_FLAG, &res);
@@ -558,12 +558,12 @@ void Player::setFullscreen(bool fs, bool hide) {
             menuSubtitlesStreams->setVisibility(Visibility::Hidden, true);
         }
         main->getFiler()->setVisibility(Visibility::Visible, true);
-        main->getTitle()->setVisibility(Visibility::Visible, true);
+        //main->getTitle()->setVisibility(Visibility::Visible, true);
         main->getStatusBar()->setVisibility(Visibility::Visible, true);
     } else {
         texture->hideGradients();
         main->getFiler()->setVisibility(Visibility::Hidden, true);
-        main->getTitle()->setVisibility(Visibility::Hidden, true);
+        //main->getTitle()->setVisibility(Visibility::Hidden, true);
         main->getStatusBar()->setVisibility(Visibility::Hidden, true);
         setVisibility(Visibility::Visible, true);
     }

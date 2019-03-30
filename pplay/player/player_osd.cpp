@@ -98,7 +98,7 @@ PlayerOSD::PlayerOSD(Main *m) : Rectangle({64, 64}) {
     title->setFillColor(COLOR_RED);
     title->setOrigin(Origin::Left);
     title->setPosition((64 * 3 + 50) * main->getScaling(), getSize().y / 2);
-    title->setWidth(buttons.at((int) ButtonID::SeekForward1)->getPosition().x - title->getPosition().x - 32);
+    title->setSizeMax(buttons.at((int) ButtonID::SeekForward1)->getPosition().x - title->getPosition().x - 32, 0);
 
     add(title);
 

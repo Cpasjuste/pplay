@@ -27,10 +27,10 @@ MenuButton::MenuButton(Main *main, const MenuItem &item, const FloatRect &rect) 
     name->setFillColor(COLOR_FONT);
     if (!item.icon.empty()) {
         name->setPosition((ICON_SIZE + 32) * main->getScaling(), getSize().y / 2);
-        name->setWidth((getSize().x - ICON_SIZE + 32) * main->getScaling());
+        name->setSizeMax((getSize().x - ICON_SIZE + 32) * main->getScaling(), 0);
     } else {
         name->setPosition(16 * main->getScaling(), getSize().y / 2);
-        name->setWidth((getSize().x - (16 * main->getScaling())) * main->getScaling());
+        name->setSizeMax((getSize().x - (16 * main->getScaling())) * main->getScaling(), 0);
     }
     add(name);
 }

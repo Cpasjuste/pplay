@@ -14,6 +14,7 @@
 #include "menus/menu_video.h"
 #include "status_box.h"
 #include "status_bar.h"
+#include "scrapper.h"
 
 #define INPUT_DELAY 500
 #define ICON_SIZE 24
@@ -73,8 +74,6 @@ public:
 
     Filer *getFiler();
 
-    c2d::Texture *getTitle();
-
     PPLAYConfig *getConfig();
 
     c2d::Font *getFont() override;
@@ -84,6 +83,8 @@ public:
     StatusBox *getStatus();
 
     StatusBar *getStatusBar();
+
+    pplay::Scrapper *getScrapper();
 
     float getScaling();
 
@@ -108,10 +109,10 @@ private:
     Filer *filerSmb = nullptr;
     Filer *filer = nullptr;
     StatusBar *statusBar = nullptr;
-    c2d::Texture *title = nullptr;
     Player *player = nullptr;
     MenuMain *menu_main = nullptr;
     MenuVideo *menu_video = nullptr;
+    pplay::Scrapper *scrapper = nullptr;
     float scaling = 1;
 
     bool exit = false;

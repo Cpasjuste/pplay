@@ -18,6 +18,8 @@ public:
 
     void setFile(const MediaFile &file);
 
+    void setTitle(const std::string &title);
+
 private:
 
     Main *main;

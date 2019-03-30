@@ -13,7 +13,7 @@ StatusBox::StatusBox(Main *m, const c2d::Vector2f &position)
         : Rectangle({(m->getSize().x - 64) * m->getScaling(), 48 * m->getScaling()}) {
 
     main = m;
-
+    pos = position;
     setPosition(position);
 
     icon = new C2DTexture(main->getIo()->getDataReadPath() + "skin/wait.png");
@@ -35,7 +35,7 @@ StatusBox::StatusBox(Main *m, const c2d::Vector2f &position)
     messageText->setFillColor(COLOR_FONT);
     messageText->setPosition(icon->getSize().x + 16,
                              titleText->getPosition().y + main->getFontSize(Main::FontSize::Medium) + 4);
-    messageText->setWidth(getSize().x - icon->getSize().x - 16);
+    messageText->setSizeMax(getSize().x - icon->getSize().x - 16, 0);
     add(messageText);
 
     clock = new C2DClock();
@@ -81,10 +81,10 @@ void StatusBox::onDraw(c2d::Transform &transform, bool draw) {
 
     if (main->getPlayer()->getOSD()->isVisible()) {
         FloatRect bounds = main->getPlayer()->getOSD()->getGlobalBounds();
-        setPosition(10, bounds.top - 32);
+        setPosition(pos.x, bounds.top - 32);
     } else {
         FloatRect bounds = main->getMenuMain()->getGlobalBounds();
-        setPosition(bounds.left + bounds.width + 10, main->getSize().y - 16);
+        setPosition(bounds.left + bounds.width + pos.x, main->getSize().y - 16);
     }
 
     SDL_LockMutex(mutex);

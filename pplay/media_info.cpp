@@ -11,8 +11,7 @@
 
 MediaInfo::MediaInfo(const c2d::Io::File &file) {
 
-    std::string hash = std::to_string(std::hash<std::string>()(file.path));
-    serialize_path = c2d_renderer->getIo()->getDataWritePath() + "cache/" + hash;
+    serialize_path = pplay::Utility::getMediaInfoPath(file);
 
     if (!pplay::Utility::isMedia(file)) {
         return;

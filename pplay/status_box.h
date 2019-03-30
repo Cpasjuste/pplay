@@ -25,9 +25,10 @@ public:
 
 private:
 
-    void onDraw(c2d::Transform &transform, bool draw = true) override;
+    virtual void onDraw(c2d::Transform &transform, bool draw = true) override;
 
     Main *main;
+    c2d::Vector2f pos;
     c2d::Texture *icon;
     c2d::Text *titleText;
     c2d::Text *messageText;
@@ -35,6 +36,8 @@ private:
     c2d::Clock *clock;
     SDL_mutex *mutex;
     bool infinite = false;
+
+    friend class ScrapperStatusBox;
 };
 
 #endif //PPLAY_STATUS_BOX_H

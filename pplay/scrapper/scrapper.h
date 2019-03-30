@@ -8,19 +8,27 @@
 #include <SDL_thread.h>
 #include "cross2d/skeleton/sfml/RectangleShape.hpp"
 
+class Main;
+
 namespace pplay {
 
     class Scrapper {
 
     public:
 
-        explicit Scrapper(const std::string &path);
+        explicit Scrapper(Main *main);
 
-        void scrap();
+        ~Scrapper();
 
+        int scrap(const std::string &path);
+
+        Main *main;
         std::string path;
-        bool scrapping = false;
+        SDL_mutex *mutex = nullptr;
+        SDL_cond *cond = nullptr;
         SDL_Thread *thread = nullptr;
+        bool scrapping = false;
+        bool running = true;
     };
 }
 

@@ -1,6 +1,7 @@
 TODO
 ====
 
+- add fade out texture for previews
 - remove automatic media info extraction
 - handle more than menu height in subtitles selection
 

@@ -3,11 +3,12 @@
 //
 
 #include "main.h"
-#include "filers/filer_sdmc.h"
-#include "filers/filer_http.h"
-#include "filers/filer_ftp.h"
-#include "menus/menu_main.h"
-#include "menus/menu_video.h"
+#include "filer_sdmc.h"
+#include "filer_http.h"
+#include "filer_ftp.h"
+#include "menu_main.h"
+#include "menu_video.h"
+#include "scrapper.h"
 
 #ifdef __SMB_SUPPORT__
 #include "filers/filer_smb.h"
@@ -48,6 +49,7 @@ static void on_applet_hook(AppletHookType hook, void *arg) {
 
 using namespace c2d;
 using namespace c2d::config;
+using namespace pplay;
 
 Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
 
@@ -71,7 +73,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     font->setFilter(Texture::Filter::Point);
     font->setOffset({0, -4});
 
-    statusBox = new StatusBox(this, {10, getSize().y - 16});
+    statusBox = new StatusBox(this, {0, getSize().y - 16});
     statusBox->setOrigin(Origin::BottomLeft);
     statusBox->setLayer(10);
     add(statusBox);
@@ -109,13 +111,6 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     statusBar = new StatusBar(this);
     statusBar->setLayer(10);
     add(statusBar);
-
-    // title image
-    title = new C2DTexture(getIo()->getDataReadPath() + "skin/pplay.png");
-    title->setOrigin(Origin::BottomRight);
-    title->setPosition(getSize().x - 16, getSize().y - 16);
-    title->add(new TweenAlpha(0, 255, 0.5f));
-    add(title);
 
     // ffmpeg player
     player = new Player(this);
@@ -156,9 +151,13 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     messageBox->getTitleText()->setOutlineThickness(0);
     messageBox->getMessageText()->setOutlineThickness(0);
     add(messageBox);
+
+    scrapper = new Scrapper(this);
+    scrapper->scrap("/home/cpasjuste/dev/multi/videos");
 }
 
 Main::~Main() {
+    delete (scrapper);
     delete (config);
     delete (timer);
     delete (font);
@@ -340,12 +339,12 @@ unsigned int Main::getFontSize(FontSize fontSize) {
     return (unsigned int) ((float) fontSize * scaling);
 }
 
-c2d::Texture *Main::getTitle() {
-    return title;
-}
-
 StatusBar *Main::getStatusBar() {
     return statusBar;
+}
+
+pplay::Scrapper *Main::getScrapper() {
+    return scrapper;
 }
 
 int main() {

@@ -62,6 +62,13 @@ private:
     int item_max;
     int item_index;
     std::vector<int> item_index_prev;
+
+    c2d::Sprite *backdrop;
+    c2d::Texture *backdrop_texture = nullptr;
+    c2d::Sprite *poster;
+    c2d::Texture *poster_texture = nullptr;
+    c2d::Texture *fade = nullptr;
+    c2d::Text *text = nullptr;
 };
 
 #endif //NXFILER_FILER_H
