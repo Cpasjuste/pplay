@@ -8,6 +8,7 @@
 #include "filer_ftp.h"
 #include "utility.h"
 
+#if 0
 using namespace c2d;
 
 #define TIMEOUT 3
@@ -132,3 +133,4 @@ const std::string FilerFtp::getError() {
 
 FilerFtp::~FilerFtp() {
 }
+#endif

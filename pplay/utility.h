@@ -27,6 +27,8 @@ namespace pplay {
 
         static std::string getMediaBackdropPath(const c2d::Io::File &file);
 
+        static std::vector<std::string> getMediaExtensions();
+
         static bool isMedia(const c2d::Io::File &file);
 
         static std::string formatTime(double seconds);

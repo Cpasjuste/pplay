@@ -7,7 +7,7 @@
 #include "utility.h"
 #include "p_search.h"
 
-#define ITEM_HEIGHT 90
+#define ITEM_HEIGHT 50
 
 using namespace c2d;
 
@@ -104,13 +104,8 @@ void Filer::setSelection(int index) {
             int idx = index_start + i;
             items[i]->setFile(files[idx]);
             items[i]->setVisibility(Visibility::Visible);
-            pscrap::Search search;
-            std::string scrapPath = pplay::Utility::getMediaScrapPath(files[idx]);
-            if (main->getIo()->exist(scrapPath)) {
-                search.load(scrapPath);
-                if (search.total_results > 0) {
-                    items[i]->setTitle(search.movies[0].title);
-                }
+            if (!files[idx].movies.empty()) {
+                items[i]->setTitle(files[idx].movies[0].title);
             }
             // set highlight position
             if (index_start + i == (unsigned int) item_index) {
@@ -147,10 +142,12 @@ void Filer::setSelection(int index) {
                     }
                 }
                 // load overview
-                if (search.total_results > 0) {
+                if (!files[idx].movies.empty()) {
                     std::string date =
-                            search.movies[0].release_date.substr(0, search.movies[0].release_date.find_first_of('-'));
-                    std::string str = search.movies[0].title + " (" + date + ")\n\n" + search.movies[0].overview;
+                            files[idx].movies[0].release_date.substr(
+                                    0, files[idx].movies[0].release_date.find_first_of('-'));
+                    std::string str = files[idx].movies[0].title + " (" + date + ")\n\n"
+                                      + files[idx].movies[0].overview;
                     text->setString(str);
                     text->setVisibility(Visibility::Visible);
                 }
@@ -215,17 +212,120 @@ bool Filer::onInput(c2d::Input::Player *players) {
     return true;
 }
 
+static bool compare(const MediaFile &a, const MediaFile &b) {
+
+    if (a.type == Io::Type::Directory && b.type != Io::Type::Directory) {
+        return true;
+    }
+    if (a.type != Io::Type::Directory && b.type == Io::Type::Directory) {
+        return false;
+    }
+
+    std::string aa = a.movies.empty() ? a.name : a.movies[0].title;
+    std::string bb = b.movies.empty() ? b.name : b.movies[0].title;
+
+    return Utility::toLower(aa) < Utility::toLower(bb);
+}
+
+bool Filer::getDir(const std::string &p) {
+
+    printf("getDir(%s)\n", p.c_str());
+
+    files.clear();
+    path = p;
+    if (path.size() > 1 && Utility::endsWith(path, "/")) {
+        path = Utility::removeLastSlash(path);
+    }
+
+#ifdef __SWITCH__
+    Io::File file("..", "..", Io::Type::Directory, 0, COLOR_BLUE);
+    files.emplace_back(file, MediaInfo(file));
+#endif
+    std::vector<std::string> ext = pplay::Utility::getMediaExtensions();
+    pplay::Io::DeviceType type = ((pplay::Io *) main->getIo())->getType(p);
+    std::vector<Io::File> _files =
+            ((pplay::Io *) main->getIo())->getDirList(type, ext, path, false);
+
+    for (auto &file : _files) {
+        MediaFile mf(file, MediaInfo(file));
+        if (file.type == Io::Type::File) {
+            pscrap::Search search;
+            std::string scrapPath = pplay::Utility::getMediaScrapPath(file);
+            if (main->getIo()->exist(scrapPath)) {
+                search.load(scrapPath);
+                if (search.total_results > 0) {
+                    mf.movies = search.movies;
+                }
+            }
+        }
+        files.emplace_back(mf);
+    }
+
+    // sort after title have been scrapped
+    std::sort(files.begin(), files.end(), compare);
+
+    setSelection(0);
+
+    return true;
+}
+
 void Filer::enter(int index) {
-    item_index_prev.push_back(index);
+
+    MediaFile file = getSelection();
+    bool success;
+
+    if (file.name == "..") {
+        exit();
+        return;
+    }
+
+    if (path == "/") {
+        success = getDir(path + file.name);
+    } else {
+        success = getDir(path + "/" + file.name);
+    }
+    if (success) {
+        item_index_prev.push_back(index);
+        setSelection(item_index);
+    }
 }
 
 void Filer::exit() {
-    if (!item_index_prev.empty()) {
-        int last = (int) item_index_prev.size() - 1;
-        if (item_index_prev[last] < (int) files.size()) {
-            item_index = item_index_prev[last];
+
+    std::string p = path;
+
+    if (p == "/" || p.find('/') == std::string::npos) {
+        return;
+    }
+
+    pplay::Io::DeviceType type = ((pplay::Io *) main->getIo())->getType(p);
+    if (type != pplay::Io::DeviceType::Sdmc) {
+        std::string s = p;
+        if (!Utility::endsWith(s, "/")) {
+            s += "/";
         }
-        item_index_prev.erase(item_index_prev.end() - 1);
+        if (s == main->getConfig()->getOption(OPT_NETWORK)->getString()) {
+            return;
+        }
+    }
+
+    while (p.back() != '/') {
+        p.erase(p.size() - 1);
+    }
+
+    if (p.size() > 1 && Utility::endsWith(p, "/")) {
+        p.erase(p.size() - 1);
+    }
+
+    if (getDir(p)) {
+        if (!item_index_prev.empty()) {
+            int last = (int) item_index_prev.size() - 1;
+            if (item_index_prev[last] < (int) files.size()) {
+                item_index = item_index_prev[last];
+            }
+            item_index_prev.erase(item_index_prev.end() - 1);
+        }
+        setSelection(item_index);
     }
 }
 

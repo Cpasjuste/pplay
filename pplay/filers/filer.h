@@ -21,11 +21,11 @@ public:
 
     Filer(Main *main, const std::string &path, const c2d::FloatRect &rect);
 
-    ~Filer();
+    ~Filer() override;
 
     void setMediaInfo(const MediaFile &target, const MediaInfo &mediaInfo);
 
-    virtual bool getDir(const std::string &path) { return false; };
+    virtual bool getDir(const std::string &path);
 
     virtual std::string getPath();
 
@@ -41,14 +41,6 @@ public:
 
 private:
 
-    friend class FilerSdmc;
-
-    friend class FilerHttp;
-
-    friend class FilerFtp;
-
-    friend class FilerSmb;
-
     virtual void enter(int index);
 
     virtual void exit();
@@ -60,7 +52,7 @@ private:
     Highlight *highlight;
     float item_height;
     int item_max;
-    int item_index;
+    int item_index = 0;
     std::vector<int> item_index_prev;
 
     c2d::Sprite *backdrop;

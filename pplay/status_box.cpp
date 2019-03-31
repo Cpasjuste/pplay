@@ -79,7 +79,8 @@ void StatusBox::onDraw(c2d::Transform &transform, bool draw) {
         setVisibility(Visibility::Hidden, true);
     }
 
-    if (main->getPlayer()->getOSD()->isVisible()) {
+    PlayerOSD *osd = main->getPlayer()->getOSD();
+    if (osd && osd->isVisible()) {
         FloatRect bounds = main->getPlayer()->getOSD()->getGlobalBounds();
         setPosition(pos.x, bounds.top - 32);
     } else {

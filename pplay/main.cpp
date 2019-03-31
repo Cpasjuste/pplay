@@ -3,9 +3,8 @@
 //
 
 #include "main.h"
-#include "filer_sdmc.h"
-#include "filer_http.h"
-#include "filer_ftp.h"
+#include "io.h"
+#include "filer.h"
 #include "menu_main.h"
 #include "menu_video.h"
 #include "scrapper.h"
@@ -53,7 +52,8 @@ using namespace pplay;
 
 Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
 
-    setClearColor(Color::Black);
+    // custom io
+    pplayIo = new pplay::Io();
 
     // configure input
     getInput()->setRepeatDelay(INPUT_DELAY);
@@ -81,30 +81,11 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     // media information cache
     getIo()->create(getIo()->getDataWritePath() + "cache");
 
-    // create filers
-    // sdmc
-    FloatRect filerRect = {0, 0, (getSize().x / 2) - 16, getSize().y - 32 - 64};
-    filerSdmc = new FilerSdmc(this, "/", filerRect);
-    filerSdmc->setLayer(1);
-    add(filerSdmc);
-    // http
-    filerHttp = new FilerHttp(this, filerRect);
-    filerHttp->setLayer(1);
-    filerHttp->setVisibility(Visibility::Hidden);
-    add(filerHttp);
-    // ftp
-    filerFtp = new FilerFtp(this, filerRect);
-    filerFtp->setLayer(1);
-    filerFtp->setVisibility(Visibility::Hidden);
-    add(filerFtp);
-#ifdef __SMB_SUPPORT__
-    // smb
-    filerSmb = new FilerSmb(this, filerRect);
-    filerSmb->setLayer(1);
-    filerSmb->setVisibility(Visibility::Hidden);
-    add(filerSmb);
-#endif
-    filer = filerSdmc;
+    // create filer
+    FloatRect filerRect = {0, 0, (getSize().x / 2) - 64, getSize().y - 32 - 64};
+    filer = new Filer(this, "/", filerRect);
+    filer->setLayer(1);
+    add(filer);
     filer->getDir(config->getOption(OPT_LAST_PATH)->getString());
 
     // status bar
@@ -153,7 +134,8 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     add(messageBox);
 
     scrapper = new Scrapper(this);
-    scrapper->scrap("/home/cpasjuste/dev/multi/videos");
+    //scrapper->scrap("/home/cpasjuste/dev/multi/videos");
+    //scrapper->scrap("http://192.168.0.2/files/Videos");
 }
 
 Main::~Main() {
@@ -161,6 +143,7 @@ Main::~Main() {
     delete (config);
     delete (timer);
     delete (font);
+    delete (pplayIo);
 }
 
 bool Main::onInput(c2d::Input::Player *players) {
@@ -207,66 +190,28 @@ void Main::onDraw(c2d::Transform &transform, bool draw) {
     C2DObject::onDraw(transform);
 }
 
-// TODO: move this in menu_main
 void Main::show(MenuType type) {
 
     if (player->isStopped() && player->isFullscreen()) {
         player->setFullscreen(false);
     }
 
+    filer->setVisibility(Visibility::Visible, true);
     if (type == MenuType::Home) {
-        filerSdmc->setVisibility(Visibility::Visible);
-        filerHttp->setVisibility(Visibility::Hidden);
-        filerFtp->setVisibility(Visibility::Hidden);
-#ifdef __SMB_SUPPORT__
-        filerSmb->setVisibility(Visibility::Hidden);
-#endif
-        filer = filerSdmc;
-        if (!filer->getDir(config->getOption(OPT_HOME_PATH)->getString())) {
+        std::string path = config->getOption(OPT_HOME_PATH)->getString();
+        if (!filer->getDir(path)) {
             if (filer->getDir("/")) {
                 filer->clearHistory();
             }
         }
-        return;
-    }
-
-    filerSdmc->setVisibility(Visibility::Hidden);
-
-    std::string net_path = config->getOption(OPT_NETWORK)->getString();
-    if (Utility::startWith(net_path, "http:")) {
-        filerFtp->setVisibility(Visibility::Hidden);
-#ifdef __SMB_SUPPORT__
-        filerSmb->setVisibility(Visibility::Hidden);
-#endif
-        filerHttp->setVisibility(Visibility::Visible);
-        filer = filerHttp;
-    } else if (Utility::startWith(net_path, "ftp:")) {
-        filerHttp->setVisibility(Visibility::Hidden);
-#ifdef __SMB_SUPPORT__
-        filerSmb->setVisibility(Visibility::Hidden);
-#endif
-        filerFtp->setVisibility(Visibility::Visible);
-        filer = filerFtp;
-#ifdef __SMB_SUPPORT__
-        } else if (Utility::startWith(net_path, "smb:")) {
-            filerHttp->setVisibility(Visibility::Hidden);
-            filerFtp->setVisibility(Visibility::Hidden);
-            filerSmb->setVisibility(Visibility::Visible);
-            filer = filerSmb;
+    } else {
+        std::string path = config->getOption(OPT_NETWORK)->getString();
+        if (!filer->getDir(path)) {
+            messageBox->show("OOPS", filer->getError(), "OK");
+            show(MenuType::Home);
         } else {
-#else
-    } else {
-#endif
-        messageBox->show("OOPS", "NETWORK path is wrong (see pplay.cfg)", "OK");
-        show(MenuType::Home);
-        return;
-    }
-
-    if (!filer->getDir(net_path)) {
-        messageBox->show("OOPS", filer->getError(), "OK");
-        show(MenuType::Home);
-    } else {
-        filer->clearHistory();
+            filer->clearHistory();
+        }
     }
 }
 
@@ -286,11 +231,8 @@ void Main::setRunningStop() {
 void Main::quit() {
 
     // TODO: save network path
-    if (filerSdmc->isVisible()) {
-        config->getOption(OPT_LAST_PATH)->setString(filer->getPath());
-        config->save();
-    }
-
+    config->getOption(OPT_LAST_PATH)->setString(filer->getPath());
+    config->save();
     exit = true;
     if (player->isStopped()) {
         running = false;
@@ -345,6 +287,10 @@ StatusBar *Main::getStatusBar() {
 
 pplay::Scrapper *Main::getScrapper() {
     return scrapper;
+}
+
+c2d::Io *Main::getIo() {
+    return (c2d::Io *) pplayIo;
 }
 
 int main() {
