@@ -133,7 +133,7 @@ void Player::onLoadEvent() {
                         if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_STRING) {
                             stream.language = node.u.list->values[i].u.list->values[n].u.string;
                         }
-                    } else if (key == "decoder-desc") {
+                    } else if (key == "codec") {
                         if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_STRING) {
                             stream.codec = node.u.list->values[i].u.list->values[n].u.string;
                         }
@@ -614,5 +614,6 @@ const std::string &Player::getTitle() const {
 PlayerOSD *Player::getOSD() {
     return osd;
 }
+
 
 

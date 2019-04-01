@@ -29,19 +29,20 @@ set(TITLE_ID "PPLAY0001")
 set(PPLAY_INC
         pplay
         pplay/filer
+        pplay/filer/Browser
+        pplay/filer/ftplib
         pplay/menus
         pplay/player
-        pplay/ftplib
         pplay/scrapper
         )
 
 file(GLOB PPLAY_SRC
         pplay/*.c*
         pplay/filer/*.c*
+        pplay/filer/Browser/*.c*
+        pplay/filer/ftplib/*.c*
         pplay/menus/*.c*
         pplay/player/*.c*
-        pplay/Browser/*.c*
-        pplay/ftplib/*.c*
         pplay/scrapper/*.c*
         )
 

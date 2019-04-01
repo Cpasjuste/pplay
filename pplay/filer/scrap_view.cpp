@@ -33,16 +33,35 @@ ScrapView::ScrapView(Main *m, const c2d::FloatRect &rect) : Rectangle(rect) {
     poster->setVisibility(Visibility::Hidden);
     add(poster);
 
-    // text
     Vector2f pos{poster->getPosition().x + 216, poster->getPosition().y + 16};
-    Vector2f size{getSize().x - pos.x - 16, 300 - 50};
+    Vector2f size{getSize().x - pos.x - 16, 170};
+
+    // title
+    title = new C2DText("TITLE", main->getFontSize(Main::FontSize::Medium), main->getFont());
+    title->setPosition(pos.x, pos.y);
+    add(title);
+
+    // text
     text = new C2DText("", main->getFontSize(Main::FontSize::Small), main->getFont());
     text->setFillColor(COLOR_FONT);
-    text->setPosition(pos.x, pos.y);
+    text->setPosition(pos.x, pos.y + 70);
     text->setOverflow(Text::NewLine);
     text->setSizeMax(size.x, size.y);
     text->setVisibility(Visibility::Hidden);
     add(text);
+
+    resolution_icon = new TextIcon("1080p", main->getFontSize(Main::FontSize::Small), main->getFont());
+    resolution_icon->setPosition(pos.x, 80);
+    add(resolution_icon);
+    video_icon = new TextIcon("h264", main->getFontSize(Main::FontSize::Small), main->getFont());
+    video_icon->setPosition(pos.x + 64, 80);
+    add(video_icon);
+    audio_icon = new TextIcon("DTS", main->getFontSize(Main::FontSize::Small), main->getFont());
+    audio_icon->setPosition(pos.x + 64 * 2, 80);
+    add(audio_icon);
+    subs_icon = new TextIcon("SUBS", main->getFontSize(Main::FontSize::Small), main->getFont());
+    subs_icon->setPosition(pos.x + 64 * 3, 80);
+    add(subs_icon);
 }
 
 void ScrapView::setMovie(const MediaFile &file) {
@@ -101,14 +120,60 @@ void ScrapView::setMovie(const MediaFile &file) {
         }
     }
 
-    // load overview
+    // load..
     std::string date =
             file.movies[0].release_date.substr(
                     0, file.movies[0].release_date.find_first_of('-'));
-    std::string str = file.movies[0].title + " (" + date + ")\n\n"
-                      + file.movies[0].overview;
-    text->setString(str);
+    title->setString(file.movies[0].title + " (" + date + ")");
+
+    text->setString(file.movies[0].overview);
     text->setVisibility(Visibility::Visible);
+
+    // load mediaInfo
+    if (!file.mediaInfo.videos.empty()) {
+        int width = file.mediaInfo.videos[0].width;
+        int height = file.mediaInfo.videos[0].height;
+        if (width == 3840) {
+            resolution_icon->setString("2160p");
+        } else if (width == 1920) {
+            resolution_icon->setString("1080p");
+        } else if (width == 1280) {
+            resolution_icon->setString("720p");
+        } else {
+            resolution_icon->setString(std::to_string(height) + "p");
+        }
+        std::string vid = Utility::toUpper(file.mediaInfo.videos[0].codec);
+        video_icon->setString(vid);
+        video_icon->setPosition(
+                resolution_icon->getPosition().x + resolution_icon->getSize().x + 8,
+                video_icon->getPosition().y);
+    }
+
+    if (!file.mediaInfo.audios.empty()) {
+        std::string aud = Utility::toUpper(file.mediaInfo.audios[0].codec);
+        audio_icon->setString(aud);
+        audio_icon->setPosition(
+                video_icon->getPosition().x + video_icon->getSize().x + 8,
+                audio_icon->getPosition().y);
+        audio_icon->setVisibility(Visibility::Visible);
+    } else {
+        audio_icon->setVisibility(Visibility::Hidden);
+    }
+
+    if (!file.mediaInfo.subtitles.empty()) {
+        if(!file.mediaInfo.audios.empty()) {
+            subs_icon->setPosition(
+                    audio_icon->getPosition().x + audio_icon->getSize().x + 8,
+                    subs_icon->getPosition().y);
+        } else {
+            subs_icon->setPosition(
+                    video_icon->getPosition().x + video_icon->getSize().x + 8,
+                    subs_icon->getPosition().y);
+        }
+        subs_icon->setVisibility(Visibility::Visible);
+    } else {
+        subs_icon->setVisibility(Visibility::Hidden);
+    }
 }
 
 void ScrapView::setVisibility(Visibility visibility, bool tweenPlay) {

@@ -8,6 +8,7 @@
 #include "cross2d/skeleton/sfml/Text.hpp"
 #include "cross2d/skeleton/sfml/Sprite.hpp"
 #include "cross2d/skeleton/sfml/Rectangle.hpp"
+#include "text_icon.h"
 #include "p_movie.h"
 
 class Main;
@@ -32,7 +33,13 @@ private:
     c2d::Sprite *poster;
     c2d::Texture *poster_texture = nullptr;
     c2d::Texture *fade = nullptr;
+    c2d::Text *title = nullptr;
     c2d::Text *text = nullptr;
+
+    TextIcon *resolution_icon = nullptr;
+    TextIcon *video_icon = nullptr;
+    TextIcon *audio_icon = nullptr;
+    TextIcon *subs_icon = nullptr;
 };
 
 #endif //PPLAY_SCRAP_VIEW_H
