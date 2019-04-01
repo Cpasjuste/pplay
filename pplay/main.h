@@ -6,12 +6,12 @@
 #define PPLAY_MAIN_H
 
 #include "cross2d/c2d.h"
-#include "filers/filer.h"
-#include "player/player.h"
+#include "filer.h"
+#include "player.h"
 #include "pplay_config.h"
-#include "menus/menu.h"
-#include "menus/menu_main.h"
-#include "menus/menu_video.h"
+#include "menu.h"
+#include "menu_main.h"
+#include "menu_video.h"
 #include "status_box.h"
 #include "status_bar.h"
 #include "scrapper.h"

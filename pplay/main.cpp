@@ -82,7 +82,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     getIo()->create(getIo()->getDataWritePath() + "cache");
 
     // create filer
-    FloatRect filerRect = {0, 0, (getSize().x / 2) - 64, getSize().y - 32 - 64};
+    FloatRect filerRect = {0, 0, getSize().x, getSize().y};
     filer = new Filer(this, "/", filerRect);
     filer->setLayer(1);
     add(filer);
@@ -134,7 +134,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     add(messageBox);
 
     scrapper = new Scrapper(this);
-    //scrapper->scrap("/home/cpasjuste/dev/multi/videos");
+    scrapper->scrap("/home/cpasjuste/dev/videos");
     //scrapper->scrap("http://192.168.0.2/files/Videos");
 }
 

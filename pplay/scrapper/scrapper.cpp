@@ -14,7 +14,7 @@ using namespace pscrap;
 
 static std::vector<c2d::Io::File> scrapList;
 
-static void getMedias(Main *main, const std::string &path) {
+static void get_medias(Main *main, const std::string &path) {
 
     std::vector<std::string> ext = pplay::Utility::getMediaExtensions();
     pplay::Io::DeviceType type = ((pplay::Io *) main->getIo())->getType(path);
@@ -33,7 +33,7 @@ static void getMedias(Main *main, const std::string &path) {
             if (file.name == "." || file.name == "..") {
                 continue;
             }
-            getMedias(main, file.path);
+            get_medias(main, file.path);
         } else {
             scrapList.emplace_back(file);
         }
@@ -43,6 +43,35 @@ static void getMedias(Main *main, const std::string &path) {
 static const char *tokens[64] = {
         "720p", "1080p", "2160p"
 };
+
+static std::string clean_name(const std::string &name) {
+    // try to cut movie name to speed up "reverse" search
+    // will work until 2030 :)
+    bool cut = false;
+    std::string search = c2d::Utility::toLower(name);
+    search = c2d::Utility::removeExt(search);
+    for (int j = 2030; j > 1969; j--) {
+        size_t pos = search.rfind(std::to_string(j));
+        if ((pos != std::string::npos) && (pos > 3)) {
+            search = search.substr(0, pos - 1);
+            cut = true;
+            break;
+        }
+    }
+    if (!cut) {
+        for (int j = 0; j < 32; j++) {
+            if (tokens[j]) {
+                size_t pos = search.rfind(tokens[j]);
+                if ((pos != std::string::npos) && (pos > 1)) {
+                    search = search.substr(0, pos - 1);
+                    break;
+                }
+            }
+        }
+    }
+
+    return search;
+}
 
 static int scrap_thread(void *ptr) {
 
@@ -65,7 +94,7 @@ static int scrap_thread(void *ptr) {
             c2d::C2DClock clock;
 
             scrapList.clear();
-            getMedias(main, scrapper->path);
+            get_medias(main, scrapper->path);
 
             size_t size = scrapList.size();
             for (size_t i = 0; i < size; i++) {
@@ -78,42 +107,19 @@ static int scrap_thread(void *ptr) {
                     std::string title = "Scrapping... (" + std::to_string(i) + "/" + std::to_string(size) + ")";
                     main->getStatus()->show(title, "Searching: " + file.name, true);
                     std::string lang = main->getConfig()->getOption(OPT_TMDB_LANGUAGE)->getString();
-                    // try to cut at unneeded tokens to speed up "recursive name" search
-                    // will work until 2030 :)
-                    bool cutted = false;
-                    std::string toSearch = c2d::Utility::toLower(file.name);
-                    toSearch = c2d::Utility::removeExt(toSearch);
-                    for (int j = 2030; j > 1969; j--) {
-                        size_t pos = toSearch.rfind(std::to_string(j));
-                        if (pos != std::string::npos & pos > 3) {
-                            toSearch = toSearch.substr(0, pos - 1);
-                            cutted = true;
-                            break;
-                        }
-                    }
-                    if (!cutted) {
-                        for (int j = 0; j < 32; j++) {
-                            if (tokens[j]) {
-                                size_t pos = toSearch.rfind(tokens[j]);
-                                if (pos != std::string::npos && pos > 1) {
-                                    toSearch = toSearch.substr(0, pos - 1);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    Search search(API_KEY, toSearch, lang);
+                    Search search(API_KEY, clean_name(file.name), lang);
                     int res = search.get();
                     if (res == 0) {
                         search.save(scrap_path);
                         if (search.total_results > 0) {
-                            printf("%s\n", search.movies.at(0).title.c_str());
                             main->getStatus()->show(title, "Downloading poster: "
                                                            + search.movies.at(0).title, true);
                             search.movies.at(0).getPoster(pplay::Utility::getMediaPosterPath(file));
                             main->getStatus()->show(title, "Downloading backdrop: "
                                                            + search.movies.at(0).title, true);
                             search.movies.at(0).getBackdrop(pplay::Utility::getMediaBackdropPath(file), 780);
+                            // refresh ui now
+                            main->getFiler()->setScrapInfo(file, search.movies);
                         }
                     }
                 }

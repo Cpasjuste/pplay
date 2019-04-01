@@ -96,7 +96,6 @@ private:
     // ui
     Main *main = nullptr;
     PlayerOSD *osd = nullptr;
-    c2d::TweenPosition *tweenPosition = nullptr;
     c2d::TweenScale *tweenScale = nullptr;
     MenuVideoSubmenu *menuVideoStreams = nullptr;
     MenuVideoSubmenu *menuAudioStreams = nullptr;

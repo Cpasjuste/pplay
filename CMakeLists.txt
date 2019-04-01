@@ -28,7 +28,7 @@ set(TITLE_ID "PPLAY0001")
 
 set(PPLAY_INC
         pplay
-        pplay/filers
+        pplay/filer
         pplay/menus
         pplay/player
         pplay/ftplib
@@ -37,7 +37,7 @@ set(PPLAY_INC
 
 file(GLOB PPLAY_SRC
         pplay/*.c*
-        pplay/filers/*.c*
+        pplay/filer/*.c*
         pplay/menus/*.c*
         pplay/player/*.c*
         pplay/Browser/*.c*

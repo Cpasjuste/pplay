@@ -15,66 +15,52 @@ Filer::Filer(Main *m, const std::string &path, const c2d::FloatRect &rect) : Rec
 
     main = m;
 
-    // backdrop
-    backdrop = new Sprite();
-    backdrop->setOrigin(Origin::TopRight);
-    backdrop->setPosition(main->getSize().x, 32);
-    backdrop->setVisibility(Visibility::Hidden);
-    add(backdrop);
+    // force scrap view width to scrapped backdrop width
+    scrapView = new ScrapView(main, {rect.width - 780, 0, 780, rect.height});
+    add(scrapView);
 
-    // fade
-    fade = new C2DTexture(main->getIo()->getDataReadPath() + "skin/fade.png");
-    fade->setOrigin(Origin::TopRight);
-    fade->setPosition(backdrop->getPosition());
-    add(fade);
-
-    // poster
-    poster = new Sprite();
-    poster->setOrigin(Origin::BottomLeft);
-    poster->setPosition(getSize().x - 50, main->getSize().y - 16);
-    poster->setVisibility(Visibility::Hidden);
-    add(poster);
-
-    // text
-    Vector2f pos{poster->getPosition().x + 216, poster->getPosition().y - 220};
-    Vector2f size{main->getSize().x - pos.x - 16, 0};
-    text = new C2DText("blahblab", main->getFontSize(Main::FontSize::Small), main->getFont());
-    text->setFillColor(COLOR_FONT);
-    text->setPosition(pos.x, pos.y);
-    text->setOverflow(Text::NewLine);
-    text->setSizeMax(size.x, size.y);
-    text->setVisibility(Visibility::Hidden);
-    add(text);
-
+    Vector2f size = {rect.width - 670, rect.height - 64};
     // highlight
-    highlight = new Highlight({getSize().x, ITEM_HEIGHT * main->getScaling()}, Highlight::CursorPosition::Left);
+    highlight = new Highlight({size.x, ITEM_HEIGHT * main->getScaling()}, Highlight::CursorPosition::Left);
     add(highlight);
 
     // items
     item_height = ITEM_HEIGHT * main->getScaling();
-    item_max = (int) (getSize().y / item_height);
-    if ((item_max * item_height) < getSize().y) {
-        item_height = getSize().y / (float) item_max;
+    item_max = (int) (size.y / item_height);
+    if ((item_max * item_height) < size.y) {
+        item_height = size.y / (float) item_max;
     }
 
     for (unsigned int i = 0; i < (unsigned int) item_max; i++) {
-        FloatRect r = {0, (item_height * i) + 1, getSize().x - 2, item_height - 2};
+        FloatRect r = {0, (item_height * i) + 1, size.x - 2, item_height - 2};
         items.emplace_back(new FilerItem(main, r));
         add(items[i]);
     }
 
     // tween
     add(new TweenAlpha(0, 255, 0.5f));
-};
+}
 
 void Filer::setMediaInfo(const MediaFile &target, const MediaInfo &mediaInfo) {
 
     for (size_t i = 0; i < files.size(); i++) {
         if (files[i].path == target.path) {
             files[i].mediaInfo = mediaInfo;
+            dirty = true;
+            break;
         }
     }
-    setSelection(item_index);
+}
+
+void Filer::setScrapInfo(const Io::File &target, const std::vector<pscrap::Movie> &movies) {
+
+    for (size_t i = 0; i < files.size(); i++) {
+        if (files[i].path == target.path) {
+            files[i].movies = movies;
+            dirty = true;
+            break;
+        }
+    }
 }
 
 void Filer::setSelection(int index) {
@@ -83,74 +69,23 @@ void Filer::setSelection(int index) {
     int page = item_index / item_max;
     unsigned int index_start = (unsigned int) page * item_max;
 
-    text->setVisibility(Visibility::Hidden);
-    fade->setVisibility(Visibility::Hidden);
-    backdrop->setVisibility(Visibility::Hidden);
-    if (backdrop_texture) {
-        delete (backdrop_texture);
-        backdrop_texture = nullptr;
-    }
-    poster->setVisibility(Visibility::Hidden);
-    if (poster_texture) {
-        delete (poster_texture);
-        poster_texture = nullptr;
-    }
+    scrapView->setVisibility(Visibility::Hidden);
 
     for (unsigned int i = 0; i < (unsigned int) item_max; i++) {
         if (index_start + i >= files.size()) {
             items[i]->setVisibility(Visibility::Hidden);
         } else {
             // load media info, set file
-            int idx = index_start + i;
-            items[i]->setFile(files[idx]);
+            MediaFile file = files[index_start + i];
+            items[i]->setFile(file);
             items[i]->setVisibility(Visibility::Visible);
-            if (!files[idx].movies.empty()) {
-                items[i]->setTitle(files[idx].movies[0].title);
+            if (!file.movies.empty()) {
+                items[i]->setTitle(file.movies[0].title);
             }
             // set highlight position
             if (index_start + i == (unsigned int) item_index) {
                 highlight->setPosition(items[i]->getPosition());
-                if (!main->getPlayer() || main->getPlayer()->isStopped()) {
-                    // load backdrop if available
-                    std::string tex_path = pplay::Utility::getMediaBackdropPath(files[idx]);
-                    if (main->getIo()->exist(tex_path)) {
-                        fade->setVisibility(Visibility::Visible);
-                        backdrop_texture = new C2DTexture(tex_path);
-                        backdrop->setTexture(backdrop_texture, true);
-                        backdrop->setVisibility(Visibility::Visible);
-                        if (backdrop_texture->getTextureRect().width != 780) {
-                            // scaling
-                            float scaling = std::min(
-                                    main->getSize().x * 0.6f / backdrop_texture->getTextureRect().width,
-                                    main->getSize().y * 0.6f / backdrop_texture->getTextureRect().height);
-                            backdrop->setScale(scaling, scaling);
-                        }
-                    }
-                }
-                // load poster if available
-                std::string tex_path = pplay::Utility::getMediaPosterPath(files[idx]);
-                if (main->getIo()->exist(tex_path)) {
-                    poster_texture = new C2DTexture(tex_path);
-                    poster->setTexture(poster_texture, true);
-                    poster->setVisibility(Visibility::Visible);
-                    if (poster_texture->getTextureRect().width != 200) {
-                        // scaling
-                        float scaling = std::min(
-                                main->getSize().x * 0.6f / poster_texture->getTextureRect().width,
-                                main->getSize().y * 0.6f / poster_texture->getTextureRect().height);
-                        poster->setScale(scaling, scaling);
-                    }
-                }
-                // load overview
-                if (!files[idx].movies.empty()) {
-                    std::string date =
-                            files[idx].movies[0].release_date.substr(
-                                    0, files[idx].movies[0].release_date.find_first_of('-'));
-                    std::string str = files[idx].movies[0].title + " (" + date + ")\n\n"
-                                      + files[idx].movies[0].overview;
-                    text->setString(str);
-                    text->setVisibility(Visibility::Visible);
-                }
+                scrapView->setMovie(file);
             }
         }
     }
@@ -210,6 +145,13 @@ bool Filer::onInput(c2d::Input::Player *players) {
     }
 
     return true;
+}
+
+void Filer::onUpdate() {
+    if (dirty) {
+        setSelection(item_index);
+        dirty = false;
+    }
 }
 
 static bool compare(const MediaFile &a, const MediaFile &b) {
@@ -338,10 +280,4 @@ std::string Filer::getPath() {
 }
 
 Filer::~Filer() {
-    if (backdrop_texture) {
-        delete (backdrop_texture);
-    }
-    if (poster_texture) {
-        delete (poster_texture);
-    }
 }

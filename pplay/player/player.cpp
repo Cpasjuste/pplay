@@ -21,12 +21,9 @@ Player::Player(Main *_main) : Rectangle(_main->getSize()) {
 
     main = _main;
 
-    setOrigin(Origin::TopRight);
+    setPosition(main->getSize());
+    setOrigin(Origin::BottomRight);
 
-    tweenPosition = new TweenPosition(
-            {main->getSize().x, 32},
-            {main->getSize().x, 0}, 0.5f);
-    add(tweenPosition);
     tweenScale = new TweenScale({0.6f, 0.6f}, {1.0f, 1.0f}, 0.5f);
     add(tweenScale);
 
@@ -543,10 +540,9 @@ void Player::setFullscreen(bool fs, bool hide) {
         if (hide) {
             setVisibility(Visibility::Hidden, true);
         } else {
-            tweenPosition->play(TweenDirection::Backward);
             tweenScale->play(TweenDirection::Backward);
         }
-        texture->showGradients();
+        texture->showFade();
         main->getMenuVideo()->setVisibility(Visibility::Hidden, true);
         if (menuVideoStreams) {
             menuVideoStreams->setVisibility(Visibility::Hidden, true);
@@ -558,12 +554,10 @@ void Player::setFullscreen(bool fs, bool hide) {
             menuSubtitlesStreams->setVisibility(Visibility::Hidden, true);
         }
         main->getFiler()->setVisibility(Visibility::Visible, true);
-        //main->getTitle()->setVisibility(Visibility::Visible, true);
         main->getStatusBar()->setVisibility(Visibility::Visible, true);
     } else {
-        texture->hideGradients();
+        texture->hideFade();
         main->getFiler()->setVisibility(Visibility::Hidden, true);
-        //main->getTitle()->setVisibility(Visibility::Hidden, true);
         main->getStatusBar()->setVisibility(Visibility::Hidden, true);
         setVisibility(Visibility::Visible, true);
     }
