@@ -61,79 +61,14 @@ bool Player::load(const MediaFile &f) {
 
 void Player::onLoadEvent() {
 
-    std::vector<MediaInfo::Stream> streams;
+    // load/update media information (include playback info)
+    file.mediaInfo = mpv->getMediaInfo(file);
+    file.mediaInfo.save(file);
 
-    // load tracks
-    mpv_node node;
-    mpv_get_property(mpv->getHandle(), "track-list", MPV_FORMAT_NODE, &node);
-    if (node.format == MPV_FORMAT_NODE_ARRAY) {
-        for (int i = 0; i < node.u.list->num; i++) {
-            if (node.u.list->values[i].format == MPV_FORMAT_NODE_MAP) {
-                MediaInfo::Stream stream{};
-                for (int n = 0; n < node.u.list->values[i].u.list->num; n++) {
-                    std::string key = node.u.list->values[i].u.list->keys[n];
-                    if (key == "type") {
-                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_STRING) {
-                            stream.type = node.u.list->values[i].u.list->values[n].u.string;
-                        }
-                    } else if (key == "id") {
-                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_INT64) {
-                            stream.id = (int) node.u.list->values[i].u.list->values[n].u.int64;
-                        }
-                    } else if (key == "title") {
-                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_STRING) {
-                            stream.title = node.u.list->values[i].u.list->values[n].u.string;
-                        }
-                    } else if (key == "lang") {
-                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_STRING) {
-                            stream.language = node.u.list->values[i].u.list->values[n].u.string;
-                        }
-                    } else if (key == "codec") {
-                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_STRING) {
-                            stream.codec = node.u.list->values[i].u.list->values[n].u.string;
-                        }
-                    } else if (key == "demux-w") {
-                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_INT64) {
-                            stream.width = (int) node.u.list->values[i].u.list->values[n].u.int64;
-                        }
-                    } else if (key == "demux-h") {
-                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_INT64) {
-                            stream.height = (int) node.u.list->values[i].u.list->values[n].u.int64;
-                        }
-                    } else if (key == "demux-samplerate") {
-                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_INT64) {
-                            stream.sample_rate = (int) node.u.list->values[i].u.list->values[n].u.int64;
-                        }
-                    } else if (key == "demux-channel-count") {
-                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_INT64) {
-                            stream.channels = (int) node.u.list->values[i].u.list->values[n].u.int64;
-                        }
-                    }
-                }
-                streams.push_back(stream);
-            }
-        }
-    }
-
-    file.mediaInfo.videos.clear();
-    file.mediaInfo.audios.clear();
-    file.mediaInfo.subtitles.clear();
-    for (auto &stream : streams) {
-        if (stream.type == "video") {
-            file.mediaInfo.videos.push_back(stream);
-        } else if (stream.type == "audio") {
-            file.mediaInfo.audios.push_back(stream);
-        } else if (stream.type == "sub") {
-            file.mediaInfo.subtitles.push_back(stream);
-        }
-    }
-
-    // update filer item
-    file.mediaInfo.duration = mpv->getDuration();
-    file.mediaInfo.save();
+    // TODO: is this really needed as it should be extracted from scrapper
     main->getFiler()->setMediaInfo(file, file.mediaInfo);
 
-    // create menus
+    // build video track selection menu
     if (!file.mediaInfo.videos.empty()) {
         // videos menu options
         std::vector<MenuItem> items;
@@ -149,6 +84,7 @@ void Player::onLoadEvent() {
         menuVideoStreams->setLayer(3);
         add(menuVideoStreams);
     }
+    // build audio track selection menu
     if (!file.mediaInfo.audios.empty()) {
         // audios menu options
         std::vector<MenuItem> items;
@@ -165,6 +101,7 @@ void Player::onLoadEvent() {
         menuAudioStreams->setLayer(3);
         add(menuAudioStreams);
     }
+    // build subtitles track selection menu
     if (!file.mediaInfo.subtitles.empty()) {
         // subtitles menu options
         std::vector<MenuItem> items;
@@ -180,6 +117,12 @@ void Player::onLoadEvent() {
         add(menuSubtitlesStreams);
     }
 
+    // restore saved tracks id
+    setVideoStream(file.mediaInfo.playbackInfo.vid_id);
+    setAudioStream(file.mediaInfo.playbackInfo.aud_id);
+    setSubtitleStream(file.mediaInfo.playbackInfo.sub_id);
+
+    // resume playback if wanted
     if (file.mediaInfo.playbackInfo.position > 0) {
         std::string msg = "Resume playback at "
                           + pplay::Utility::formatTime(file.mediaInfo.playbackInfo.position) + " ?";
@@ -188,10 +131,6 @@ void Player::onLoadEvent() {
         }
     }
 
-    setVideoStream(file.mediaInfo.playbackInfo.vid_id);
-    setAudioStream(file.mediaInfo.playbackInfo.aud_id);
-    setSubtitleStream(file.mediaInfo.playbackInfo.sub_id);
-
     resume();
     setFullscreen(true);
 }
@@ -199,7 +138,6 @@ void Player::onLoadEvent() {
 void Player::onStopEvent() {
 
     main->getStatus()->hide();
-    file.mediaInfo.save();
     main->getMenuVideo()->reset();
     osd->reset();
 
@@ -208,17 +146,20 @@ void Player::onStopEvent() {
         printf("Player::load: could not load file\n");
     }
 
-    // Audio
+    // save mediaInfo (again, for playback position, tracks id..)
+    file.mediaInfo.save(file);
+
+    // audio
     if (menuAudioStreams) {
         delete (menuAudioStreams);
         menuAudioStreams = nullptr;
     }
-    // Video
+    // video
     if (menuVideoStreams) {
         delete (menuVideoStreams);
         menuVideoStreams = nullptr;
     }
-    // Subtitles
+    // subtitles
     if (menuSubtitlesStreams) {
         delete (menuSubtitlesStreams);
         menuSubtitlesStreams = nullptr;
@@ -408,16 +349,8 @@ void Player::resume() {
 }
 
 void Player::stop() {
-    printf("Player::stop\n");
     if (!mpv->isStopped()) {
-        // save media info
-        long position = mpv->getPosition();
-        if (position > 5) {
-            file.mediaInfo.playbackInfo.position = (int) position - 5;
-        } else {
-            file.mediaInfo.playbackInfo.position = 0;
-        }
-        // stop mpv playback
+        file.mediaInfo.playbackInfo.position = (int) mpv->getPosition();
         mpv->stop();
     }
 }

@@ -1,13 +1,13 @@
 TODO
 ====
-
-- add fade out texture for previews
-- remove automatic media info extraction
+- add m3u support
+-
 - handle more than menu height in subtitles selection
 
 DONE
 ====
 
+- add fade out texture for previews
 - add status bar (time, battery)
 - player: allow ui rendering/flip when buffering media (partially done, do the same for seeking?)
 - player: save per media settings (progress, selected streams..)

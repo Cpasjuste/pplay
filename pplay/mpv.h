@@ -10,6 +10,7 @@
 
 #include "../mpv/libmpv/client.h"
 #include "../mpv/libmpv/render_gl.h"
+#include "media_info.h"
 
 class Mpv {
 
@@ -64,6 +65,8 @@ public:
     mpv_handle *getHandle();
 
     mpv_render_context *getContext();
+
+    MediaInfo getMediaInfo(const c2d::Io::File &file);
 
 private:
 

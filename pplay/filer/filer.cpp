@@ -131,7 +131,8 @@ bool Filer::onInput(c2d::Input::Player *players) {
     } else if (keys & Input::Key::Left) {
         main->getMenuMain()->setVisibility(Visibility::Visible, true);
     } else if (keys & Input::Key::Right) {
-        if (!main->getPlayer()->getMpv()->isStopped() && !main->getPlayer()->isFullscreen()) {
+        if (!main->getPlayer()->getMpv()->isStopped()
+            && !main->getPlayer()->isFullscreen()) {
             main->getPlayer()->setFullscreen(true);
         }
     } else if (keys & Input::Key::Fire1) {

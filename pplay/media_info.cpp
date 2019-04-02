@@ -12,15 +12,15 @@
 MediaInfo::MediaInfo(const c2d::Io::File &file) {
 
     serialize_path = pplay::Utility::getMediaInfoPath(file);
-
     if (!pplay::Utility::isMedia(file)) {
         return;
     }
-
     deserialize();
 }
 
-void MediaInfo::save() {
+void MediaInfo::save(const c2d::Io::File &file) {
+
+    serialize_path = pplay::Utility::getMediaInfoPath(file);
     serialize();
 }
 

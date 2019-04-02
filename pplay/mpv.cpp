@@ -11,7 +11,6 @@ static void *get_proc_address_mpv(void *unused, const char *name) {
 
 Mpv::Mpv(const std::string &configPath, bool initRender) {
 
-    // MPV INIT
     handle = mpv_create();
     if (!handle) {
         printf("Mpv::Mpv: error: mpv_create\n");
@@ -182,4 +181,85 @@ mpv_handle *Mpv::getHandle() {
 
 mpv_render_context *Mpv::getContext() {
     return context;
+}
+
+MediaInfo Mpv::getMediaInfo(const c2d::Io::File &file) {
+
+    MediaInfo mediaInfo(file);
+    std::vector<MediaInfo::Stream> streams;
+
+    if (!isAvailable() || isStopped()) {
+        return mediaInfo;
+    }
+
+    // load track list
+    mpv_node node;
+    mpv_get_property(handle, "track-list", MPV_FORMAT_NODE, &node);
+    if (node.format == MPV_FORMAT_NODE_ARRAY) {
+        for (int i = 0; i < node.u.list->num; i++) {
+            if (node.u.list->values[i].format == MPV_FORMAT_NODE_MAP) {
+                MediaInfo::Stream stream{};
+                for (int n = 0; n < node.u.list->values[i].u.list->num; n++) {
+                    std::string key = node.u.list->values[i].u.list->keys[n];
+                    if (key == "type") {
+                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_STRING) {
+                            stream.type = node.u.list->values[i].u.list->values[n].u.string;
+                        }
+                    } else if (key == "id") {
+                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_INT64) {
+                            stream.id = (int) node.u.list->values[i].u.list->values[n].u.int64;
+                        }
+                    } else if (key == "title") {
+                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_STRING) {
+                            stream.title = node.u.list->values[i].u.list->values[n].u.string;
+                        }
+                    } else if (key == "lang") {
+                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_STRING) {
+                            stream.language = node.u.list->values[i].u.list->values[n].u.string;
+                        }
+                    } else if (key == "codec") {
+                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_STRING) {
+                            stream.codec = node.u.list->values[i].u.list->values[n].u.string;
+                        }
+                    } else if (key == "demux-w") {
+                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_INT64) {
+                            stream.width = (int) node.u.list->values[i].u.list->values[n].u.int64;
+                        }
+                    } else if (key == "demux-h") {
+                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_INT64) {
+                            stream.height = (int) node.u.list->values[i].u.list->values[n].u.int64;
+                        }
+                    } else if (key == "demux-samplerate") {
+                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_INT64) {
+                            stream.sample_rate = (int) node.u.list->values[i].u.list->values[n].u.int64;
+                        }
+                    } else if (key == "demux-channel-count") {
+                        if (node.u.list->values[i].u.list->values[n].format == MPV_FORMAT_INT64) {
+                            stream.channels = (int) node.u.list->values[i].u.list->values[n].u.int64;
+                        }
+                    }
+                }
+                streams.push_back(stream);
+            }
+        }
+    }
+
+    // set media info tracks
+    mediaInfo.videos.clear();
+    mediaInfo.audios.clear();
+    mediaInfo.subtitles.clear();
+    for (auto &stream : streams) {
+        if (stream.type == "video") {
+            mediaInfo.videos.push_back(stream);
+        } else if (stream.type == "audio") {
+            mediaInfo.audios.push_back(stream);
+        } else if (stream.type == "sub") {
+            mediaInfo.subtitles.push_back(stream);
+        }
+    }
+
+    // set duration
+    mediaInfo.duration = getDuration();
+
+    return mediaInfo;
 }

@@ -40,7 +40,7 @@ public:
 
     explicit MediaInfo(const c2d::Io::File &file);
 
-    void save();
+    void save(const c2d::Io::File &file);
 
     // media information
     std::string title = "Unknown";
