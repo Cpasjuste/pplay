@@ -129,12 +129,12 @@ void PlayerOSD::onDraw(c2d::Transform &transform, bool draw) {
 
     Player *player = main->getPlayer();
 
-    if (player->isStopped() || !player->isFullscreen()) {
+    if (player->getMpv()->isStopped() || !player->isFullscreen()) {
         setVisibility(Visibility::Hidden, false);
         return;
     }
 
-    if (player->getSpeed() != 1) {
+    if (player->getMpv()->getSpeed() != 1) {
         clock.restart();
     }
 
@@ -143,8 +143,8 @@ void PlayerOSD::onDraw(c2d::Transform &transform, bool draw) {
         main->getStatusBar()->setVisibility(Visibility::Hidden, true);
     }
 
-    position = player->getPlaybackPosition();
-    duration = player->getPlaybackDuration();
+    position = player->getMpv()->getPosition();
+    duration = player->getMpv()->getDuration();
     progress->setProgress(position / duration);
     progress_text->setString(pplay::Utility::formatTime(position));
     duration_text->setString(pplay::Utility::formatTime(duration));
@@ -154,7 +154,7 @@ void PlayerOSD::onDraw(c2d::Transform &transform, bool draw) {
 
 bool PlayerOSD::onInput(c2d::Input::Player *players) {
 
-    if (main->getPlayer()->isStopped() || !main->getPlayer()->isFullscreen()) {
+    if (main->getPlayer()->getMpv()->isStopped() || !main->getPlayer()->isFullscreen()) {
         setVisibility(Visibility::Hidden, true);
         main->getStatusBar()->setVisibility(Visibility::Hidden, true);
         return true;
@@ -181,7 +181,7 @@ bool PlayerOSD::onInput(c2d::Input::Player *players) {
         clock.restart();
     } else if (keys & Input::Key::Fire1) {
         if (index == (int) ButtonID::Pause) {
-            bool pause = !main->getPlayer()->isPaused();
+            bool pause = !main->getPlayer()->getMpv()->isPaused();
             btn_play->setVisibility(pause ? Visibility::Visible : Visibility::Hidden);
             buttons.at((int) ButtonID::Pause)->setVisibility(pause ? Visibility::Hidden : Visibility::Visible);
             if (pause) {
@@ -192,13 +192,13 @@ bool PlayerOSD::onInput(c2d::Input::Player *players) {
                 main->getPlayer()->resume();
             }
         } else if (index == (int) ButtonID::SeekForward1) {
-            main->getPlayer()->seek(position + 60.0);
+            main->getPlayer()->getMpv()->seek(position + 60.0);
         } else if (index == (int) ButtonID::SeekForward10) {
-            main->getPlayer()->seek(position + (60.0 * 10.0));
+            main->getPlayer()->getMpv()->seek(position + (60.0 * 10.0));
         } else if (index == (int) ButtonID::SeekBackward1) {
-            main->getPlayer()->seek(position - 60.0);
+            main->getPlayer()->getMpv()->seek(position - 60.0);
         } else if (index == (int) ButtonID::SeekBackward10) {
-            main->getPlayer()->seek(position - (60.0 * 10.0));
+            main->getPlayer()->getMpv()->seek(position - (60.0 * 10.0));
         } else if (index == (int) ButtonID::Stop) {
             setVisibility(Visibility::Hidden);
             main->getStatus()->show("Info...", "Stopping playback...");

@@ -5,11 +5,9 @@
 #ifndef PPLAY_PLAYER_H
 #define PPLAY_PLAYER_H
 
-#include "../mpv/libmpv/client.h"
-#include "../mpv/libmpv/render_gl.h"
-
 #include "menus/menu_video_submenu.h"
 #include "media_file.h"
+#include "mpv.h"
 
 class Main;
 
@@ -20,12 +18,6 @@ class VideoTexture;
 class Player : public c2d::Rectangle {
 
 public:
-
-    struct Mpv {
-        mpv_handle *handle = nullptr;
-        mpv_render_context *ctx = nullptr;
-        bool available = false;
-    };
 
     explicit Player(Main *main);
 
@@ -39,15 +31,7 @@ public:
 
     void stop();
 
-    int seek(double position);
-
     void setSpeed(double speed);
-
-    double getSpeed();
-
-    bool isPaused();
-
-    bool isStopped();
 
     bool isFullscreen();
 
@@ -65,15 +49,9 @@ public:
 
     int getSubtitleStream();
 
-    int getVideoBitrate();
-
-    int getAudioBitrate();
-
-    long getPlaybackDuration();
-
-    long getPlaybackPosition();
-
     PlayerOSD *getOSD();
+
+    Mpv *getMpv();
 
     MenuVideoSubmenu *getMenuVideoStreams();
 
@@ -104,7 +82,7 @@ private:
 
     // player
     VideoTexture *texture = nullptr;
-    Mpv mpv;
+    Mpv *mpv;
 
     bool fullscreen = false;
 };

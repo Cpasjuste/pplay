@@ -12,7 +12,7 @@ class VideoTexture : public c2d::GLTextureBuffer {
 
 public:
 
-    explicit VideoTexture(const c2d::Vector2f &size, Player::Mpv *mpv);
+    explicit VideoTexture(const c2d::Vector2f &size, Mpv *mpv);
 
     void showFade();
 
@@ -22,7 +22,7 @@ private:
 
     void onDraw(c2d::Transform &transform, bool draw = true) override;
 
-    Player::Mpv *mpv = nullptr;
+    Mpv *mpv = nullptr;
     c2d::Texture *fade = nullptr;
     c2d::TweenAlpha *fadeTween = nullptr;
 };

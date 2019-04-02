@@ -87,7 +87,7 @@ void ScrapView::setMovie(const MediaFile &file) {
     poster->setVisibility(Visibility::Hidden);
     text->setVisibility(Visibility::Hidden);
 
-    if (!main->getPlayer() || main->getPlayer()->isStopped()) {
+    if (!main->getPlayer() || main->getPlayer()->getMpv()->isStopped()) {
         // load backdrop if available
         std::string tex_path = pplay::Utility::getMediaBackdropPath(file);
         if (main->getIo()->exist(tex_path)) {

@@ -134,7 +134,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     add(messageBox);
 
     scrapper = new Scrapper(this);
-    scrapper->scrap("/home/cpasjuste/dev/videos");
+    scrapper->scrap("/home/cpasjuste/dev/multi/medias");
     //scrapper->scrap("http://192.168.0.2/files/Videos");
 }
 
@@ -163,12 +163,14 @@ bool Main::onInput(c2d::Input::Player *players) {
             quit();
         }
     } else if (keys & Input::Touch) {
+#if 0
         if (player->getGlobalBounds().contains(players[0].touch)) {
-            if (!player->isStopped() && !player->isFullscreen()) {
+            if (!player->getMpv()->isStopped() && !player->isFullscreen()) {
                 player->setFullscreen(true);
                 return true;
             }
         }
+#endif
     }
 
     return Renderer::onInput(players);
@@ -192,7 +194,7 @@ void Main::onDraw(c2d::Transform &transform, bool draw) {
 
 void Main::show(MenuType type) {
 
-    if (player->isStopped() && player->isFullscreen()) {
+    if (player->getMpv()->isStopped() && player->isFullscreen()) {
         player->setFullscreen(false);
     }
 
@@ -234,7 +236,7 @@ void Main::quit() {
     config->getOption(OPT_LAST_PATH)->setString(filer->getPath());
     config->save();
     exit = true;
-    if (player->isStopped()) {
+    if (player->getMpv()->isStopped()) {
         running = false;
     } else {
         player->stop();

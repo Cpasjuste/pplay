@@ -7,9 +7,9 @@
 
 using namespace c2d;
 
-VideoTexture::VideoTexture(const c2d::Vector2f &size, Player::Mpv *_mpv) : GLTextureBuffer(size, Format::RGBA8) {
+VideoTexture::VideoTexture(const c2d::Vector2f &size, Mpv *m) : GLTextureBuffer(size, Format::RGBA8) {
 
-    mpv = _mpv;
+    mpv = m;
 
     // fade
     fade = new C2DTexture(c2d_renderer->getIo()->getDataReadPath() + "skin/fade.png");
@@ -30,7 +30,7 @@ void VideoTexture::showFade() {
 
 void VideoTexture::onDraw(c2d::Transform &transform, bool draw) {
 
-    if (draw && mpv && mpv->available) {
+    if (draw && mpv && mpv->isAvailable()) {
         int flip_y{0};
         mpv_opengl_fbo mpv_fbo{
                 .fbo = fbo,
@@ -44,7 +44,7 @@ void VideoTexture::onDraw(c2d::Transform &transform, bool draw) {
 
         GLint vp[4];
         glGetIntegerv(GL_VIEWPORT, vp);
-        mpv_render_context_render(mpv->ctx, r_params);
+        mpv_render_context_render(mpv->getContext(), r_params);
         glViewport(vp[0], vp[1], (GLsizei) vp[2], (GLsizei) vp[3]);
     }
 

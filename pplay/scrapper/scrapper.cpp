@@ -40,8 +40,11 @@ static void get_medias(Main *main, const std::string &path) {
     }
 }
 
-static const char *tokens[64] = {
-        "720p", "1080p", "2160p"
+#define TOKEN_COUNT 11
+static const char *tokens[TOKEN_COUNT] = {
+        "720p", "1080p", "2160p", "hdrip",
+        "dvdrip", "bdrip", "xvid", "divx",
+        "web-dl", "webrip", "bluray"
 };
 
 static std::string clean_name(const std::string &name) {
@@ -59,9 +62,9 @@ static std::string clean_name(const std::string &name) {
         }
     }
     if (!cut) {
-        for (int j = 0; j < 32; j++) {
-            if (tokens[j]) {
-                size_t pos = search.rfind(tokens[j]);
+        for (auto &token : tokens) {
+            if (token) {
+                size_t pos = search.rfind(token);
                 if ((pos != std::string::npos) && (pos > 1)) {
                     search = search.substr(0, pos - 1);
                     break;
@@ -76,7 +79,7 @@ static std::string clean_name(const std::string &name) {
 static int scrap_thread(void *ptr) {
 
     auto scrapper = (Scrapper *) ptr;
-    auto main = (Main *) scrapper->main;
+    auto main = scrapper->main;
 
     while (scrapper->running) {
 
