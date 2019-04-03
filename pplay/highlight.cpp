@@ -25,6 +25,10 @@ Highlight::Highlight(const c2d::Vector2f &size, const CursorPosition &pos) : Rec
         cursor->move(size.x - 4, 0);
     }
     add(cursor);
+
+    tween = new TweenPosition(getPosition(), getPosition(), (float) INPUT_DELAY / 2);
+    tween->setState(TweenState::Stopped);
+    add(tween);
 }
 
 void Highlight::setAlpha(uint8_t alpha, bool recursive) {
@@ -40,4 +44,15 @@ void Highlight::setFillColor(const c2d::Color &color) {
 
 void Highlight::setCursorColor(const c2d::Color &color) {
     cursor->setFillColor(color);
+}
+
+void Highlight::tweenTo(const c2d::Vector2f &position) {
+    if (tween) {
+        float seconds = (float) (c2d_renderer->getInput()->getRepeatDelay() * 0.001f) / 3;
+        tween->setFromTo(getPosition(), position, seconds);
+        tween->play(TweenDirection::Forward, true);
+        printf("TWEEN\n");
+    } else {
+        Transformable::setPosition(position);
+    }
 }

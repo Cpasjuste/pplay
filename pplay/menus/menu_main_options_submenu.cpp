@@ -32,7 +32,7 @@ void MenuMainOptionsSubmenu::setSelection(const std::string &name) {
 
     for (auto btn : buttons) {
         if (Utility::toLower(btn->item.name) == Utility::toLower(name)) {
-            highlight_selection->setPosition(btn->getPosition());
+            highlight_selection->tweenTo(btn->getPosition());
         }
     }
 }

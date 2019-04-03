@@ -118,7 +118,7 @@ void PlayerOSD::setVisibility(c2d::Visibility visibility, bool tweenPlay) {
 
     if (visibility == Visibility::Visible) {
         index = 0;
-        highlight->setPosition(buttons.at((size_t) index)->getPosition().x, 0);
+        highlight->tweenTo({buttons.at((size_t) index)->getPosition().x, 0});
     }
 
     clock.restart();
@@ -170,14 +170,14 @@ bool PlayerOSD::onInput(c2d::Input::Player *players) {
         if (index < 0) {
             index = (int) buttons.size() - 1;
         }
-        highlight->setPosition(buttons.at((size_t) index)->getPosition().x, 0);
+        highlight->tweenTo({buttons.at((size_t) index)->getPosition().x, 0});
         clock.restart();
     } else if (keys & Input::Key::Right) {
         index++;
         if (index >= (int) buttons.size()) {
             index = 0;
         }
-        highlight->setPosition(buttons.at((size_t) index)->getPosition().x, 0);
+        highlight->tweenTo({buttons.at((size_t) index)->getPosition().x, 0});
         clock.restart();
     } else if (keys & Input::Key::Fire1) {
         if (index == (int) ButtonID::Pause) {
@@ -213,7 +213,7 @@ bool PlayerOSD::onInput(c2d::Input::Player *players) {
 
 void PlayerOSD::reset() {
     index = 0;
-    highlight->setPosition(buttons.at((size_t) index)->getPosition().x, 0);
+    highlight->tweenTo({buttons.at((size_t) index)->getPosition().x, 0});
     btn_play->setVisibility(Visibility::Hidden);
     buttons.at((int) ButtonID::Pause)->setVisibility(Visibility::Visible);
     clock.restart();

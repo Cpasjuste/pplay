@@ -84,7 +84,7 @@ void Filer::setSelection(int index) {
             }
             // set highlight position
             if (index_start + i == (unsigned int) item_index) {
-                highlight->setPosition(items[i]->getPosition());
+                highlight->tweenTo(items[i]->getPosition());
                 scrapView->setMovie(file);
             }
         }

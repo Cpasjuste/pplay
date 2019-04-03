@@ -117,7 +117,7 @@ bool Menu::onInput(c2d::Input::Player *players) {
         }
     }
 
-    highlight->setPosition(0, buttons[index]->getPosition().y);
+    highlight->tweenTo({0, buttons[index]->getPosition().y});
 
     return true;
 }
@@ -132,5 +132,5 @@ MenuItem *Menu::getSelection() {
 
 void Menu::reset() {
     index = 0;
-    highlight->setPosition(0, buttons[index]->getPosition().y);
+    highlight->tweenTo({0, buttons[index]->getPosition().y});
 }
