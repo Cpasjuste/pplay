@@ -186,7 +186,7 @@ mpv_render_context *Mpv::getContext() {
 MediaInfo Mpv::getMediaInfo(const c2d::Io::File &file) {
 
     MediaInfo mediaInfo(file);
-    std::vector<MediaInfo::Stream> streams;
+    std::vector<MediaInfo::Track> streams;
 
     if (!isAvailable() || isStopped()) {
         return mediaInfo;
@@ -198,7 +198,7 @@ MediaInfo Mpv::getMediaInfo(const c2d::Io::File &file) {
     if (node.format == MPV_FORMAT_NODE_ARRAY) {
         for (int i = 0; i < node.u.list->num; i++) {
             if (node.u.list->values[i].format == MPV_FORMAT_NODE_MAP) {
-                MediaInfo::Stream stream{};
+                MediaInfo::Track stream{};
                 for (int n = 0; n < node.u.list->values[i].u.list->num; n++) {
                     std::string key = node.u.list->values[i].u.list->keys[n];
                     if (key == "type") {

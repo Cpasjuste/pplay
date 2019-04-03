@@ -86,7 +86,7 @@ Menu::Menu(Main *m, const c2d::FloatRect &rect, const std::string &_title,
 
 bool Menu::onInput(c2d::Input::Player *players) {
 
-    int keys = players[0].keys;
+    unsigned int keys = players[0].keys;
 
     if (keys & Input::Touch) {
         Vector2f touch = players[0].touch;

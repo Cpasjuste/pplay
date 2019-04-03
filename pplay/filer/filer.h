@@ -22,8 +22,6 @@ public:
 
     Filer(Main *main, const std::string &path, const c2d::FloatRect &rect);
 
-    ~Filer() override;
-
     void setMediaInfo(const MediaFile &target, const MediaInfo &mediaInfo);
 
     void setScrapInfo(const c2d::Io::File &target, const std::vector<pscrap::Movie> &movies);

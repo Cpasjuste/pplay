@@ -69,8 +69,6 @@ void Filer::setSelection(int index) {
     int page = item_index / item_max;
     unsigned int index_start = (unsigned int) page * item_max;
 
-    scrapView->setVisibility(Visibility::Hidden);
-
     for (unsigned int i = 0; i < (unsigned int) item_max; i++) {
         if (index_start + i >= files.size()) {
             items[i]->setVisibility(Visibility::Hidden);
@@ -85,7 +83,12 @@ void Filer::setSelection(int index) {
             // set highlight position
             if (index_start + i == (unsigned int) item_index) {
                 highlight->tweenTo(items[i]->getPosition());
-                scrapView->setMovie(file);
+                if (file.type == Io::Type::File) {
+                    scrapView->setVisibility(Visibility::Visible);
+                    scrapView->setMovie(file);
+                } else {
+                    scrapView->setVisibility(Visibility::Hidden);
+                }
             }
         }
     }
@@ -122,12 +125,14 @@ bool Filer::onInput(c2d::Input::Player *players) {
         if (item_index < 0)
             item_index = (int) (files.size() - 1);
         setSelection(item_index);
+        scrapView->unload();
     } else if (keys & Input::Key::Down) {
         item_index++;
         if (item_index >= (int) files.size()) {
             item_index = 0;
         }
         setSelection(item_index);
+        scrapView->unload();
     } else if (keys & Input::Key::Left) {
         main->getMenuMain()->setVisibility(Visibility::Visible, true);
     } else if (keys & Input::Key::Right) {
@@ -149,10 +154,13 @@ bool Filer::onInput(c2d::Input::Player *players) {
 }
 
 void Filer::onUpdate() {
+
     if (dirty) {
         setSelection(item_index);
         dirty = false;
     }
+
+    C2DObject::onUpdate();
 }
 
 static bool compare(const MediaFile &a, const MediaFile &b) {
@@ -278,7 +286,4 @@ void Filer::clearHistory() {
 
 std::string Filer::getPath() {
     return path;
-}
-
-Filer::~Filer() {
 }

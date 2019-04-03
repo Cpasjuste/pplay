@@ -18,19 +18,22 @@ ScrapView::ScrapView(Main *m, const c2d::FloatRect &rect) : Rectangle(rect) {
     backdrop->setOrigin(Origin::BottomRight);
     backdrop->setPosition(getSize());
     backdrop->setVisibility(Visibility::Hidden);
+    backdrop->setAlpha(0);
+    backdrop->add(new TweenAlpha(0, 255, 0.3f));
     add(backdrop);
 
-    // fade
+    // backdrop fade
     fade = new C2DTexture(main->getIo()->getDataReadPath() + "skin/fade.png");
     fade->setOrigin(Origin::BottomRight);
     fade->setPosition(backdrop->getPosition());
-    fade->setVisibility(Visibility::Hidden);
     add(fade);
 
     // poster
     poster = new Sprite();
     poster->setPosition(64, 32);
     poster->setVisibility(Visibility::Hidden);
+    poster->setAlpha(0);
+    poster->add(new TweenAlpha(0, 255, 0.3f));
     add(poster);
 
     Vector2f pos{poster->getPosition().x + 216, poster->getPosition().y + 16};
@@ -42,13 +45,12 @@ ScrapView::ScrapView(Main *m, const c2d::FloatRect &rect) : Rectangle(rect) {
     add(title);
 
     // text
-    text = new C2DText("", main->getFontSize(Main::FontSize::Small), main->getFont());
-    text->setFillColor(COLOR_FONT);
-    text->setPosition(pos.x, pos.y + 70);
-    text->setOverflow(Text::NewLine);
-    text->setSizeMax(size.x, size.y);
-    text->setVisibility(Visibility::Hidden);
-    add(text);
+    overview = new C2DText("", main->getFontSize(Main::FontSize::Small), main->getFont());
+    overview->setFillColor(COLOR_FONT);
+    overview->setPosition(pos.x, pos.y + 70);
+    overview->setOverflow(Text::NewLine);
+    overview->setSizeMax(size.x, size.y);
+    add(overview);
 
     resolution_icon = new TextIcon("1080p", main->getFontSize(Main::FontSize::Small), main->getFont());
     resolution_icon->setPosition(pos.x, 80);
@@ -62,129 +64,152 @@ ScrapView::ScrapView(Main *m, const c2d::FloatRect &rect) : Rectangle(rect) {
     subs_icon = new TextIcon("SUBS", main->getFontSize(Main::FontSize::Small), main->getFont());
     subs_icon->setPosition(pos.x + 64 * 3, 80);
     add(subs_icon);
+
+    clock = new C2DClock();
 }
 
-void ScrapView::setMovie(const MediaFile &file) {
+void ScrapView::setMovie(const MediaFile &f) {
 
-    // always delete previous textures
-    if (backdrop_texture) {
-        delete (backdrop_texture);
-        backdrop_texture = nullptr;
-    }
-    if (poster_texture) {
-        delete (poster_texture);
-        poster_texture = nullptr;
-    }
+    file = f;
+
+    video_icon->setVisibility(Visibility::Hidden);
+    audio_icon->setVisibility(Visibility::Hidden);
+    subs_icon->setVisibility(Visibility::Hidden);
+    resolution_icon->setVisibility(Visibility::Hidden);
 
     // if no movie was scrapped, return
     if (file.movies.empty()) {
-        return;
-    }
+        title->setString(file.name);
+        overview->setString("No information available.\n\n"
+                            "Please use the scrapper option to get "
+                            "some information\nabout this media.");
+    } else {
+        // load..
+        pscrap::Movie movie = file.movies[0];
+        std::string date =
+                movie.release_date.substr(0, movie.release_date.find_first_of('-'));
+        title->setString(movie.title + " (" + date + ")");
+        overview->setString(movie.overview);
 
-    setVisibility(Visibility::Visible);
-    fade->setVisibility(Visibility::Hidden);
-    backdrop->setVisibility(Visibility::Hidden);
-    poster->setVisibility(Visibility::Hidden);
-    text->setVisibility(Visibility::Hidden);
-
-    if (!main->getPlayer() || main->getPlayer()->getMpv()->isStopped()) {
-        // load backdrop if available
-        std::string tex_path = pplay::Utility::getMediaBackdropPath(file);
-        if (main->getIo()->exist(tex_path)) {
-            fade->setVisibility(Visibility::Visible);
-            backdrop_texture = new C2DTexture(tex_path);
-            backdrop->setTexture(backdrop_texture, true);
-            backdrop->setVisibility(Visibility::Visible);
-            if (backdrop_texture->getTextureRect().width != 780) {
-                // scaling
-                float scaling = std::min(
-                        getSize().x / backdrop_texture->getTextureRect().width,
-                        getSize().y / backdrop_texture->getTextureRect().height);
-                backdrop->setScale(scaling, scaling);
+        // load mediaInfo
+        if (!file.mediaInfo.videos.empty()) {
+            MediaInfo::Track track = file.mediaInfo.videos[0];
+            int width = track.width;
+            int height = track.height;
+            if (width == 3840) {
+                resolution_icon->setString("2160p");
+            } else if (width == 1920) {
+                resolution_icon->setString("1080p");
+            } else if (width == 1280) {
+                resolution_icon->setString("720p");
+            } else {
+                resolution_icon->setString(std::to_string(height) + "p");
             }
+            std::string vid = Utility::toUpper(track.codec);
+            video_icon->setString(vid);
+            video_icon->setPosition(
+                    resolution_icon->getPosition().x + resolution_icon->getSize().x + 8,
+                    video_icon->getPosition().y);
+            video_icon->setVisibility(Visibility::Visible);
+            resolution_icon->setVisibility(Visibility::Visible);
         }
-    }
 
-    // load poster if available
-    std::string tex_path = pplay::Utility::getMediaPosterPath(file);
-    if (main->getIo()->exist(tex_path)) {
-        poster_texture = new C2DTexture(tex_path);
-        poster->setTexture(poster_texture, true);
-        poster->setVisibility(Visibility::Visible);
-        if (poster_texture->getTextureRect().width != 200) {
-            // scaling
-            float scaling = std::min(
-                    getSize().x / poster_texture->getTextureRect().width,
-                    getSize().y / poster_texture->getTextureRect().height);
-            poster->setScale(scaling, scaling);
-        }
-    }
-
-    // load..
-    std::string date =
-            file.movies[0].release_date.substr(
-                    0, file.movies[0].release_date.find_first_of('-'));
-    title->setString(file.movies[0].title + " (" + date + ")");
-
-    text->setString(file.movies[0].overview);
-    text->setVisibility(Visibility::Visible);
-
-    // load mediaInfo
-    if (!file.mediaInfo.videos.empty()) {
-        int width = file.mediaInfo.videos[0].width;
-        int height = file.mediaInfo.videos[0].height;
-        if (width == 3840) {
-            resolution_icon->setString("2160p");
-        } else if (width == 1920) {
-            resolution_icon->setString("1080p");
-        } else if (width == 1280) {
-            resolution_icon->setString("720p");
-        } else {
-            resolution_icon->setString(std::to_string(height) + "p");
-        }
-        std::string vid = Utility::toUpper(file.mediaInfo.videos[0].codec);
-        video_icon->setString(vid);
-        video_icon->setPosition(
-                resolution_icon->getPosition().x + resolution_icon->getSize().x + 8,
-                video_icon->getPosition().y);
-    }
-
-    if (!file.mediaInfo.audios.empty()) {
-        std::string aud = Utility::toUpper(file.mediaInfo.audios[0].codec);
-        audio_icon->setString(aud);
-        audio_icon->setPosition(
-                video_icon->getPosition().x + video_icon->getSize().x + 8,
-                audio_icon->getPosition().y);
-        audio_icon->setVisibility(Visibility::Visible);
-    } else {
-        audio_icon->setVisibility(Visibility::Hidden);
-    }
-
-    if (!file.mediaInfo.subtitles.empty()) {
-        if(!file.mediaInfo.audios.empty()) {
-            subs_icon->setPosition(
-                    audio_icon->getPosition().x + audio_icon->getSize().x + 8,
-                    subs_icon->getPosition().y);
-        } else {
-            subs_icon->setPosition(
+        if (!file.mediaInfo.audios.empty()) {
+            std::string aud = Utility::toUpper(file.mediaInfo.audios[0].codec);
+            audio_icon->setString(aud);
+            audio_icon->setPosition(
                     video_icon->getPosition().x + video_icon->getSize().x + 8,
-                    subs_icon->getPosition().y);
+                    audio_icon->getPosition().y);
+            audio_icon->setVisibility(Visibility::Visible);
         }
-        subs_icon->setVisibility(Visibility::Visible);
-    } else {
-        subs_icon->setVisibility(Visibility::Hidden);
+
+        if (!file.mediaInfo.subtitles.empty()) {
+            if (!file.mediaInfo.audios.empty()) {
+                subs_icon->setPosition(
+                        audio_icon->getPosition().x + audio_icon->getSize().x + 8,
+                        subs_icon->getPosition().y);
+            } else {
+                subs_icon->setPosition(
+                        video_icon->getPosition().x + video_icon->getSize().x + 8,
+                        subs_icon->getPosition().y);
+            }
+            subs_icon->setVisibility(Visibility::Visible);
+        }
     }
 }
 
-void ScrapView::setVisibility(Visibility visibility, bool tweenPlay) {
-    Rectangle::setVisibility(visibility, tweenPlay);
+void ScrapView::onUpdate() {
+
+    if (!isVisible()) {
+        return;
+    }
+
+    unsigned int keys = main->getInput()->getKeys();
+
+    if (keys > 0 && keys != Input::Delay) {
+        clock->restart();
+    } else if (keys == 0 && clock->getElapsedTime().asMilliseconds() > 500) {
+        // load images
+        if (!file.movies.empty() && !backdrop->isVisible()) {
+            // load backdrop if available
+            if (!main->getPlayer() || main->getPlayer()->getMpv()->isStopped()) {
+                std::string tex_path = pplay::Utility::getMediaBackdropPath(file);
+                if (main->getIo()->exist(tex_path)) {
+                    backdrop_texture = new C2DTexture(tex_path);
+                    backdrop->setTexture(backdrop_texture, true);
+                    backdrop->setVisibility(Visibility::Visible, true);
+                    if (backdrop_texture->getTextureRect().width != 780) {
+                        // scaling
+                        float scaling = std::min(
+                                getSize().x / backdrop_texture->getTextureRect().width,
+                                getSize().y / backdrop_texture->getTextureRect().height);
+                        backdrop->setScale(scaling, scaling);
+                    }
+                }
+            }
+            // load poster if available
+            std::string tex_path = pplay::Utility::getMediaPosterPath(file);
+            if (main->getIo()->exist(tex_path)) {
+                poster_texture = new C2DTexture(tex_path);
+                poster->setTexture(poster_texture, true);
+                poster->setVisibility(Visibility::Visible, true);
+                if (poster_texture->getTextureRect().width != 200) {
+                    // scaling
+                    float scaling = std::min(
+                            getSize().x / poster_texture->getTextureRect().width,
+                            getSize().y / poster_texture->getTextureRect().height);
+                    poster->setScale(scaling, scaling);
+                }
+            }
+        }
+    }
+}
+
+void ScrapView::unload() {
+
+    backdrop->setVisibility(Visibility::Hidden);
+    poster->setVisibility(Visibility::Hidden);
+
+    if (backdrop_texture) {
+        delete (backdrop_texture);
+        backdrop_texture = nullptr;
+        backdrop->setTexture(nullptr);
+    }
+
+    if (poster_texture) {
+        delete (poster_texture);
+        poster_texture = nullptr;
+        poster->setTexture(nullptr);
+    }
 }
 
 ScrapView::~ScrapView() {
     if (backdrop_texture) {
         delete (backdrop_texture);
+
     }
     if (poster_texture) {
         delete (poster_texture);
     }
+    delete (clock);
 }

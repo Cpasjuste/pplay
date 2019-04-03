@@ -14,7 +14,7 @@ class MediaInfo {
 
 public:
 
-    class Stream {
+    class Track {
     public:
         int id;
         std::string type;
@@ -47,9 +47,9 @@ public:
     std::string path;
     long duration = 0;
     int bit_rate = 0;
-    std::vector<Stream> videos;
-    std::vector<Stream> audios;
-    std::vector<Stream> subtitles;
+    std::vector<Track> videos;
+    std::vector<Track> audios;
+    std::vector<Track> subtitles;
     // media playback status
     Playback playbackInfo;
 

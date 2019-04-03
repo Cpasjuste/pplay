@@ -23,9 +23,11 @@ public:
 
     void setMovie(const MediaFile &file);
 
-    void setVisibility(c2d::Visibility visibility, bool tweenPlay = false) override;
+    void unload();
 
 private:
+
+    void onUpdate() override;
 
     Main *main;
     c2d::Sprite *backdrop;
@@ -34,12 +36,16 @@ private:
     c2d::Texture *poster_texture = nullptr;
     c2d::Texture *fade = nullptr;
     c2d::Text *title = nullptr;
-    c2d::Text *text = nullptr;
+    c2d::Text *overview = nullptr;
 
     TextIcon *resolution_icon = nullptr;
     TextIcon *video_icon = nullptr;
     TextIcon *audio_icon = nullptr;
     TextIcon *subs_icon = nullptr;
+
+    MediaFile file;
+
+    c2d::Clock *clock;
 };
 
 #endif //PPLAY_SCRAP_VIEW_H

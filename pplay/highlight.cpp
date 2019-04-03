@@ -51,7 +51,6 @@ void Highlight::tweenTo(const c2d::Vector2f &position) {
         float seconds = (float) (c2d_renderer->getInput()->getRepeatDelay() * 0.001f) / 3;
         tween->setFromTo(getPosition(), position, seconds);
         tween->play(TweenDirection::Forward, true);
-        printf("TWEEN\n");
     } else {
         Transformable::setPosition(position);
     }

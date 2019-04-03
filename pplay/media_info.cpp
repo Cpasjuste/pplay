@@ -196,7 +196,7 @@ bool MediaInfo::deserialize() {
     fs.read((char *) &count, sizeof(count));
     //printf("Media::deserialize: video streams = %i\n", count);
     for (int i = 0; i < count; i++) {
-        Stream stream{};
+        Track stream{};
         // id
         fs.read((char *) &stream.id, sizeof(stream.id));
         // type
@@ -240,7 +240,7 @@ bool MediaInfo::deserialize() {
     fs.read((char *) &count, sizeof(count));
     //printf("Media::deserialize: audio streams = %i\n", count);
     for (int i = 0; i < count; i++) {
-        Stream stream{};
+        Track stream{};
         // id
         fs.read((char *) &stream.id, sizeof(stream.id));
         // type
@@ -282,7 +282,7 @@ bool MediaInfo::deserialize() {
     fs.read((char *) &count, sizeof(count));
     //printf("Media::deserialize: subtitle streams = %i\n", count);
     for (int i = 0; i < count; i++) {
-        Stream stream{};
+        Track stream{};
         // id
         fs.read((char *) &stream.id, sizeof(stream.id));
         // type
