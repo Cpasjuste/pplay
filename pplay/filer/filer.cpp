@@ -84,7 +84,9 @@ void Filer::setSelection(int index) {
             if (index_start + i == (unsigned int) item_index) {
                 highlight->tweenTo(items[i]->getPosition());
                 if (file.type == Io::Type::File) {
-                    scrapView->setVisibility(Visibility::Visible);
+                    if (!scrapView->isVisible()) {
+                        scrapView->setVisibility(Visibility::Visible);
+                    }
                     scrapView->setMovie(file);
                 } else {
                     scrapView->setVisibility(Visibility::Hidden);
@@ -142,11 +144,13 @@ bool Filer::onInput(c2d::Input::Player *players) {
         }
     } else if (keys & Input::Key::Fire1) {
         if (getSelection().type == Io::Type::Directory) {
+            scrapView->unload();
             enter(item_index);
         } else if (pplay::Utility::isMedia(getSelection())) {
             main->getPlayer()->load(files[item_index]);
         }
     } else if (keys & Input::Key::Fire2) {
+        scrapView->unload();
         exit();
     }
 

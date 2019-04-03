@@ -17,18 +17,23 @@ Player::Player(Main *_main) : Rectangle(_main->getSize()) {
 
     main = _main;
 
-    setPosition(main->getSize());
+    Vector2f pos = main->getSize();
+    setPosition(pos);
     setOrigin(Origin::BottomRight);
 
-    tweenScale = new TweenScale({0.6f, 0.6f}, {1.0f, 1.0f}, 0.5f);
+    tweenScale = new TweenScale({0.25f, 0.25f}, {1.0f, 1.0f}, 0.5f);
     add(tweenScale);
+    tweenPosition = new TweenPosition({pos.x - 16, pos.y - 16}, {pos}, 0.5f);
+    add(tweenPosition);
 
     setVisibility(Visibility::Hidden);
 
     mpv = new Mpv(main->getIo()->getDataWritePath() + "mpv", true);
 
     // TODO: create texture of video size?
-    texture = new VideoTexture(main->getSize(), mpv);
+    texture = new VideoTexture(pos, mpv);
+    texture->setOutlineColor(Color::Red);
+    texture->setOutlineThickness(4);
     add(texture);
 
     osd = new PlayerOSD(main);
@@ -66,7 +71,7 @@ void Player::onLoadEvent() {
     file.mediaInfo.save(file);
 
     // TODO: is this really needed as it should be extracted from scrapper
-    main->getFiler()->setMediaInfo(file, file.mediaInfo);
+    // main->getFiler()->setMediaInfo(file, file.mediaInfo);
 
     // build video track selection menu
     if (!file.mediaInfo.videos.empty()) {
@@ -135,15 +140,17 @@ void Player::onLoadEvent() {
     setFullscreen(true);
 }
 
-void Player::onStopEvent() {
+void Player::onStopEvent(int reason) {
 
     main->getStatus()->hide();
     main->getMenuVideo()->reset();
     osd->reset();
 
-    if (!isFullscreen()) {
+    if (reason == MPV_END_FILE_REASON_ERROR) {
         main->getStatus()->show("Error...", "Could not load file");
         printf("Player::load: could not load file\n");
+    } else if (reason == MPV_END_FILE_REASON_EOF) {
+        file.mediaInfo.playbackInfo.position = 0;
     }
 
     // save mediaInfo (again, for playback position, tracks id..)
@@ -195,8 +202,9 @@ void Player::onUpdate() {
                     main->getStatus()->show("Please Wait...", "Loading... " + file.name, true);
                     break;
                 case MPV_EVENT_END_FILE:
-                    printf("MPV_EVENT_END_FILE\n");
-                    onStopEvent();
+                    //auto ef = (mpv_event_end_file *) event->data;
+                    //printf("MPV_EVENT_END_FILE: %i\n", ef->reason);
+                    onStopEvent(((mpv_event_end_file *) event->data)->reason);
                     break;
                 case MPV_EVENT_SHUTDOWN:
                     printf("MPV_EVENT_SHUTDOWN\n");
@@ -362,6 +370,9 @@ bool Player::isFullscreen() {
 void Player::setFullscreen(bool fs, bool hide) {
 
     if (fs == fullscreen) {
+        if (hide) {
+            setVisibility(Visibility::Hidden, true);
+        }
         return;
     }
 
@@ -372,6 +383,7 @@ void Player::setFullscreen(bool fs, bool hide) {
             setVisibility(Visibility::Hidden, true);
         } else {
             tweenScale->play(TweenDirection::Backward);
+            tweenPosition->play(TweenDirection::Backward);
         }
         texture->showFade();
         main->getMenuVideo()->setVisibility(Visibility::Hidden, true);

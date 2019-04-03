@@ -95,6 +95,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
 
     // ffmpeg player
     player = new Player(this);
+    player->setLayer(2);
     add(player);
 
     // main menu
@@ -105,7 +106,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     items.emplace_back("Exit", "exit.png", MenuItem::Position::Bottom);
     menu_main = new MenuMain(this, {-250 * scaling, 0, 250 * scaling, getSize().y}, items);
     menu_main->setVisibility(Visibility::Hidden, false);
-    menu_main->setLayer(2);
+    menu_main->setLayer(3);
     add(menu_main);
 
     // video menu
@@ -116,17 +117,17 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     items.emplace_back("Stop", "exit.png", MenuItem::Position::Bottom);
     menu_video = new MenuVideo(this, {getSize().x, 0, 250 * scaling, getSize().y}, items);
     menu_video->setVisibility(Visibility::Hidden, false);
-    menu_video->setLayer(2);
+    menu_video->setLayer(3);
     add(menu_video);
 
     // a messagebox...
-    float w = getSize().x / 2;
+    float w = getSize().x / 3;
     float h = getSize().y / 3;
     messageBox = new MessageBox({getSize().x / 2, getSize().y / 2, w, h},
                                 getInput(), getFont(), getFontSize(Main::FontSize::Medium));
     messageBox->setOrigin(Origin::Center);
     messageBox->setFillColor(COLOR_BG);
-    messageBox->setAlpha(200);
+    messageBox->setAlpha(240);
     messageBox->setOutlineColor(COLOR_RED);
     messageBox->setOutlineThickness(2);
     messageBox->getTitleText()->setOutlineThickness(0);

@@ -44,8 +44,8 @@ private:
     TextIcon *subs_icon = nullptr;
 
     MediaFile file;
-
     c2d::Clock *clock;
+    bool loaded = false;
 };
 
 #endif //PPLAY_SCRAP_VIEW_H

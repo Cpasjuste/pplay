@@ -69,12 +69,13 @@ private:
 
     void onLoadEvent();
 
-    void onStopEvent();
+    void onStopEvent(int reason);
 
     // ui
     Main *main = nullptr;
     PlayerOSD *osd = nullptr;
     c2d::TweenScale *tweenScale = nullptr;
+    c2d::TweenPosition *tweenPosition = nullptr;
     MenuVideoSubmenu *menuVideoStreams = nullptr;
     MenuVideoSubmenu *menuAudioStreams = nullptr;
     MenuVideoSubmenu *menuSubtitlesStreams = nullptr;

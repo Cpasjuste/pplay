@@ -14,6 +14,7 @@ VideoTexture::VideoTexture(const c2d::Vector2f &size, Mpv *m) : GLTextureBuffer(
     // fade
     fade = new C2DTexture(c2d_renderer->getIo()->getDataReadPath() + "skin/fade.png");
     fade->setScale(size.x / fade->getTextureRect().width, size.y / fade->getTextureRect().height);
+    fade->setFillColor(Color::Black);
     fade->setAlpha(0);
     fadeTween = new TweenAlpha(0, 255, 0.5f);
     fade->add(fadeTween);

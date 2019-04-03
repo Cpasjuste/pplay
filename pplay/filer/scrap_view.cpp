@@ -26,6 +26,7 @@ ScrapView::ScrapView(Main *m, const c2d::FloatRect &rect) : Rectangle(rect) {
     fade = new C2DTexture(main->getIo()->getDataReadPath() + "skin/fade.png");
     fade->setOrigin(Origin::BottomRight);
     fade->setPosition(backdrop->getPosition());
+    fade->setFillColor(Color::Black);
     add(fade);
 
     // poster
@@ -37,7 +38,7 @@ ScrapView::ScrapView(Main *m, const c2d::FloatRect &rect) : Rectangle(rect) {
     add(poster);
 
     Vector2f pos{poster->getPosition().x + 216, poster->getPosition().y + 16};
-    Vector2f size{getSize().x - pos.x - 16, 170};
+    Vector2f size{getSize().x - pos.x - 16, 180};
 
     // title
     title = new C2DText("TITLE", main->getFontSize(Main::FontSize::Medium), main->getFont());
@@ -82,7 +83,7 @@ void ScrapView::setMovie(const MediaFile &f) {
         title->setString(file.name);
         overview->setString("No information available.\n\n"
                             "Please use the scrapper option to get "
-                            "some information\nabout this media.");
+                            "some information about this media.");
     } else {
         // load..
         pscrap::Movie movie = file.movies[0];
@@ -140,7 +141,7 @@ void ScrapView::setMovie(const MediaFile &f) {
 
 void ScrapView::onUpdate() {
 
-    if (!isVisible()) {
+    if (!main->getFiler()->isVisible()) {
         return;
     }
 
@@ -148,27 +149,28 @@ void ScrapView::onUpdate() {
 
     if (keys > 0 && keys != Input::Delay) {
         clock->restart();
-    } else if (keys == 0 && clock->getElapsedTime().asMilliseconds() > 500) {
+    } else if (keys == 0 && clock->getElapsedTime().asMilliseconds() > INPUT_DELAY) {
         // load images
-        if (!file.movies.empty() && !backdrop->isVisible()) {
+        if (!loaded && !file.movies.empty()) {
+            loaded = true;
             // load backdrop if available
-            if (!main->getPlayer() || main->getPlayer()->getMpv()->isStopped()) {
-                std::string tex_path = pplay::Utility::getMediaBackdropPath(file);
-                if (main->getIo()->exist(tex_path)) {
-                    backdrop_texture = new C2DTexture(tex_path);
-                    backdrop->setTexture(backdrop_texture, true);
-                    backdrop->setVisibility(Visibility::Visible, true);
-                    if (backdrop_texture->getTextureRect().width != 780) {
-                        // scaling
-                        float scaling = std::min(
-                                getSize().x / backdrop_texture->getTextureRect().width,
-                                getSize().y / backdrop_texture->getTextureRect().height);
-                        backdrop->setScale(scaling, scaling);
-                    }
+            std::string tex_path = pplay::Utility::getMediaBackdropPath(file);
+            if (main->getIo()->exist(tex_path)) {
+                fade->setVisibility(Visibility::Visible);
+                backdrop_texture = new C2DTexture(tex_path);
+                backdrop->setTexture(backdrop_texture, true);
+                backdrop->setVisibility(Visibility::Visible, true);
+                if (backdrop_texture->getTextureRect().width != 780) {
+                    // scaling
+                    float scaling = std::min(
+                            getSize().x / backdrop_texture->getTextureRect().width,
+                            getSize().y / backdrop_texture->getTextureRect().height);
+                    backdrop->setScale(scaling, scaling);
                 }
             }
+
             // load poster if available
-            std::string tex_path = pplay::Utility::getMediaPosterPath(file);
+            tex_path = pplay::Utility::getMediaPosterPath(file);
             if (main->getIo()->exist(tex_path)) {
                 poster_texture = new C2DTexture(tex_path);
                 poster->setTexture(poster_texture, true);
@@ -187,29 +189,36 @@ void ScrapView::onUpdate() {
 
 void ScrapView::unload() {
 
-    backdrop->setVisibility(Visibility::Hidden);
     poster->setVisibility(Visibility::Hidden);
+    if (poster_texture) {
+        delete (poster_texture);
+        poster_texture = nullptr;
+        poster->setTexture(nullptr);
+    }
 
+    fade->setVisibility(Visibility::Hidden);
+    backdrop->setVisibility(Visibility::Hidden);
     if (backdrop_texture) {
         delete (backdrop_texture);
         backdrop_texture = nullptr;
         backdrop->setTexture(nullptr);
     }
 
-    if (poster_texture) {
-        delete (poster_texture);
-        poster_texture = nullptr;
-        poster->setTexture(nullptr);
-    }
+    loaded = false;
 }
 
 ScrapView::~ScrapView() {
+
     if (backdrop_texture) {
         delete (backdrop_texture);
-
+        backdrop_texture = nullptr;
     }
+
     if (poster_texture) {
         delete (poster_texture);
+        poster_texture = nullptr;
     }
+
     delete (clock);
 }
+
