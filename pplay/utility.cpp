@@ -64,7 +64,9 @@ std::vector<std::string> Utility::getMediaExtensions() {
             ".vob",
             ".wav",
             ".wma",
-            ".wmv"
+            ".wmv",
+            ".m3u",
+            ".m3u8"
     };
 }
 

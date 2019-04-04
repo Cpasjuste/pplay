@@ -14,7 +14,7 @@ using namespace pscrap;
 
 static std::vector<c2d::Io::File> scrapList;
 
-static void get_medias(Main *main, const std::string &path) {
+static void find_medias(Main *main, const std::string &path) {
 
     std::vector<std::string> ext = pplay::Utility::getMediaExtensions();
     pplay::Io::DeviceType type = ((pplay::Io *) main->getIo())->getType(path);
@@ -33,7 +33,7 @@ static void get_medias(Main *main, const std::string &path) {
             if (file.name == "." || file.name == "..") {
                 continue;
             }
-            get_medias(main, file.path);
+            find_medias(main, file.path);
         } else {
             scrapList.emplace_back(file);
         }
@@ -97,13 +97,15 @@ static int scrap_thread(void *ptr) {
             c2d::C2DClock clock;
 
             scrapList.clear();
-            get_medias(main, scrapper->path);
+            find_medias(main, scrapper->path);
 
             size_t size = scrapList.size();
             for (size_t i = 0; i < size; i++) {
+
                 if (!main->getScrapper()->running) {
                     break;
                 }
+
                 c2d::Io::File file = scrapList.at(i);
                 std::string scrap_path = pplay::Utility::getMediaScrapPath(file);
                 if (!main->getIo()->exist(scrap_path)) {
