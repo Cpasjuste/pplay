@@ -12,7 +12,7 @@ Copy "pplay" folder to switch sdcard (/switch/pplay)
 Usage
 -----
 - Use left/right to switch menu's and windows... select a media and... have fun.
-- When playing a media, you can press the "DOWN" or "A" button to bring the UI, the "R" shoulder for fast forward ("L" button to stop).
+- When playing a media, you can press the "DOWN" or "A" button to bring the UI, the "R" shoulder for fast forward ("L" button to stop), and "LEFT" to access video, audio and subtitles selection.
 
 Notes
 ----
