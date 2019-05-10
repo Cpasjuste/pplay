@@ -10,8 +10,6 @@
 using namespace pplay;
 using namespace pscrap;
 
-#define API_KEY "80435e61cc52ad8850355379108a92d0"
-
 static std::vector<c2d::Io::File> scrapList;
 
 static void find_medias(Main *main, const std::string &path) {

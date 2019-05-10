@@ -27,11 +27,11 @@ static void on_applet_hook(AppletHookType hook, void *arg) {
             break;
         case AppletHookType_OnFocusState:
             if (appletGetFocusState() == AppletFocusState_Focused) {
-                if (main->getPlayer()->isPaused()) {
+                if (main->getPlayer()->getMpv()->isPaused()) {
                     main->getPlayer()->resume();
                 }
             } else {
-                if (!main->getPlayer()->isPaused()) {
+                if (!main->getPlayer()->getMpv()->isPaused()) {
                     main->getPlayer()->pause();
                 }
             }
@@ -135,7 +135,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     add(messageBox);
 
     scrapper = new Scrapper(this);
-    scrapper->scrap("/home/cpasjuste/dev/multi/medias");
+    //scrapper->scrap("/home/cpasjuste/dev/multi/videos/");
     //scrapper->scrap("http://192.168.0.2/files/Videos");
 }
 

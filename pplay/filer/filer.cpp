@@ -152,6 +152,8 @@ bool Filer::onInput(c2d::Input::Player *players) {
     } else if (keys & Input::Key::Fire2) {
         scrapView->unload();
         exit();
+    } else if (keys & Input::Key::Fire3) {
+        main->getScrapper()->scrap(path);
     }
 
     return true;
@@ -192,10 +194,6 @@ bool Filer::getDir(const std::string &p) {
         path = Utility::removeLastSlash(path);
     }
 
-#ifdef __SWITCH__
-    Io::File file("..", "..", Io::Type::Directory, 0, COLOR_BLUE);
-    files.emplace_back(file, MediaInfo(file));
-#endif
     std::vector<std::string> ext = pplay::Utility::getMediaExtensions();
     pplay::Io::DeviceType type = ((pplay::Io *) main->getIo())->getType(p);
     std::vector<Io::File> _files =
@@ -218,6 +216,13 @@ bool Filer::getDir(const std::string &p) {
 
     // sort after title have been scrapped
     std::sort(files.begin(), files.end(), compare);
+
+    if (files.size() > 1) {
+        if (files.at(0).name != "..") {
+            Io::File file("..", "..", Io::Type::Directory, 0, COLOR_BLUE);
+            files.insert(files.begin(), MediaFile{file, MediaInfo(file)});
+        }
+    }
 
     setSelection(0);
 
