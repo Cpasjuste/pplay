@@ -92,7 +92,7 @@ std::vector<c2d::Io::File> Io::getDirList(const pplay::Io::DeviceType &type, con
     // remove items by extensions, if provided
     if (!extensions.empty()) {
         files.erase(
-                std::remove_if(files.begin(), files.end(), [extensions](Io::File file) {
+                std::remove_if(files.begin(), files.end(), [extensions](const Io::File& file) {
                     for (auto &ext : extensions) {
                         if (c2d::Utility::endsWith(file.name, ext, false)) {
                             return false;

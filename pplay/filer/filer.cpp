@@ -102,7 +102,7 @@ void Filer::setSelection(int index) {
     }
 }
 
-const MediaFile Filer::getSelection() const {
+MediaFile Filer::getSelection() const {
 
     if (!files.empty() && files.size() > (unsigned int) item_index) {
         return files[item_index];

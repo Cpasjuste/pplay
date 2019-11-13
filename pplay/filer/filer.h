@@ -30,13 +30,13 @@ public:
 
     virtual std::string getPath();
 
-    virtual const MediaFile getSelection() const;
+    virtual MediaFile getSelection() const;
 
     virtual void setSelection(int index);
 
     virtual void clearHistory();
 
-    virtual const std::string getError() { return ""; };
+    virtual std::string getError() { return ""; };
 
     bool onInput(c2d::Input::Player *players) override;
 

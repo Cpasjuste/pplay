@@ -190,7 +190,7 @@ void ScrapView::onUpdate() {
 void ScrapView::unload() {
 
     poster->setVisibility(Visibility::Hidden);
-    if (poster_texture) {
+    if (poster_texture != nullptr) {
         delete (poster_texture);
         poster_texture = nullptr;
         poster->setTexture(nullptr);
@@ -198,7 +198,7 @@ void ScrapView::unload() {
 
     fade->setVisibility(Visibility::Hidden);
     backdrop->setVisibility(Visibility::Hidden);
-    if (backdrop_texture) {
+    if (backdrop_texture != nullptr) {
         delete (backdrop_texture);
         backdrop_texture = nullptr;
         backdrop->setTexture(nullptr);
@@ -209,16 +209,15 @@ void ScrapView::unload() {
 
 ScrapView::~ScrapView() {
 
-    if (backdrop_texture) {
+    if (backdrop_texture != nullptr) {
         delete (backdrop_texture);
         backdrop_texture = nullptr;
     }
 
-    if (poster_texture) {
+    if (poster_texture != nullptr) {
         delete (poster_texture);
         poster_texture = nullptr;
     }
 
     delete (clock);
 }
-

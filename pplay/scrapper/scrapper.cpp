@@ -61,7 +61,7 @@ static std::string clean_name(const std::string &name) {
     }
     if (!cut) {
         for (auto &token : tokens) {
-            if (token) {
+            if (token != nullptr) {
                 size_t pos = search.rfind(token);
                 if ((pos != std::string::npos) && (pos > 1)) {
                     search = search.substr(0, pos - 1);
