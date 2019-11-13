@@ -48,7 +48,7 @@ void Highlight::setCursorColor(const c2d::Color &color) {
 
 void Highlight::tweenTo(const c2d::Vector2f &position) {
     if (tween) {
-        float seconds = (float) (c2d_renderer->getInput()->getRepeatDelay() * 0.001f) / 3;
+        float seconds = (float) c2d_renderer->getInput()->getRepeatDelay() * 0.001f / 5;
         tween->setFromTo(getPosition(), position, seconds);
         tween->play(TweenDirection::Forward, true);
     } else {

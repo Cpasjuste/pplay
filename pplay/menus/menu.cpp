@@ -78,9 +78,9 @@ Menu::Menu(Main *m, const c2d::FloatRect &rect, const std::string &_title,
 
     // tween!
     if (left) {
-        add(new TweenPosition({-rect.width, 0}, {0, 0}, 0.5f));
+        add(new TweenPosition({-rect.width, 0}, {0, 0}, 0.2f));
     } else {
-        add(new TweenPosition({main->getSize().x, 0}, {main->getSize().x - getSize().x, 0}, 0.5f));
+        add(new TweenPosition({main->getSize().x, 0}, {main->getSize().x - getSize().x, 0}, 0.2f));
     }
 }
 
