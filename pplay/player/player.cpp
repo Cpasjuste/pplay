@@ -28,7 +28,7 @@ Player::Player(Main *_main) : Rectangle(_main->getSize()) {
 
     setVisibility(Visibility::Hidden);
 
-    mpv = new Mpv(main->getIo()->getDataWritePath() + "mpv", true);
+    mpv = new Mpv(main->getIo()->getDataPath() + "mpv", true);
 
     // TODO: create texture of video size?
     texture = new VideoTexture(pos, mpv);

@@ -14,7 +14,7 @@ MenuButton::MenuButton(Main *main, const MenuItem &item, const FloatRect &rect) 
     setOrigin(Origin::Left);
 
     if (!item.icon.empty()) {
-        icon = new C2DTexture(main->getIo()->getDataReadPath() + "skin/" + item.icon);
+        icon = new C2DTexture(main->getIo()->getRomFsPath() + "skin/" + item.icon);
         icon->setOrigin(Origin::Left);
         icon->setPosition(16 * main->getScaling(), getSize().y / 2);
         icon->setScale(main->getSize().x / 1920, main->getSize().y / 1080);

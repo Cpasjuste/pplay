@@ -41,7 +41,7 @@ PlayerOSD::PlayerOSD(Main *m) : Rectangle({64, 64}) {
     duration_text->setPosition(getSize().x - (20 * main->getScaling()), getSize().y / 2);
     add(duration_text);
 
-    auto btn = new C2DTexture(main->getIo()->getDataReadPath() + "skin/btn_pause.png");
+    auto btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_pause.png");
     btn->setScale(main->getScaling(), main->getScaling());
     btn->setPosition(64 * 1 * main->getScaling(), getSize().y / 2);
     btn->setOrigin(Origin::Center);
@@ -49,14 +49,14 @@ PlayerOSD::PlayerOSD(Main *m) : Rectangle({64, 64}) {
     buttons.push_back(btn);
 
     // left buttons
-    btn = new C2DTexture(main->getIo()->getDataReadPath() + "skin/btn_seek_backward_10.png");
+    btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_seek_backward_10.png");
     btn->setScale(main->getScaling(), main->getScaling());
     btn->setPosition(64 * 2 * main->getScaling(), getSize().y / 2);
     btn->setOrigin(Origin::Center);
     add(btn);
     buttons.push_back(btn);
 
-    btn = new C2DTexture(main->getIo()->getDataReadPath() + "skin/btn_seek_backward_1.png");
+    btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_seek_backward_1.png");
     btn->setScale(main->getScaling(), main->getScaling());
     btn->setPosition(64 * 3 * main->getScaling(), getSize().y / 2);
     btn->setOrigin(Origin::Center);
@@ -64,21 +64,21 @@ PlayerOSD::PlayerOSD(Main *m) : Rectangle({64, 64}) {
     buttons.push_back(btn);
 
     // right buttons
-    btn = new C2DTexture(main->getIo()->getDataReadPath() + "skin/btn_seek_forward_1.png");
+    btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_seek_forward_1.png");
     btn->setScale(main->getScaling(), main->getScaling());
     btn->setPosition(getSize().x - (64 * 3 * main->getScaling()), getSize().y / 2);
     btn->setOrigin(Origin::Center);
     add(btn);
     buttons.push_back(btn);
 
-    btn = new C2DTexture(main->getIo()->getDataReadPath() + "skin/btn_seek_forward_10.png");
+    btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_seek_forward_10.png");
     btn->setScale(main->getScaling(), main->getScaling());
     btn->setPosition(getSize().x - (64 * 2 * main->getScaling()), getSize().y / 2);
     btn->setOrigin(Origin::Center);
     add(btn);
     buttons.push_back(btn);
 
-    btn = new C2DTexture(main->getIo()->getDataReadPath() + "skin/btn_stop.png");
+    btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_stop.png");
     btn->setScale(main->getScaling(), main->getScaling());
     btn->setPosition(getSize().x - (64 * 1 * main->getScaling()), getSize().y / 2);
     btn->setOrigin(Origin::Center);
@@ -86,7 +86,7 @@ PlayerOSD::PlayerOSD(Main *m) : Rectangle({64, 64}) {
     buttons.push_back(btn);
 
     // btn_play for btn_pause
-    btn_play = new C2DTexture(main->getIo()->getDataReadPath() + "skin/btn_play.png");
+    btn_play = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_play.png");
     btn_play->setScale(main->getScaling(), main->getScaling());
     btn_play->setPosition(buttons.at((size_t) ButtonID::Pause)->getPosition().x, getSize().y / 2);
     btn_play->setOrigin(Origin::Center);

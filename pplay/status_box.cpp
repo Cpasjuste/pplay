@@ -16,7 +16,7 @@ StatusBox::StatusBox(Main *m, const c2d::Vector2f &position)
     pos = position;
     setPosition(position);
 
-    icon = new C2DTexture(main->getIo()->getDataReadPath() + "skin/wait.png");
+    icon = new C2DTexture(main->getIo()->getRomFsPath() + "skin/wait.png");
     icon->setOrigin(Origin::Center);
     icon->setScale(main->getSize().x / 1920, main->getSize().y / 1080);
     icon->setPosition(icon->getSize().x / 2 + 8, getSize().y / 2);

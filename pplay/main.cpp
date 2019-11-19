@@ -69,7 +69,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
 
     // font
     font = new C2DFont();
-    font->loadFromFile(getIo()->getDataReadPath() + "skin/font.ttf");
+    font->loadFromFile(getIo()->getRomFsPath() + "skin/font.ttf");
     font->setFilter(Texture::Filter::Point);
     font->setOffset({0, -4});
 
@@ -79,7 +79,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     add(statusBox);
 
     // media information cache
-    getIo()->create(getIo()->getDataWritePath() + "cache");
+    getIo()->create(getIo()->getDataPath() + "cache");
 
     // create filer
     FloatRect filerRect = {0, 0, getSize().x, getSize().y};

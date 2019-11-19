@@ -19,22 +19,22 @@ using namespace pplay;
 
 std::string Utility::getMediaInfoPath(const c2d::Io::File &file) {
     std::string hash = std::to_string(std::hash<std::string>()(file.path));
-    return c2d_renderer->getIo()->getDataWritePath() + "cache/" + hash + ".info";
+    return c2d_renderer->getIo()->getDataPath() + "cache/" + hash + ".info";
 }
 
 std::string Utility::getMediaScrapPath(const c2d::Io::File &file) {
     std::string hash = std::to_string(std::hash<std::string>()(file.path));
-    return c2d_renderer->getIo()->getDataWritePath() + "cache/" + hash + ".scrap";
+    return c2d_renderer->getIo()->getDataPath() + "cache/" + hash + ".scrap";
 }
 
 std::string Utility::getMediaPosterPath(const c2d::Io::File &file) {
     std::string hash = std::to_string(std::hash<std::string>()(file.path));
-    return c2d_renderer->getIo()->getDataWritePath() + "cache/" + hash + "-poster.jpg";
+    return c2d_renderer->getIo()->getDataPath() + "cache/" + hash + "-poster.jpg";
 }
 
 std::string Utility::getMediaBackdropPath(const c2d::Io::File &file) {
     std::string hash = std::to_string(std::hash<std::string>()(file.path));
-    return c2d_renderer->getIo()->getDataWritePath() + "cache/" + hash + "-backdrop.jpg";
+    return c2d_renderer->getIo()->getDataPath() + "cache/" + hash + "-backdrop.jpg";
 }
 
 std::vector<std::string> Utility::getMediaExtensions() {
