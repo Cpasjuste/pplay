@@ -8,7 +8,7 @@
 using namespace c2d;
 
 GradientRectangle::GradientRectangle(const FloatRect &rect) : Sprite() {
-    setTextureRect({0, 0, (int) rect.width, (int) rect.height});
+    setSize(rect.width, rect.height);
     setPosition(rect.left, rect.top);
 }
 
@@ -21,7 +21,7 @@ void GradientRectangle::setColor(const Color &color1, const Color &color2) {
     getVertexArray()->update();
 }
 
-void GradientRectangle::setAlpha(uint8_t alpha, bool recursive) {
+void GradientRectangle::setAlpha(uint8_t alpha, bool  /*recursive*/) {
     auto *vertices = getVertexArray()->getVertices();
     vertices->at(2).color.a = alpha;
     vertices->at(3).color.a = alpha;

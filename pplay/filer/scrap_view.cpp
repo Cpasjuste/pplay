@@ -141,7 +141,7 @@ void ScrapView::setMovie(const MediaFile &f) {
 
 void ScrapView::onUpdate() {
 
-    if (!main->getFiler()->isVisible()) {
+    if (!isVisible() || !main->getFiler()->isVisible()) {
         return;
     }
 
@@ -149,7 +149,7 @@ void ScrapView::onUpdate() {
 
     if (keys > 0 && keys != Input::Delay) {
         clock->restart();
-    } else if (keys == 0 && clock->getElapsedTime().asMilliseconds() > INPUT_DELAY) {
+    } else if (keys == 0 && clock->getElapsedTime().asMilliseconds() > main->getInput()->getRepeatDelay()) {
         // load images
         if (!loaded && !file.movies.empty()) {
             loaded = true;
