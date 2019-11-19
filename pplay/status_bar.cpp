@@ -84,6 +84,8 @@ StatusBar::StatusBar(Main *main) : GradientRectangle({0, 0, main->getSize().x, 3
     timeText->setPosition(battery->getPosition().x - timeText->getLocalBounds().width, height / 2);
     timeText->setFillColor(COLOR_FONT);
     add(timeText);
+
+    setVisibility(Visibility::Visible, true);
 }
 
 void StatusBar::onUpdate() {
