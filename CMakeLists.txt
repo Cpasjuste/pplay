@@ -4,7 +4,7 @@ set(CMAKE_VERBOSE_MAKEFILE OFF)
 ####################
 # TARGET PLATFORM
 ####################
-set(PLATFORM_LINUX ON CACHE BOOL "Linux platform target")
+set(PLATFORM_LINUX OFF CACHE BOOL "Linux platform target")
 set(PLATFORM_WINDOWS OFF CACHE BOOL "Windows platform target (msys/mingw64)")
 set(PLATFORM_RPI3 OFF CACHE BOOL "RIP3 platform target")
 set(PLATFORM_SWITCH OFF CACHE BOOL "Nintendo Switch platform target")
