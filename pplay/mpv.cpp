@@ -21,8 +21,8 @@ Mpv::Mpv(const std::string &configPath, bool initRender) {
     mpv_set_option_string(handle, "terminal", "yes");
     mpv_set_option_string(handle, "msg-level", "all=v");
     mpv_set_option_string(handle, "vd-lavc-threads", "4");
-    mpv_set_option_string(handle, "vd-lavc-dr", "yes");
     mpv_set_option_string(handle, "vd-lavc-fast", "yes");
+    mpv_set_option_string(handle, "vd-lavc-skiploopfilter", "all");
     mpv_set_option_string(handle, "audio-channels", "stereo");
     if (!initRender) {
         mpv_set_option_string(handle, "vid", "no");
