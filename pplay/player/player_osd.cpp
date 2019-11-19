@@ -94,12 +94,11 @@ PlayerOSD::PlayerOSD(Main *m) : Rectangle({64, 64}) {
     add(btn_play);
 
     // TITLE
-    title = new Text("", main->getFontSize(Main::FontSize::Medium), main->getFont());
+    title = new Text("Unknown Title", main->getFontSize(Main::FontSize::Medium), main->getFont());
     title->setFillColor(COLOR_RED);
     title->setOrigin(Origin::Left);
     title->setPosition((64 * 3 + 50) * main->getScaling(), getSize().y / 2);
     title->setSizeMax(buttons.at((int) ButtonID::SeekForward1)->getPosition().x - title->getPosition().x - 32, 0);
-
     add(title);
 
     add(new TweenPosition({getPosition().x, getPosition().y},
@@ -112,17 +111,16 @@ PlayerOSD::PlayerOSD(Main *m) : Rectangle({64, 64}) {
 
 void PlayerOSD::setVisibility(c2d::Visibility visibility, bool tweenPlay) {
 
-    if (main->getPlayer()) {
-        title->setString(main->getPlayer()->getTitle());
-    }
-
     if (visibility == Visibility::Visible) {
         index = 0;
         highlight->tweenTo({buttons.at((size_t) index)->getPosition().x, 0});
+        if (main->getPlayer() != nullptr) {
+            title->setString(main->getPlayer()->getTitle());
+        }
     }
 
     clock.restart();
-    C2DObject::setVisibility(visibility, tweenPlay);
+    Rectangle::setVisibility(visibility, tweenPlay);
 }
 
 void PlayerOSD::onDraw(c2d::Transform &transform, bool draw) {
@@ -143,13 +141,13 @@ void PlayerOSD::onDraw(c2d::Transform &transform, bool draw) {
         main->getStatusBar()->setVisibility(Visibility::Hidden, true);
     }
 
-    position = player->getMpv()->getPosition();
-    duration = player->getMpv()->getDuration();
+    position = (float) player->getMpv()->getPosition();
+    duration = (float) player->getMpv()->getDuration();
     progress->setProgress(position / duration);
     progress_text->setString(pplay::Utility::formatTime(position));
     duration_text->setString(pplay::Utility::formatTime(duration));
 
-    C2DObject::onDraw(transform, draw);
+    Rectangle::onDraw(transform, draw);
 }
 
 bool PlayerOSD::onInput(c2d::Input::Player *players) {

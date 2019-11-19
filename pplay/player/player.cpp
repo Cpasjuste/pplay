@@ -3,8 +3,6 @@
 //
 
 #include <sstream>
-#include <iomanip>
-
 #include "main.h"
 #include "player.h"
 #include "player_osd.h"
@@ -157,17 +155,17 @@ void Player::onStopEvent(int reason) {
     file.mediaInfo.save(file);
 
     // audio
-    if (menuAudioStreams) {
+    if (menuAudioStreams != nullptr) {
         delete (menuAudioStreams);
         menuAudioStreams = nullptr;
     }
     // video
-    if (menuVideoStreams) {
+    if (menuVideoStreams != nullptr) {
         delete (menuVideoStreams);
         menuVideoStreams = nullptr;
     }
     // subtitles
-    if (menuSubtitlesStreams) {
+    if (menuSubtitlesStreams != nullptr) {
         delete (menuSubtitlesStreams);
         menuSubtitlesStreams = nullptr;
     }
@@ -190,7 +188,7 @@ void Player::onUpdate() {
     // handle mpv events
     if (mpv->isAvailable()) {
         mpv_event *event = mpv->getEvent();
-        if (event) {
+        if (event != nullptr) {
             switch (event->event_id) {
                 case MPV_EVENT_FILE_LOADED:
                     printf("MPV_EVENT_FILE_LOADED\n");
@@ -257,6 +255,10 @@ void Player::onUpdate() {
             }
         }
     }
+
+    if (isVisible()) {
+        Rectangle::onUpdate();
+    }
 }
 
 bool Player::onInput(c2d::Input::Player *players) {
@@ -266,9 +268,9 @@ bool Player::onInput(c2d::Input::Player *players) {
     if (mpv->isStopped()
         || main->getFiler()->isVisible()
         || main->getMenuVideo()->isVisible()
-        || (getMenuVideoStreams() && getMenuVideoStreams()->isVisible())
-        || (getMenuAudioStreams() && getMenuAudioStreams()->isVisible())
-        || (getMenuSubtitlesStreams() && getMenuSubtitlesStreams()->isVisible())) {
+        || (getMenuVideoStreams() != nullptr && getMenuVideoStreams()->isVisible())
+        || (getMenuAudioStreams() != nullptr && getMenuAudioStreams()->isVisible())
+        || (getMenuSubtitlesStreams() != nullptr && getMenuSubtitlesStreams()->isVisible())) {
         return C2DObject::onInput(players);
     }
 
@@ -387,13 +389,13 @@ void Player::setFullscreen(bool fs, bool hide) {
         }
         texture->showFade();
         main->getMenuVideo()->setVisibility(Visibility::Hidden, true);
-        if (menuVideoStreams) {
+        if (menuVideoStreams != nullptr) {
             menuVideoStreams->setVisibility(Visibility::Hidden, true);
         }
-        if (menuAudioStreams) {
+        if (menuAudioStreams != nullptr) {
             menuAudioStreams->setVisibility(Visibility::Hidden, true);
         }
-        if (menuSubtitlesStreams) {
+        if (menuSubtitlesStreams != nullptr) {
             menuSubtitlesStreams->setVisibility(Visibility::Hidden, true);
         }
         main->getFiler()->setVisibility(Visibility::Visible, true);
