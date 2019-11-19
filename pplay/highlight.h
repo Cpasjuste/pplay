@@ -20,7 +20,7 @@ public:
 
     void setAlpha(uint8_t alpha, bool recursive = false) override;
 
-    void setFillColor(const c2d::Color &color);
+    void setFillColor(const c2d::Color &color) override;
 
     void setCursorColor(const c2d::Color &color);
 

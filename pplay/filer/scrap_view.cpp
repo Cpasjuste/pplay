@@ -185,6 +185,8 @@ void ScrapView::onUpdate() {
             }
         }
     }
+
+    Rectangle::onUpdate();
 }
 
 void ScrapView::unload() {
