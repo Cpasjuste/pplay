@@ -36,7 +36,7 @@ project(pplay)
 
 # pplay version
 set(VERSION_MAJOR "3")
-set(VERSION_MINOR "0")
+set(VERSION_MINOR "1")
 set(PROJECT_AUTHOR "Cpasjuste")
 set(TITLE_ID "PPLAY0001")
 
