@@ -40,6 +40,8 @@ set(VERSION_MINOR "1")
 set(PROJECT_AUTHOR "Cpasjuste")
 set(TITLE_ID "PPLAY0001")
 
+find_package(BZip2 REQUIRED)
+
 set(PPLAY_INC
         pplay
         pplay/filer
@@ -58,6 +60,7 @@ file(GLOB PPLAY_SRC
         pplay/menus/*.c*
         pplay/player/*.c*
         pplay/scrapper/*.c*
+        ${BZIP2_INCLUDE_DIR}
         )
 
 set(PPLAY_CFLAGS
@@ -68,7 +71,7 @@ set(PPLAY_CFLAGS
         -DM_SQRT2=1.41421356237309504880
         )
 
-set(PPLAY_LDFLAGS curl)
+set(PPLAY_LDFLAGS ${BZIP2_LIBRARIES})
 
 if (BUILD_SMBCLIENT)
     list(APPEND PPLAY_CFLAGS -D__SMB_SUPPORT__)

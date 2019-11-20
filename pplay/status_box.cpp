@@ -51,14 +51,14 @@ StatusBox::~StatusBox() {
     SDL_DestroyMutex(mutex);
 }
 
-void StatusBox::show(const std::string &title, const std::string &message, bool infinite, bool drawNow) {
+void StatusBox::show(const std::string &title, const std::string &message, bool inf, bool drawNow) {
 
     SDL_LockMutex(mutex);
     titleText->setString(title);
     messageText->setString(message);
     SDL_UnlockMutex(mutex);
 
-    this->infinite = infinite;
+    infinite = inf;
     clock->restart();
     setVisibility(Visibility::Visible, true);
     if (drawNow) {
