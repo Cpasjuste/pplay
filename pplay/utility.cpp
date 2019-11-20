@@ -5,8 +5,7 @@
 #include <sstream>
 #include <iomanip>
 
-#include "cross2d/skeleton/io.h"
-#include "cross2d/skeleton/utility.h"
+#include "cross2d/c2d.h"
 
 #ifdef __SWITCH__
 
@@ -18,36 +17,71 @@
 
 using namespace pplay;
 
+std::string Utility::getMediaInfoPath(const c2d::Io::File &file) {
+    std::string hash = std::to_string(std::hash<std::string>()(file.path));
+    return c2d_renderer->getIo()->getDataPath() + "cache/" + hash + ".info";
+}
+
+std::string Utility::getMediaScrapPath(const c2d::Io::File &file) {
+    std::string hash = std::to_string(std::hash<std::string>()(file.path));
+    return c2d_renderer->getIo()->getDataPath() + "cache/" + hash + ".scrap";
+}
+
+std::string Utility::getMediaPosterPath(const c2d::Io::File &file) {
+    std::string hash = std::to_string(std::hash<std::string>()(file.path));
+    return c2d_renderer->getIo()->getDataPath() + "cache/" + hash + "-poster.jpg";
+}
+
+std::string Utility::getMediaBackdropPath(const c2d::Io::File &file) {
+    std::string hash = std::to_string(std::hash<std::string>()(file.path));
+    return c2d_renderer->getIo()->getDataPath() + "cache/" + hash + "-backdrop.jpg";
+}
+
+std::vector<std::string> Utility::getMediaExtensions() {
+    return {
+            ".8svx",
+            ".aac",
+            ".ac3",
+            ".aif",
+            ".asf",
+            ".avi",
+            ".dv",
+            ".flv",
+            ".m2ts",
+            ".m2v",
+            ".m4a",
+            ".mkv",
+            ".mov",
+            ".mp3",
+            ".mp4",
+            ".mpeg",
+            ".mpg",
+            ".mts",
+            ".ogg",
+            ".rmvb",
+            ".swf",
+            ".ts",
+            ".vob",
+            ".wav",
+            ".wma",
+            ".wmv",
+            ".m3u",
+            ".m3u8"
+    };
+}
+
 bool Utility::isMedia(const c2d::Io::File &file) {
 
-    return file.type == c2d::Io::Type::File &&
-           (c2d::Utility::endsWith(file.name, ".8svx", false)
-            || c2d::Utility::endsWith(file.name, ".aac", false)
-            || c2d::Utility::endsWith(file.name, ".ac3", false)
-            || c2d::Utility::endsWith(file.name, ".aif", false)
-            || c2d::Utility::endsWith(file.name, ".asf", false)
-            || c2d::Utility::endsWith(file.name, ".avi", false)
-            || c2d::Utility::endsWith(file.name, ".dv", false)
-            || c2d::Utility::endsWith(file.name, ".flv", false)
-            || c2d::Utility::endsWith(file.name, ".m2ts", false)
-            || c2d::Utility::endsWith(file.name, ".m2v", false)
-            || c2d::Utility::endsWith(file.name, ".m4a", false)
-            || c2d::Utility::endsWith(file.name, ".mkv", false)
-            || c2d::Utility::endsWith(file.name, ".mov", false)
-            || c2d::Utility::endsWith(file.name, ".mp3", false)
-            || c2d::Utility::endsWith(file.name, ".mp4", false)
-            || c2d::Utility::endsWith(file.name, ".mpeg", false)
-            || c2d::Utility::endsWith(file.name, ".mpg", false)
-            || c2d::Utility::endsWith(file.name, ".mts", false)
-            || c2d::Utility::endsWith(file.name, ".ogg", false)
-            || c2d::Utility::endsWith(file.name, ".rmvb", false)
-            || c2d::Utility::endsWith(file.name, ".swf", false)
-            || c2d::Utility::endsWith(file.name, ".ts", false)
-            || c2d::Utility::endsWith(file.name, ".vob", false)
-            || c2d::Utility::endsWith(file.name, ".wav", false)
-            || c2d::Utility::endsWith(file.name, ".wma", false)
-            || c2d::Utility::endsWith(file.name, ".wmv", false)
-           );
+    if (file.type == c2d::Io::Type::File) {
+        std::vector<std::string> extensions = getMediaExtensions();
+        for (auto &ext : extensions) {
+            if (c2d::Utility::endsWith(file.name, ext, false)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 std::string Utility::formatTime(double seconds) {
@@ -133,3 +167,5 @@ void Utility::setCpuClock(const CpuClock &clock) {
     }
 #endif
 }
+
+

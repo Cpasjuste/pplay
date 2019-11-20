@@ -11,17 +11,16 @@
 
 MediaInfo::MediaInfo(const c2d::Io::File &file) {
 
-    std::string hash = std::to_string(std::hash<std::string>()(file.path));
-    serialize_path = c2d_renderer->getIo()->getDataWritePath() + "cache/" + hash;
-
+    serialize_path = pplay::Utility::getMediaInfoPath(file);
     if (!pplay::Utility::isMedia(file)) {
         return;
     }
-
     deserialize();
 }
 
-void MediaInfo::save() {
+void MediaInfo::save(const c2d::Io::File &file) {
+
+    serialize_path = pplay::Utility::getMediaInfoPath(file);
     serialize();
 }
 
@@ -197,7 +196,7 @@ bool MediaInfo::deserialize() {
     fs.read((char *) &count, sizeof(count));
     //printf("Media::deserialize: video streams = %i\n", count);
     for (int i = 0; i < count; i++) {
-        Stream stream{};
+        Track stream{};
         // id
         fs.read((char *) &stream.id, sizeof(stream.id));
         // type
@@ -241,7 +240,7 @@ bool MediaInfo::deserialize() {
     fs.read((char *) &count, sizeof(count));
     //printf("Media::deserialize: audio streams = %i\n", count);
     for (int i = 0; i < count; i++) {
-        Stream stream{};
+        Track stream{};
         // id
         fs.read((char *) &stream.id, sizeof(stream.id));
         // type
@@ -283,7 +282,7 @@ bool MediaInfo::deserialize() {
     fs.read((char *) &count, sizeof(count));
     //printf("Media::deserialize: subtitle streams = %i\n", count);
     for (int i = 0; i < count; i++) {
-        Stream stream{};
+        Track stream{};
         // id
         fs.read((char *) &stream.id, sizeof(stream.id));
         // type

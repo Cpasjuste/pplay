@@ -12,6 +12,7 @@
 #include "filer_item.h"
 #include "media_file.h"
 #include "highlight.h"
+#include "scrap_view.h"
 
 class Main;
 
@@ -21,33 +22,27 @@ public:
 
     Filer(Main *main, const std::string &path, const c2d::FloatRect &rect);
 
-    ~Filer();
-
     void setMediaInfo(const MediaFile &target, const MediaInfo &mediaInfo);
 
-    virtual bool getDir(const std::string &path) { return false; };
+    void setScrapInfo(const c2d::Io::File &target, const std::vector<pscrap::Movie> &movies);
+
+    virtual bool getDir(const std::string &path);
 
     virtual std::string getPath();
 
-    virtual const MediaFile getSelection() const;
+    virtual MediaFile getSelection() const;
 
     virtual void setSelection(int index);
 
     virtual void clearHistory();
 
-    virtual const std::string getError() { return ""; };
+    virtual std::string getError() { return ""; };
 
     bool onInput(c2d::Input::Player *players) override;
 
+    void onUpdate() override;
+
 private:
-
-    friend class FilerSdmc;
-
-    friend class FilerHttp;
-
-    friend class FilerFtp;
-
-    friend class FilerSmb;
 
     virtual void enter(int index);
 
@@ -58,10 +53,13 @@ private:
     std::vector<FilerItem *> items;
     std::vector<MediaFile> files;
     Highlight *highlight;
+    ScrapView *scrapView;
     float item_height;
     int item_max;
-    int item_index;
+    int item_index = 0;
     std::vector<int> item_index_prev;
+
+    bool dirty = false;
 };
 
 #endif //NXFILER_FILER_H

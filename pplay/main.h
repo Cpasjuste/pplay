@@ -6,14 +6,16 @@
 #define PPLAY_MAIN_H
 
 #include "cross2d/c2d.h"
-#include "filers/filer.h"
-#include "player/player.h"
+#include "filer.h"
+#include "player.h"
 #include "pplay_config.h"
-#include "menus/menu.h"
-#include "menus/menu_main.h"
-#include "menus/menu_video.h"
+#include "menu.h"
+#include "menu_main.h"
+#include "menu_video.h"
 #include "status_box.h"
 #include "status_bar.h"
+#include "scrapper.h"
+#include "io.h"
 
 #define INPUT_DELAY 500
 #define ICON_SIZE 24
@@ -73,8 +75,6 @@ public:
 
     Filer *getFiler();
 
-    c2d::Texture *getTitle();
-
     PPLAYConfig *getConfig();
 
     c2d::Font *getFont() override;
@@ -84,6 +84,10 @@ public:
     StatusBox *getStatus();
 
     StatusBar *getStatusBar();
+
+    pplay::Scrapper *getScrapper();
+
+    c2d::Io *getIo() override;
 
     float getScaling();
 
@@ -97,21 +101,18 @@ private:
 
     void onDraw(c2d::Transform &transform, bool draw = true) override;
 
+    pplay::Io *pplayIo = nullptr;
     c2d::Font *font = nullptr;
     c2d::Clock *timer = nullptr;
     c2d::MessageBox *messageBox = nullptr;
     StatusBox *statusBox = nullptr;
     PPLAYConfig *config = nullptr;
-    Filer *filerSdmc = nullptr;
-    Filer *filerHttp = nullptr;
-    Filer *filerFtp = nullptr;
-    Filer *filerSmb = nullptr;
     Filer *filer = nullptr;
     StatusBar *statusBar = nullptr;
-    c2d::Texture *title = nullptr;
     Player *player = nullptr;
     MenuMain *menu_main = nullptr;
     MenuVideo *menu_video = nullptr;
+    pplay::Scrapper *scrapper = nullptr;
     float scaling = 1;
 
     bool exit = false;

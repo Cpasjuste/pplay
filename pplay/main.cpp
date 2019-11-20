@@ -3,11 +3,11 @@
 //
 
 #include "main.h"
-#include "filers/filer_sdmc.h"
-#include "filers/filer_http.h"
-#include "filers/filer_ftp.h"
-#include "menus/menu_main.h"
-#include "menus/menu_video.h"
+#include "io.h"
+#include "filer.h"
+#include "menu_main.h"
+#include "menu_video.h"
+#include "scrapper.h"
 
 #ifdef __SMB_SUPPORT__
 #include "filers/filer_smb.h"
@@ -27,11 +27,11 @@ static void on_applet_hook(AppletHookType hook, void *arg) {
             break;
         case AppletHookType_OnFocusState:
             if (appletGetFocusState() == AppletFocusState_Focused) {
-                if (main->getPlayer()->isPaused()) {
+                if (main->getPlayer()->getMpv()->isPaused()) {
                     main->getPlayer()->resume();
                 }
             } else {
-                if (!main->getPlayer()->isPaused()) {
+                if (!main->getPlayer()->getMpv()->isPaused()) {
                     main->getPlayer()->pause();
                 }
             }
@@ -48,10 +48,12 @@ static void on_applet_hook(AppletHookType hook, void *arg) {
 
 using namespace c2d;
 using namespace c2d::config;
+using namespace pplay;
 
 Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
 
-    setClearColor(Color::Black);
+    // custom io
+    pplayIo = new pplay::Io();
 
     // configure input
     getInput()->setRepeatDelay(INPUT_DELAY);
@@ -67,42 +69,23 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
 
     // font
     font = new C2DFont();
-    font->loadFromFile(getIo()->getDataReadPath() + "skin/font.ttf");
+    font->loadFromFile(getIo()->getRomFsPath() + "skin/font.ttf");
     font->setFilter(Texture::Filter::Point);
     font->setOffset({0, -4});
 
-    statusBox = new StatusBox(this, {10, getSize().y - 16});
+    statusBox = new StatusBox(this, {0, getSize().y - 16});
     statusBox->setOrigin(Origin::BottomLeft);
     statusBox->setLayer(10);
     add(statusBox);
 
     // media information cache
-    getIo()->create(getIo()->getDataWritePath() + "cache");
+    getIo()->create(getIo()->getDataPath() + "cache");
 
-    // create filers
-    // sdmc
-    FloatRect filerRect = {0, 0, (getSize().x / 2) - 16, getSize().y - 32 - 64};
-    filerSdmc = new FilerSdmc(this, "/", filerRect);
-    filerSdmc->setLayer(1);
-    add(filerSdmc);
-    // http
-    filerHttp = new FilerHttp(this, filerRect);
-    filerHttp->setLayer(1);
-    filerHttp->setVisibility(Visibility::Hidden);
-    add(filerHttp);
-    // ftp
-    filerFtp = new FilerFtp(this, filerRect);
-    filerFtp->setLayer(1);
-    filerFtp->setVisibility(Visibility::Hidden);
-    add(filerFtp);
-#ifdef __SMB_SUPPORT__
-    // smb
-    filerSmb = new FilerSmb(this, filerRect);
-    filerSmb->setLayer(1);
-    filerSmb->setVisibility(Visibility::Hidden);
-    add(filerSmb);
-#endif
-    filer = filerSdmc;
+    // create filer
+    FloatRect filerRect = {0, 0, getSize().x, getSize().y};
+    filer = new Filer(this, "/", filerRect);
+    filer->setLayer(1);
+    add(filer);
     filer->getDir(config->getOption(OPT_LAST_PATH)->getString());
 
     // status bar
@@ -110,15 +93,9 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     statusBar->setLayer(10);
     add(statusBar);
 
-    // title image
-    title = new C2DTexture(getIo()->getDataReadPath() + "skin/pplay.png");
-    title->setOrigin(Origin::BottomRight);
-    title->setPosition(getSize().x - 16, getSize().y - 16);
-    title->add(new TweenAlpha(0, 255, 0.5f));
-    add(title);
-
     // ffmpeg player
     player = new Player(this);
+    player->setLayer(2);
     add(player);
 
     // main menu
@@ -129,7 +106,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     items.emplace_back("Exit", "exit.png", MenuItem::Position::Bottom);
     menu_main = new MenuMain(this, {-250 * scaling, 0, 250 * scaling, getSize().y}, items);
     menu_main->setVisibility(Visibility::Hidden, false);
-    menu_main->setLayer(2);
+    menu_main->setLayer(3);
     add(menu_main);
 
     // video menu
@@ -140,28 +117,34 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     items.emplace_back("Stop", "exit.png", MenuItem::Position::Bottom);
     menu_video = new MenuVideo(this, {getSize().x, 0, 250 * scaling, getSize().y}, items);
     menu_video->setVisibility(Visibility::Hidden, false);
-    menu_video->setLayer(2);
+    menu_video->setLayer(3);
     add(menu_video);
 
     // a messagebox...
-    float w = getSize().x / 2;
+    float w = getSize().x / 3;
     float h = getSize().y / 3;
     messageBox = new MessageBox({getSize().x / 2, getSize().y / 2, w, h},
                                 getInput(), getFont(), getFontSize(Main::FontSize::Medium));
     messageBox->setOrigin(Origin::Center);
     messageBox->setFillColor(COLOR_BG);
-    messageBox->setAlpha(200);
+    messageBox->setAlpha(240);
     messageBox->setOutlineColor(COLOR_RED);
     messageBox->setOutlineThickness(2);
     messageBox->getTitleText()->setOutlineThickness(0);
     messageBox->getMessageText()->setOutlineThickness(0);
     add(messageBox);
+
+    scrapper = new Scrapper(this);
+    //scrapper->scrap("/home/cpasjuste/dev/multi/videos/");
+    //scrapper->scrap("http://192.168.0.2/files/Videos");
 }
 
 Main::~Main() {
+    delete (scrapper);
     delete (config);
     delete (timer);
     delete (font);
+    delete (pplayIo);
 }
 
 bool Main::onInput(c2d::Input::Player *players) {
@@ -181,12 +164,14 @@ bool Main::onInput(c2d::Input::Player *players) {
             quit();
         }
     } else if (keys & Input::Touch) {
+#if 0
         if (player->getGlobalBounds().contains(players[0].touch)) {
-            if (!player->isStopped() && !player->isFullscreen()) {
+            if (!player->getMpv()->isStopped() && !player->isFullscreen()) {
                 player->setFullscreen(true);
                 return true;
             }
         }
+#endif
     }
 
     return Renderer::onInput(players);
@@ -208,66 +193,28 @@ void Main::onDraw(c2d::Transform &transform, bool draw) {
     C2DObject::onDraw(transform);
 }
 
-// TODO: move this in menu_main
 void Main::show(MenuType type) {
 
-    if (player->isStopped() && player->isFullscreen()) {
+    if (player->getMpv()->isStopped() && player->isFullscreen()) {
         player->setFullscreen(false);
     }
 
+    filer->setVisibility(Visibility::Visible, true);
     if (type == MenuType::Home) {
-        filerSdmc->setVisibility(Visibility::Visible);
-        filerHttp->setVisibility(Visibility::Hidden);
-        filerFtp->setVisibility(Visibility::Hidden);
-#ifdef __SMB_SUPPORT__
-        filerSmb->setVisibility(Visibility::Hidden);
-#endif
-        filer = filerSdmc;
-        if (!filer->getDir(config->getOption(OPT_HOME_PATH)->getString())) {
+        std::string path = config->getOption(OPT_HOME_PATH)->getString();
+        if (!filer->getDir(path)) {
             if (filer->getDir("/")) {
                 filer->clearHistory();
             }
         }
-        return;
-    }
-
-    filerSdmc->setVisibility(Visibility::Hidden);
-
-    std::string net_path = config->getOption(OPT_NETWORK)->getString();
-    if (Utility::startWith(net_path, "http:")) {
-        filerFtp->setVisibility(Visibility::Hidden);
-#ifdef __SMB_SUPPORT__
-        filerSmb->setVisibility(Visibility::Hidden);
-#endif
-        filerHttp->setVisibility(Visibility::Visible);
-        filer = filerHttp;
-    } else if (Utility::startWith(net_path, "ftp:")) {
-        filerHttp->setVisibility(Visibility::Hidden);
-#ifdef __SMB_SUPPORT__
-        filerSmb->setVisibility(Visibility::Hidden);
-#endif
-        filerFtp->setVisibility(Visibility::Visible);
-        filer = filerFtp;
-#ifdef __SMB_SUPPORT__
-        } else if (Utility::startWith(net_path, "smb:")) {
-            filerHttp->setVisibility(Visibility::Hidden);
-            filerFtp->setVisibility(Visibility::Hidden);
-            filerSmb->setVisibility(Visibility::Visible);
-            filer = filerSmb;
+    } else {
+        std::string path = config->getOption(OPT_NETWORK)->getString();
+        if (!filer->getDir(path)) {
+            messageBox->show("OOPS", filer->getError(), "OK");
+            show(MenuType::Home);
         } else {
-#else
-    } else {
-#endif
-        messageBox->show("OOPS", "NETWORK path is wrong (see pplay.cfg)", "OK");
-        show(MenuType::Home);
-        return;
-    }
-
-    if (!filer->getDir(net_path)) {
-        messageBox->show("OOPS", filer->getError(), "OK");
-        show(MenuType::Home);
-    } else {
-        filer->clearHistory();
+            filer->clearHistory();
+        }
     }
 }
 
@@ -287,13 +234,10 @@ void Main::setRunningStop() {
 void Main::quit() {
 
     // TODO: save network path
-    if (filerSdmc->isVisible()) {
-        config->getOption(OPT_LAST_PATH)->setString(filer->getPath());
-        config->save();
-    }
-
+    config->getOption(OPT_LAST_PATH)->setString(filer->getPath());
+    config->save();
     exit = true;
-    if (player->isStopped()) {
+    if (player->getMpv()->isStopped()) {
         running = false;
     } else {
         player->stop();
@@ -340,12 +284,16 @@ unsigned int Main::getFontSize(FontSize fontSize) {
     return (unsigned int) ((float) fontSize * scaling);
 }
 
-c2d::Texture *Main::getTitle() {
-    return title;
-}
-
 StatusBar *Main::getStatusBar() {
     return statusBar;
+}
+
+pplay::Scrapper *Main::getScrapper() {
+    return scrapper;
+}
+
+c2d::Io *Main::getIo() {
+    return (c2d::Io *) pplayIo;
 }
 
 int main() {

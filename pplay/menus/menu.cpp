@@ -14,7 +14,7 @@ MenuButton::MenuButton(Main *main, const MenuItem &item, const FloatRect &rect) 
     setOrigin(Origin::Left);
 
     if (!item.icon.empty()) {
-        icon = new C2DTexture(main->getIo()->getDataReadPath() + "skin/" + item.icon);
+        icon = new C2DTexture(main->getIo()->getRomFsPath() + "skin/" + item.icon);
         icon->setOrigin(Origin::Left);
         icon->setPosition(16 * main->getScaling(), getSize().y / 2);
         icon->setScale(main->getSize().x / 1920, main->getSize().y / 1080);
@@ -27,10 +27,10 @@ MenuButton::MenuButton(Main *main, const MenuItem &item, const FloatRect &rect) 
     name->setFillColor(COLOR_FONT);
     if (!item.icon.empty()) {
         name->setPosition((ICON_SIZE + 32) * main->getScaling(), getSize().y / 2);
-        name->setWidth((getSize().x - ICON_SIZE + 32) * main->getScaling());
+        name->setSizeMax((getSize().x - ICON_SIZE + 32) * main->getScaling(), 0);
     } else {
         name->setPosition(16 * main->getScaling(), getSize().y / 2);
-        name->setWidth((getSize().x - (16 * main->getScaling())) * main->getScaling());
+        name->setSizeMax((getSize().x - (16 * main->getScaling())) * main->getScaling(), 0);
     }
     add(name);
 }
@@ -78,15 +78,15 @@ Menu::Menu(Main *m, const c2d::FloatRect &rect, const std::string &_title,
 
     // tween!
     if (left) {
-        add(new TweenPosition({-rect.width, 0}, {0, 0}, 0.5f));
+        add(new TweenPosition({-rect.width, 0}, {0, 0}, 0.2f));
     } else {
-        add(new TweenPosition({main->getSize().x, 0}, {main->getSize().x - getSize().x, 0}, 0.5f));
+        add(new TweenPosition({main->getSize().x, 0}, {main->getSize().x - getSize().x, 0}, 0.2f));
     }
 }
 
 bool Menu::onInput(c2d::Input::Player *players) {
 
-    int keys = players[0].keys;
+    unsigned int keys = players[0].keys;
 
     if (keys & Input::Touch) {
         Vector2f touch = players[0].touch;
@@ -117,7 +117,7 @@ bool Menu::onInput(c2d::Input::Player *players) {
         }
     }
 
-    highlight->setPosition(0, buttons[index]->getPosition().y);
+    highlight->tweenTo({0, buttons[index]->getPosition().y});
 
     return true;
 }
@@ -132,5 +132,5 @@ MenuItem *Menu::getSelection() {
 
 void Menu::reset() {
     index = 0;
-    highlight->setPosition(0, buttons[index]->getPosition().y);
+    highlight->tweenTo({0, buttons[index]->getPosition().y});
 }

@@ -20,15 +20,18 @@ public:
 
     void setAlpha(uint8_t alpha, bool recursive = false) override;
 
-    void setFillColor(const c2d::Color &color);
+    void setFillColor(const c2d::Color &color) override;
 
     void setCursorColor(const c2d::Color &color);
 
+    void tweenTo(const c2d::Vector2f &position);
+
 private:
 
-    //c2d::Texture *texture;
     GradientRectangle *gradientRectangle;
     c2d::RectangleShape *cursor;
+    c2d::TweenPosition *tween;
+
 };
 
 #endif //PPLAY_HIGHLIGHT_H

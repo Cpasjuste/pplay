@@ -12,23 +12,19 @@ class VideoTexture : public c2d::GLTextureBuffer {
 
 public:
 
-    explicit VideoTexture(const c2d::Vector2f &size, Player::Mpv *mpv);
+    explicit VideoTexture(const c2d::Vector2f &size, Mpv *mpv);
 
-    void showGradients();
+    void showFade();
 
-    void hideGradients();
+    void hideFade();
 
 private:
 
     void onDraw(c2d::Transform &transform, bool draw = true) override;
 
-    GradientRectangle *rectLeft;
-    GradientRectangle *rectBottom;
-
-    c2d::TweenAlpha *rectLeftTween;
-    c2d::TweenAlpha *rectBottomTween;
-
-    Player::Mpv *mpv;
+    Mpv *mpv = nullptr;
+    c2d::Texture *fade = nullptr;
+    c2d::TweenAlpha *fadeTween = nullptr;
 };
 
 #endif //PPLAY_VIDEO_TEXTURE_H

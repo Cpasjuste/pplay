@@ -18,7 +18,7 @@ public:
 
     bool getDir(const std::string &path) override;
 
-    const std::string getError() override;
+    std::string getError() override;
 
 private:
 

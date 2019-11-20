@@ -18,6 +18,8 @@ public:
 
     void setFile(const MediaFile &file);
 
+    void setTitle(const std::string &title);
+
 private:
 
     Main *main;
@@ -25,8 +27,6 @@ private:
 
     c2d::Text *textTitle;
     c2d::Text *textInfo;
-    c2d::Text *textVideo;
-    c2d::Text *textAudio;
 };
 
 #endif //PPLAY_FILERITEM_H

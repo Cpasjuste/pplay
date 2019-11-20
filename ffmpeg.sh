@@ -5,6 +5,7 @@ source /opt/devkitpro/switchvars.sh
     --enable-cross-compile --cross-prefix=aarch64-none-elf- --arch=aarch64 \
     --pkg-config=/opt/devkitpro/portlibs/switch/bin/aarch64-none-elf-pkg-config \
     --disable-shared --enable-static --target-os=linux --enable-pic \
+    --enable-asm --enable-neon --disable-runtime-cpudetect \
     --enable-libass --enable-libfreetype --enable-libfribidi --enable-libtheora \
     --disable-protocols --enable-protocol='file,http,ftp' \
     --disable-filters --enable-filter='rotate,transpose' \

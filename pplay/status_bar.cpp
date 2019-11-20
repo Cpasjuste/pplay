@@ -22,7 +22,7 @@ class Battery : public RectangleShape {
 
 public:
 
-    Battery(const FloatRect &rect) : RectangleShape(rect) {
+    explicit Battery(const FloatRect &rect) : RectangleShape(rect) {
 
         setFillColor(Color::Transparent);
         setOutlineColor(COLOR_FONT);
@@ -42,7 +42,11 @@ public:
         add(percentRect);
     }
 
-    void onDraw(c2d::Transform &transform, bool draw) override {
+    void onUpdate() override {
+
+        if (!isVisible()) {
+            return;
+        }
 
         unsigned int percent = 100;
 #ifdef __SWITCH__
@@ -51,7 +55,8 @@ public:
         float width = ((float) percent / 100) * (getSize().x - 2);
         percentRect->setSize(std::min(width, getSize().x - 4), percentRect->getSize().y);
         percentRect->setFillColor(percent > 15 ? COLOR_FONT : Color::Red);
-        RectangleShape::onDraw(transform, draw);
+
+        RectangleShape::onUpdate();
     }
 
     RectangleShape *percentRect = nullptr;
@@ -79,9 +84,15 @@ StatusBar::StatusBar(Main *main) : GradientRectangle({0, 0, main->getSize().x, 3
     timeText->setPosition(battery->getPosition().x - timeText->getLocalBounds().width, height / 2);
     timeText->setFillColor(COLOR_FONT);
     add(timeText);
+
+    setVisibility(Visibility::Visible, true);
 }
 
-void StatusBar::onDraw(c2d::Transform &transform, bool draw) {
+void StatusBar::onUpdate() {
+
+    if (!isVisible()) {
+        return;
+    }
 
     time_t time_raw;
     struct tm *time_struct;
@@ -93,7 +104,7 @@ void StatusBar::onDraw(c2d::Transform &transform, bool draw) {
     oss << std::setfill('0') << std::setw(2) << time_struct->tm_min;
     timeText->setString(oss.str());
 
-    Sprite::onDraw(transform, draw);
+    GradientRectangle::onUpdate();
 }
 
 StatusBar::~StatusBar() {

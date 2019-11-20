@@ -13,6 +13,7 @@
 #define OPT_CACHE_MEDIA_INFO    "CACHE_MEDIA_INFO"
 //#define OPT_BUFFER              "BUFFER"
 #define OPT_CPU_BOOST           "CPU_BOOST"
+#define OPT_TMDB_LANGUAGE       "TMDB_LANGUAGE"
 
 class Main;
 

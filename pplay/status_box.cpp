@@ -13,10 +13,10 @@ StatusBox::StatusBox(Main *m, const c2d::Vector2f &position)
         : Rectangle({(m->getSize().x - 64) * m->getScaling(), 48 * m->getScaling()}) {
 
     main = m;
-
+    pos = position;
     setPosition(position);
 
-    icon = new C2DTexture(main->getIo()->getDataReadPath() + "skin/wait.png");
+    icon = new C2DTexture(main->getIo()->getRomFsPath() + "skin/wait.png");
     icon->setOrigin(Origin::Center);
     icon->setScale(main->getSize().x / 1920, main->getSize().y / 1080);
     icon->setPosition(icon->getSize().x / 2 + 8, getSize().y / 2);
@@ -35,7 +35,7 @@ StatusBox::StatusBox(Main *m, const c2d::Vector2f &position)
     messageText->setFillColor(COLOR_FONT);
     messageText->setPosition(icon->getSize().x + 16,
                              titleText->getPosition().y + main->getFontSize(Main::FontSize::Medium) + 4);
-    messageText->setWidth(getSize().x - icon->getSize().x - 16);
+    messageText->setSizeMax(getSize().x - icon->getSize().x - 16, 0);
     add(messageText);
 
     clock = new C2DClock();
@@ -51,14 +51,14 @@ StatusBox::~StatusBox() {
     SDL_DestroyMutex(mutex);
 }
 
-void StatusBox::show(const std::string &title, const std::string &message, bool infinite, bool drawNow) {
+void StatusBox::show(const std::string &title, const std::string &message, bool inf, bool drawNow) {
 
     SDL_LockMutex(mutex);
     titleText->setString(title);
     messageText->setString(message);
     SDL_UnlockMutex(mutex);
 
-    this->infinite = infinite;
+    infinite = inf;
     clock->restart();
     setVisibility(Visibility::Visible, true);
     if (drawNow) {
@@ -79,12 +79,13 @@ void StatusBox::onDraw(c2d::Transform &transform, bool draw) {
         setVisibility(Visibility::Hidden, true);
     }
 
-    if (main->getPlayer()->getOSD()->isVisible()) {
+    PlayerOSD *osd = main->getPlayer()->getOSD();
+    if (osd && osd->isVisible()) {
         FloatRect bounds = main->getPlayer()->getOSD()->getGlobalBounds();
-        setPosition(10, bounds.top - 32);
+        setPosition(pos.x, bounds.top - 32);
     } else {
         FloatRect bounds = main->getMenuMain()->getGlobalBounds();
-        setPosition(bounds.left + bounds.width + 10, main->getSize().y - 16);
+        setPosition(bounds.left + bounds.width + pos.x, main->getSize().y - 16);
     }
 
     SDL_LockMutex(mutex);

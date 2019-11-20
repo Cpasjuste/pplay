@@ -1,9 +1,9 @@
 [submodule "libcross2d"]
-	path = libcross2d
-	url = https://github.com/Cpasjuste/libcross2d.git
+  path = libcross2d
+  url = https://github.com/Cpasjuste/libcross2d.git
 [submodule "mpv"]
-	path = mpv
-	url = https://github.com/Cpasjuste/mpv.git
+  path = mpv
+  url = https://github.com/Cpasjuste/mpv.git
 [submodule "pscrap"]
-	path = pscrap
-	url = https://github.com/Cpasjuste/pscrap.git
+  path = pscrap
+  url = https://github.com/Cpasjuste/pscrap.git

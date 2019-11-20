@@ -6,6 +6,7 @@
 #define PPLAY_UTILITY_H
 
 #include <string>
+#include "cross2d/skeleton/io.h"
 
 namespace pplay {
 
@@ -17,6 +18,16 @@ namespace pplay {
             Min = 0,
             Max = 1
         };
+
+        static std::string getMediaInfoPath(const c2d::Io::File &file);
+
+        static std::string getMediaScrapPath(const c2d::Io::File &file);
+
+        static std::string getMediaPosterPath(const c2d::Io::File &file);
+
+        static std::string getMediaBackdropPath(const c2d::Io::File &file);
+
+        static std::vector<std::string> getMediaExtensions();
 
         static bool isMedia(const c2d::Io::File &file);
 

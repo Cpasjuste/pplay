@@ -39,7 +39,7 @@ void MenuVideoSubmenu::setSelection(int streamType) {
 
     for (auto &button : buttons) {
         if (button->item.id == stream_id) {
-            highlight_selection->setPosition(button->getPosition());
+            highlight_selection->tweenTo(button->getPosition());
             break;
         }
     }
