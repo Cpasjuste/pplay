@@ -40,8 +40,6 @@ set(VERSION_MINOR "1")
 set(PROJECT_AUTHOR "Cpasjuste")
 set(TITLE_ID "PPLAY0001")
 
-find_package(BZip2 REQUIRED)
-
 set(PPLAY_INC
         pplay
         pplay/filer
@@ -60,7 +58,6 @@ file(GLOB PPLAY_SRC
         pplay/menus/*.c*
         pplay/player/*.c*
         pplay/scrapper/*.c*
-        ${BZIP2_INCLUDE_DIR}
         )
 
 set(PPLAY_CFLAGS
@@ -71,7 +68,7 @@ set(PPLAY_CFLAGS
         -DM_SQRT2=1.41421356237309504880
         )
 
-set(PPLAY_LDFLAGS ${BZIP2_LIBRARIES})
+set(PPLAY_LDFLAGS)
 
 if (BUILD_SMBCLIENT)
     list(APPEND PPLAY_CFLAGS -D__SMB_SUPPORT__)
@@ -95,14 +92,15 @@ if (PLATFORM_SWITCH)
     #####################
     # SWITCH PLATORM
     #####################
-    list(APPEND PPLAY_INC ${DEVKITPRO}/portlibs/switch/include/SDL2)
+    list(APPEND PPLAY_INC)
     list(APPEND PPLAY_LDFLAGS)
 elseif (PLATFORM_LINUX)
     #####################
     # LINUX PLATORM
     #####################
-    list(APPEND PPLAY_INC /usr/include/SDL2)
-    list(APPEND PPLAY_LDFLAGS)
+    find_package(BZip2 REQUIRED)
+    list(APPEND PPLAY_INC ${BZIP2_INCLUDE_DIR})
+    list(APPEND PPLAY_LDFLAGS ${BZIP2_LIBRARIES})
 endif ()
 
 #####################

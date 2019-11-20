@@ -5,7 +5,7 @@
 #ifndef PPLAY_SCRAPPER_H
 #define PPLAY_SCRAPPER_H
 
-#include <SDL_thread.h>
+#include <SDL2/SDL_thread.h>
 #include "cross2d/skeleton/sfml/RectangleShape.hpp"
 
 class Main;

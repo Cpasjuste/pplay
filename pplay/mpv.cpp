@@ -2,7 +2,7 @@
 // Created by cpasjuste on 02/04/19.
 //
 
-#include <SDL_video.h>
+#include <SDL2/SDL_video.h>
 #include "mpv.h"
 
 static void *get_proc_address_mpv(void *unused, const char *name) {
