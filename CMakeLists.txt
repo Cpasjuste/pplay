@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-set(CMAKE_VERBOSE_MAKEFILE OFF)
+#set(CMAKE_VERBOSE_MAKEFILE ON)
 
 ####################
 # TARGET PLATFORM
@@ -36,7 +36,7 @@ project(pplay)
 
 # pplay version
 set(VERSION_MAJOR "3")
-set(VERSION_MINOR "1")
+set(VERSION_MINOR "2")
 set(PROJECT_AUTHOR "Cpasjuste")
 set(TITLE_ID "PPLAY0001")
 
@@ -76,11 +76,6 @@ if (BUILD_SMBCLIENT)
 endif ()
 
 ##############
-# mpv
-##############
-add_subdirectory(mpv)
-
-##############
 # pscrap
 ##############
 add_subdirectory(pscrap)
@@ -93,11 +88,12 @@ if (PLATFORM_SWITCH)
     # SWITCH PLATORM
     #####################
     list(APPEND PPLAY_INC)
-    list(APPEND PPLAY_LDFLAGS)
+    list(APPEND PPLAY_LDFLAGS swscale swresample avformat avfilter avcodec avutil opus vpx ass freetype fribidi png bz2)
 elseif (PLATFORM_LINUX)
     #####################
     # LINUX PLATORM
     #####################
+    add_subdirectory(mpv)
     find_package(BZip2 REQUIRED)
     list(APPEND PPLAY_INC ${BZIP2_INCLUDE_DIR})
     list(APPEND PPLAY_LDFLAGS ${BZIP2_LIBRARIES})

@@ -153,15 +153,19 @@ void Utility::setCpuClock(const CpuClock &clock) {
 #ifdef __SWITCH__
     if (clock == CpuClock::Min) {
         if (c2d::SwitchSys::getClock(c2d::SwitchSys::Module::Cpu) !=
-            c2d::SwitchSys::getClockStock(c2d::SwitchSys::Module::Cpu)) {
+            c2d::SwitchSys::getClock(c2d::SwitchSys::Module::Cpu, true)) {
             int clock_old = c2d::SwitchSys::getClock(c2d::SwitchSys::Module::Cpu);
             c2d::SwitchSys::setClock(c2d::SwitchSys::Module::Cpu, (int) c2d::SwitchSys::CPUClock::Stock);
+            c2d::SwitchSys::setClock(c2d::SwitchSys::Module::Gpu, (int) c2d::SwitchSys::GPUClock::Stock);
+            c2d::SwitchSys::setClock(c2d::SwitchSys::Module::Emc, (int) c2d::SwitchSys::EMCClock::Stock);
             printf("restoring cpu speed (old: %i, new: %i)\n",
                    clock_old, c2d::SwitchSys::getClock(c2d::SwitchSys::Module::Cpu));
         }
     } else {
         int clock_old = c2d::SwitchSys::getClock(c2d::SwitchSys::Module::Cpu);
         c2d::SwitchSys::setClock(c2d::SwitchSys::Module::Cpu, (int) c2d::SwitchSys::CPUClock::Max);
+        c2d::SwitchSys::setClock(c2d::SwitchSys::Module::Gpu, (int) c2d::SwitchSys::GPUClock::Max);
+        c2d::SwitchSys::setClock(c2d::SwitchSys::Module::Emc, (int) c2d::SwitchSys::EMCClock::Max);
         printf("setting max cpu speed (old: %i, new: %i)\n",
                clock_old, c2d::SwitchSys::getClock(c2d::SwitchSys::Module::Cpu));
     }
