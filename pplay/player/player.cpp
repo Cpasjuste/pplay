@@ -277,7 +277,15 @@ bool Player::onInput(c2d::Input::Player *players) {
     if (keys & c2d::Input::Key::Fire5) {
         setSpeed(1);
     } else if (keys & c2d::Input::Key::Fire6) {
-        double new_speed = mpv->getSpeed() * 2;
+        double old_speed = mpv->getSpeed();
+        double new_speed = old_speed;
+        if (old_speed < 1.5) {
+            new_speed = 1.5;
+        } else if (old_speed < 2) {
+            new_speed = 2;
+        } else {
+            new_speed = old_speed * 2;
+        }
         if (new_speed <= 100) {
             setSpeed(new_speed);
         }
