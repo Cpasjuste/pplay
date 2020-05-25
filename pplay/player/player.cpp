@@ -279,9 +279,9 @@ bool Player::onInput(c2d::Input::Player *players) {
     } else if (keys & c2d::Input::Key::Fire6) {
         double old_speed = mpv->getSpeed();
         double new_speed = old_speed;
-        if (old_speed < 1.5) {
+        if (old_speed < 1.4) {
             new_speed = 1.5;
-        } else if (old_speed < 2) {
+        } else if (old_speed < 1.9) {
             new_speed = 2;
         } else {
             new_speed = old_speed * 2;
