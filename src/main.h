@@ -46,7 +46,8 @@ public:
     enum class MenuType {
         Home,
         Network,
-        Current
+        Current,
+        USB
     };
 
     enum class FontSize {

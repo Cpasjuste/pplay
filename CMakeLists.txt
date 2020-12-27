@@ -88,7 +88,7 @@ if (PLATFORM_SWITCH)
     # SWITCH PLATORM
     #####################
     list(APPEND PPLAY_INC)
-    list(APPEND PPLAY_LDFLAGS swscale swresample avformat avfilter avcodec avutil opus vpx ass freetype fribidi png bz2)
+    list(APPEND PPLAY_LDFLAGS swscale swresample avformat avfilter avcodec avutil opus vpx ass freetype fribidi png bz2 usbhsfs ntfs-3g lwext4)
 elseif (PLATFORM_LINUX)
     #####################
     # LINUX PLATORM

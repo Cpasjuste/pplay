@@ -57,6 +57,9 @@ void MenuMain::onOptionSelection(MenuItem *item) {
     } else if (item->name == "Options") {
         setVisibility(Visibility::Hidden, true);
         menuMainOptions->setVisibility(Visibility::Visible);
+    } else if (item->name == "USB") {
+        setVisibility(Visibility::Hidden, true);
+        main->show(Main::MenuType::USB);
     } else if (item->name == "Exit") {
         main->quit();
     }

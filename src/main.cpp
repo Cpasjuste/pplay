@@ -2,6 +2,8 @@
 // Created by cpasjuste on 02/10/18.
 //
 
+#include <threads.h>
+#include <usbhsfs.h>
 #include "main.h"
 #include "io.h"
 #include "filer.h"
@@ -15,6 +17,10 @@
 
 #ifdef __SWITCH__
 
+static UEvent *g_statusChangeEvent = NULL, g_exitEvent = {0};
+static UsbHsFsDevice *g_usbDevices = NULL;
+static u32 g_usbDeviceCount = 0;
+
 static AppletHookCookie applet_hook_cookie;
 
 static void on_applet_hook(AppletHookType hook, void *arg) {
@@ -26,7 +32,7 @@ static void on_applet_hook(AppletHookType hook, void *arg) {
             main->quit();
             break;
         case AppletHookType_OnFocusState:
-            if (appletGetFocusState() == AppletFocusState_Focused) {
+            if (appletGetFocusState() == AppletFocusState_InFocus) {
                 if (main->getPlayer()->getMpv()->isPaused()) {
                     main->getPlayer()->resume();
                 }
@@ -50,7 +56,44 @@ using namespace c2d;
 using namespace c2d::config;
 using namespace pplay;
 
+int usbThread(void *arg)
+{
+    (void)arg;
+    Result rc = 0;
+    int idx = 0;
+    Waiter status_change_event_waiter = waiterForUEvent(g_statusChangeEvent);
+    Waiter exit_event_waiter = waiterForUEvent(&g_exitEvent);
+    
+    while(true)
+    {
+        rc = waitMulti(&idx, -1, status_change_event_waiter, exit_event_waiter);
+        if (R_FAILED(rc)) continue;
+        if (g_usbDevices)
+        {
+            free(g_usbDevices);
+            g_usbDevices = NULL;
+        }
+
+        if (idx == 1) break;
+
+        g_usbDeviceCount = usbHsFsGetMountedDeviceCount();
+        g_usbDevices = (UsbHsFsDevice*)calloc(g_usbDeviceCount, sizeof(UsbHsFsDevice));
+    }
+    return 0;
+}
+
+void usbInit() {
+    thrd_t g_thread = {0};
+    usbHsFsInitialize(0);
+    g_statusChangeEvent = usbHsFsGetStatusChangeUserEvent();
+    ueventCreate(&g_exitEvent, true);
+    thrd_create(&g_thread, usbThread, NULL);
+    sleep(2);
+}
+
 Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
+	
+	usbHsFsInitialize(0);
 
     // custom io
     pplayIo = new pplay::Io();
@@ -101,6 +144,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     // main menu
     std::vector<MenuItem> items;
     items.emplace_back("Home", "home.png", MenuItem::Position::Top);
+    items.emplace_back("USB", "usb.png", MenuItem::Position::Top);
     items.emplace_back("Network", "network.png", MenuItem::Position::Top);
     items.emplace_back("Options", "options.png", MenuItem::Position::Top);
     items.emplace_back("Exit", "exit.png", MenuItem::Position::Bottom);
@@ -201,13 +245,18 @@ void Main::show(MenuType type) {
 
     filer->setVisibility(Visibility::Visible, true);
     if (type == MenuType::Home) {
+        usbHsFsExit();
         std::string path = config->getOption(OPT_HOME_PATH)->getString();
         if (!filer->getDir(path)) {
             if (filer->getDir("/")) {
                 filer->clearHistory();
             }
         }
+    } else if (type == MenuType::USB) {
+        usbInit();
+        filer->getDir("ums0:/");
     } else {
+        usbHsFsExit();
         std::string path = config->getOption(OPT_NETWORK)->getString();
         if (!filer->getDir(path)) {
             messageBox->show("OOPS", filer->getError(), "OK");
@@ -305,7 +354,7 @@ int main() {
     socketInitializeDefault();
 #endif
     appletMainLoop();
-    if (appletGetOperationMode() == AppletOperationMode_Docked) {
+    if (appletGetOperationMode() == AppletOperationMode_Console) {
         size = {1920, 1080};
     }
 #endif
@@ -325,6 +374,8 @@ int main() {
     delete (main);
 
 #ifdef __SWITCH__
+    usbHsFsExit();
+    sleep(2);
     appletUnhook(&applet_hook_cookie);
     appletUnlockExit();
 #ifndef __NET_DEBUG__
