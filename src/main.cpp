@@ -84,6 +84,7 @@ int usbThread(void *arg)
 
 void usbInit() {
     thrd_t g_thread = {0};
+    usbHsFsSetFileSystemMountFlags(UsbHsFsMountFlags_ShowHiddenFiles | UsbHsFsMountFlags_ReadOnly);
     usbHsFsInitialize(0);
     g_statusChangeEvent = usbHsFsGetStatusChangeUserEvent();
     ueventCreate(&g_exitEvent, true);
