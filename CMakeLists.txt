@@ -41,23 +41,23 @@ set(PROJECT_AUTHOR "Cpasjuste")
 set(TITLE_ID "PPLAY0001")
 
 set(PPLAY_INC
-        pplay
-        pplay/filer
-        pplay/filer/Browser
-        pplay/filer/ftplib
-        pplay/menus
-        pplay/player
-        pplay/scrapper
+        src
+        src/filer
+        src/filer/Browser
+        src/filer/ftplib
+        src/menus
+        src/player
+        src/scrapper
         )
 
 file(GLOB PPLAY_SRC
-        pplay/*.c*
-        pplay/filer/*.c*
-        pplay/filer/Browser/*.c*
-        pplay/filer/ftplib/*.c*
-        pplay/menus/*.c*
-        pplay/player/*.c*
-        pplay/scrapper/*.c*
+        src/*.c*
+        src/filer/*.c*
+        src/filer/Browser/*.c*
+        src/filer/ftplib/*.c*
+        src/menus/*.c*
+        src/player/*.c*
+        src/scrapper/*.c*
         )
 
 set(PPLAY_CFLAGS
