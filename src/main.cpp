@@ -92,9 +92,6 @@ void usbInit() {
 }
 
 Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
-	
-	usbHsFsInitialize(0);
-
     // custom io
     pplayIo = new pplay::Io();
 
