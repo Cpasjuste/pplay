@@ -16,6 +16,7 @@
 #include "status_bar.h"
 #include "scrapper.h"
 #include "io.h"
+#include "usbfs.h"
 
 #define INPUT_DELAY 500
 #define ICON_SIZE 24

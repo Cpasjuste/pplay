@@ -15,6 +15,7 @@ MenuMain::MenuMain(Main *main, const c2d::FloatRect &rect, const std::vector<Men
 
     // buffering options
     it.emplace_back(OPT_CPU_BOOST, "cpu.png", MenuItem::Position::Top);
+    it.emplace_back(OPT_UMS_DEVICE, "usb.png", MenuItem::Position::Top);
     //it.emplace_back(OPT_BUFFER, "buffering.png", MenuItem::Position::Top);
     menuMainOptions = new MenuMainOptions(main, rect, it);
     menuMainOptions->setLayer(2);
@@ -30,6 +31,18 @@ MenuMain::MenuMain(Main *main, const c2d::FloatRect &rect, const std::vector<Men
     menuMainOptionsCpu->setVisibility(Visibility::Hidden, false);
     menuMainOptionsCpu->setSelection(main->getConfig()->getOption(OPT_CPU_BOOST)->getString());
     main->add(menuMainOptionsCpu);
+
+    std::string umsPath;
+    it.clear();
+    for(int i = 0; i <= 9; i++) {
+        umsPath = "ums" + std::to_string(i) + ":/";
+        it.emplace_back(umsPath, "", MenuItem::Position::Top);
+    }
+    menuMainOptionsUsb = new MenuMainOptionsSubmenu(main, rect, OPT_UMS_DEVICE, it, OPT_UMS_DEVICE);
+    menuMainOptionsUsb->setLayer(2);
+    menuMainOptionsUsb->setVisibility(Visibility::Hidden, false);
+    menuMainOptionsUsb->setSelection(main->getConfig()->getOption(OPT_UMS_DEVICE)->getString());
+    main->add(menuMainOptionsUsb);
 
 #if 0
     // Buffering
@@ -87,7 +100,8 @@ bool MenuMain::isMenuVisible() {
     return isVisible()
            || menuMainOptions->isVisible()
            //|| menuMainOptionsBuffer->isVisible()
-           || menuMainOptionsCpu->isVisible();
+           || menuMainOptionsCpu->isVisible()
+           || menuMainOptionsUsb->isVisible();
 }
 
 MenuMainOptions *MenuMain::getMenuMainOptions() {
@@ -102,6 +116,9 @@ MenuMainOptionsSubmenu *MenuMain::getMenuMainOptionsSubmenu(const std::string &n
 #endif
     if (name == OPT_CPU_BOOST) {
         return menuMainOptionsCpu;
+    }
+    if (name == OPT_UMS_DEVICE) {
+        return menuMainOptionsUsb;
     }
 
     return nullptr;

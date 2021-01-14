@@ -29,6 +29,7 @@ private:
 
     MenuMainOptions *menuMainOptions;
     MenuMainOptionsSubmenu *menuMainOptionsCpu;
+    MenuMainOptionsSubmenu *menuMainOptionsUsb;
     //MenuMainOptionsSubmenu *menuMainOptionsBuffer;
 };
 
