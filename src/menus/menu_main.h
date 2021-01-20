@@ -32,7 +32,6 @@ private:
 #ifdef __SWITCH__
     MenuMainOptionsSubmenu *menuMainOptionsUsb;
 #endif
-    //MenuMainOptionsSubmenu *menuMainOptionsBuffer;
 };
 
 

@@ -99,7 +99,9 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     // main menu
     std::vector<MenuItem> items;
     items.emplace_back("Home", "home.png", MenuItem::Position::Top);
-    items.emplace_back("USB", "usb.png", MenuItem::Position::Top);
+#ifdef __SWITCH__
+    items.emplace_back("Usb", "usb.png", MenuItem::Position::Top);
+#endif
     items.emplace_back("Network", "network.png", MenuItem::Position::Top);
     items.emplace_back("Options", "options.png", MenuItem::Position::Top);
     items.emplace_back("Exit", "exit.png", MenuItem::Position::Bottom);
