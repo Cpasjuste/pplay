@@ -14,24 +14,18 @@ set(PLATFORM_VITA OFF CACHE BOOL "Sony PS Vita platform target")
 ####################
 # BUILD OPTIONS
 ####################
-set(OPTION_SDL1 OFF CACHE BOOL "SDL1 support (software, slow, unsupported)")
-set(OPTION_SDL2_GL OFF CACHE BOOL "SDL2 support (OpenGL 3.3)")
-set(OPTION_SDL2_GLES2 OFF CACHE BOOL "SDL2 support (OpenGLES 2.0)")
-set(OPTION_SDL2_SOFT OFF CACHE BOOL "SDL2 support (software, slow)")
-set(OPTION_BUILTIN_LIBCONFIG OFF CACHE BOOL "Build libconfig from sources")
-set(OPTION_FREEPLAY OFF CACHE BOOL "Build with FreePlay (CM3/ZERO) support")
-set(OPTION_RECALBOX_BUILDROOT OFF CACHE BOOL "Build from recalbox buildroot")
-set(OPTION_SCREEN_WIDTH 1280 CACHE STRING "Custom screen width")
-set(OPTION_SCREEN_HEIGHT 720 CACHE STRING "Custom screen height")
 # needs libsmbclient port to the switch...
 set(BUILD_SMBCLIENT OFF CACHE BOOL "Build with smbclient support")
 
+###################
+# MODULES
+###################
 add_subdirectory(libcross2d)
+add_subdirectory(pscrap)
 
 ##############
 # pplay
 ##############
-
 project(pplay)
 
 # pplay version
@@ -76,17 +70,12 @@ if (BUILD_SMBCLIENT)
 endif ()
 
 ##############
-# libs
+# LIBS
 ##############
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules/")
 find_package(MPV REQUIRED)
 list(APPEND PPLAY_INC ${MPV_INCLUDE_DIRS})
 list(APPEND PPLAY_LDFLAGS ${MPV_LIBRARY})
-
-##############
-# pscrap
-##############
-add_subdirectory(pscrap)
 
 #####################
 # PLATORM SPECIFIC
