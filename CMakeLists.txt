@@ -76,6 +76,14 @@ if (BUILD_SMBCLIENT)
 endif ()
 
 ##############
+# libs
+##############
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules/")
+find_package(MPV REQUIRED)
+list(APPEND PPLAY_INC ${MPV_INCLUDE_DIRS})
+list(APPEND PPLAY_LDFLAGS ${MPV_LIBRARY})
+
+##############
 # pscrap
 ##############
 add_subdirectory(pscrap)
@@ -93,7 +101,6 @@ elseif (PLATFORM_LINUX)
     #####################
     # LINUX PLATORM
     #####################
-    add_subdirectory(mpv)
     find_package(BZip2 REQUIRED)
     list(APPEND PPLAY_INC ${BZIP2_INCLUDE_DIR})
     list(APPEND PPLAY_LDFLAGS ${BZIP2_LIBRARIES})
@@ -106,7 +113,7 @@ add_executable(${CMAKE_PROJECT_NAME} ${PPLAY_SRC})
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${PPLAY_INC})
 target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE ${PPLAY_CFLAGS})
 target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>)
-target_link_libraries(${CMAKE_PROJECT_NAME} cross2d mpv pscrap ${PPLAY_LDFLAGS})
+target_link_libraries(${CMAKE_PROJECT_NAME} cross2d ${MPV_LIBRARIES} pscrap ${PPLAY_LDFLAGS})
 
 #####################
 # targets

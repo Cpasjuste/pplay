@@ -11,7 +11,9 @@ PPLAYConfig::PPLAYConfig(Main *main, int version)
         : Config("PPLAY", main->getIo()->getDataPath() + "pplay.cfg", version) {
 
     addOption({OPT_NETWORK, "http://samples.ffmpeg.org/"});
+#ifdef __SWITCH__
     addOption({OPT_UMS_DEVICE, "ums0:/"});
+#endif
     addOption({OPT_HOME_PATH, main->getIo()->getDataPath()});
     addOption({OPT_LAST_PATH, main->getIo()->getDataPath()});
     addOption({OPT_CACHE_MEDIA_INFO, (int) 1});

@@ -200,18 +200,24 @@ void Main::show(MenuType type) {
 
     filer->setVisibility(Visibility::Visible, true);
     if (type == MenuType::Home) {
+#ifdef __SWITCH__
         usbHsFsExit();
+#endif
         std::string path = config->getOption(OPT_HOME_PATH)->getString();
         if (!filer->getDir(path)) {
             if (filer->getDir("/")) {
                 filer->clearHistory();
             }
         }
-    } else if (type == MenuType::USB) {
+#ifdef __SWITCH__
+    } else if (type == MenuType::Usb) {
         usbInit();
         filer->getDir(config->getOption(OPT_UMS_DEVICE)->getString());
+#endif
     } else {
+#ifdef __SWITCH__
         usbHsFsExit();
+#endif
         std::string path = config->getOption(OPT_NETWORK)->getString();
         if (!filer->getDir(path)) {
             messageBox->show("OOPS", filer->getError(), "OK");

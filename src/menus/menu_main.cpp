@@ -32,6 +32,7 @@ MenuMain::MenuMain(Main *main, const c2d::FloatRect &rect, const std::vector<Men
     menuMainOptionsCpu->setSelection(main->getConfig()->getOption(OPT_CPU_BOOST)->getString());
     main->add(menuMainOptionsCpu);
 
+#ifdef __SWITCH__
     std::string umsPath;
     it.clear();
     for(int i = 0; i <= 9; i++) {
@@ -43,6 +44,7 @@ MenuMain::MenuMain(Main *main, const c2d::FloatRect &rect, const std::vector<Men
     menuMainOptionsUsb->setVisibility(Visibility::Hidden, false);
     menuMainOptionsUsb->setSelection(main->getConfig()->getOption(OPT_UMS_DEVICE)->getString());
     main->add(menuMainOptionsUsb);
+#endif
 
 #if 0
     // Buffering
@@ -70,9 +72,11 @@ void MenuMain::onOptionSelection(MenuItem *item) {
     } else if (item->name == "Options") {
         setVisibility(Visibility::Hidden, true);
         menuMainOptions->setVisibility(Visibility::Visible);
-    } else if (item->name == "USB") {
-        setVisibility(Visibility::Hidden, true);
-        main->show(Main::MenuType::USB);
+#ifdef __SWITCH__
+        } else if (item->name == "USB") {
+            setVisibility(Visibility::Hidden, true);
+            main->show(Main::MenuType::Usb);
+#endif
     } else if (item->name == "Exit") {
         main->quit();
     }
@@ -101,7 +105,10 @@ bool MenuMain::isMenuVisible() {
            || menuMainOptions->isVisible()
            //|| menuMainOptionsBuffer->isVisible()
            || menuMainOptionsCpu->isVisible()
-           || menuMainOptionsUsb->isVisible();
+#ifdef __SWITCH__
+            || menuMainOptionsUsb->isVisible()
+#endif
+            ;
 }
 
 MenuMainOptions *MenuMain::getMenuMainOptions() {
@@ -117,9 +124,10 @@ MenuMainOptionsSubmenu *MenuMain::getMenuMainOptionsSubmenu(const std::string &n
     if (name == OPT_CPU_BOOST) {
         return menuMainOptionsCpu;
     }
+#ifdef __SWITCH__
     if (name == OPT_UMS_DEVICE) {
         return menuMainOptionsUsb;
     }
-
+#endif
     return nullptr;
 }

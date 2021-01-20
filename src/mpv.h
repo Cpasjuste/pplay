@@ -8,8 +8,8 @@
 #include <cstdio>
 #include <string>
 
-#include "../mpv/libmpv/client.h"
-#include "../mpv/libmpv/render_gl.h"
+#include <mpv/client.h>
+#include <mpv/render_gl.h>
 #include "media_info.h"
 
 class Mpv {

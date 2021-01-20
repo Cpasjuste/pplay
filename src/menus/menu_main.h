@@ -29,7 +29,9 @@ private:
 
     MenuMainOptions *menuMainOptions;
     MenuMainOptionsSubmenu *menuMainOptionsCpu;
+#ifdef __SWITCH__
     MenuMainOptionsSubmenu *menuMainOptionsUsb;
+#endif
     //MenuMainOptionsSubmenu *menuMainOptionsBuffer;
 };
 
