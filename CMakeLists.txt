@@ -69,14 +69,6 @@ if (BUILD_SMBCLIENT)
     list(APPEND PPLAY_LDFLAGS dsm tasn1)
 endif ()
 
-##############
-# LIBS
-##############
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules/")
-find_package(MPV REQUIRED)
-list(APPEND PPLAY_INC ${MPV_INCLUDE_DIRS})
-list(APPEND PPLAY_LDFLAGS ${MPV_LIBRARY})
-
 #####################
 # PLATORM SPECIFIC
 #####################
@@ -84,6 +76,7 @@ if (PLATFORM_SWITCH)
     #####################
     # SWITCH PLATORM
     #####################
+    set(MPV_LIBRARIES mpv)
     list(APPEND PPLAY_INC)
     list(APPEND PPLAY_LDFLAGS swscale swresample avformat avfilter avcodec avutil lzma opus vpx ass freetype fribidi png bz2 usbhsfs ntfs-3g lwext4)
 elseif (PLATFORM_LINUX)
@@ -93,6 +86,10 @@ elseif (PLATFORM_LINUX)
     find_package(BZip2 REQUIRED)
     list(APPEND PPLAY_INC ${BZIP2_INCLUDE_DIR})
     list(APPEND PPLAY_LDFLAGS ${BZIP2_LIBRARIES})
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules/")
+    find_package(MPV REQUIRED)
+    list(APPEND PPLAY_INC ${MPV_INCLUDE_DIRS})
+    list(APPEND PPLAY_LDFLAGS ${MPV_LIBRARY})
 endif ()
 
 #####################

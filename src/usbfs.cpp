@@ -18,7 +18,7 @@ int usbThread(void *arg) {
         if (R_FAILED(rc)) continue;
         if (g_usbDevices) {
             free(g_usbDevices);
-            g_usbDevices = NULL;
+            g_usbDevices = nullptr;
         }
 
         if (idx == 1) break;
@@ -35,7 +35,7 @@ void usbInit() {
     usbHsFsInitialize(0);
     g_statusChangeEvent = usbHsFsGetStatusChangeUserEvent();
     ueventCreate(&g_exitEvent, true);
-    thrd_create(&g_thread, usbThread, NULL);
+    thrd_create(&g_thread, usbThread, nullptr);
     sleep(2);
 }
 
