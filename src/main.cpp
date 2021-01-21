@@ -164,34 +164,32 @@ bool Main::onInput(c2d::Input::Player *players) {
         } else {
             quit();
         }
-    } else if (keys & Input::Touch) {
-#if 0
-        if (player->getGlobalBounds().contains(players[0].touch)) {
-            if (!player->getMpv()->isStopped() && !player->isFullscreen()) {
-                player->setFullscreen(true);
-                return true;
-            }
-        }
-#endif
     }
 
     return Renderer::onInput(players);
 }
 
-void Main::onDraw(c2d::Transform &transform, bool draw) {
+void Main::onUpdate() {
 
     unsigned int keys = getInput()->getKeys(0);
-
     if (keys != Input::Key::Delay) {
-        if (keys && timer->getElapsedTime().asMilliseconds() > INPUT_DELAY) {
-            getInput()->setRepeatDelay(INPUT_DELAY / 5);
-        } else if (!keys) {
+        bool changed = (oldKeys ^ keys) != 0;
+        oldKeys = keys;
+        if (!changed) {
+            if (timer->getElapsedTime().asSeconds() > 5) {
+                getInput()->setRepeatDelay(INPUT_DELAY / 20);
+            } else if (timer->getElapsedTime().asSeconds() > 3) {
+                getInput()->setRepeatDelay(INPUT_DELAY / 8);
+            } else if (timer->getElapsedTime().asSeconds() > 1) {
+                getInput()->setRepeatDelay(INPUT_DELAY / 4);
+            }
+        } else {
             getInput()->setRepeatDelay(INPUT_DELAY);
             timer->restart();
         }
     }
 
-    C2DObject::onDraw(transform);
+    C2DRenderer::onUpdate();
 }
 
 void Main::show(MenuType type) {
@@ -212,9 +210,9 @@ void Main::show(MenuType type) {
             }
         }
 #ifdef __SWITCH__
-    } else if (type == MenuType::Usb) {
-        usbInit();
-        filer->getDir(config->getOption(OPT_UMS_DEVICE)->getString());
+        } else if (type == MenuType::Usb) {
+            usbInit();
+            filer->getDir(config->getOption(OPT_UMS_DEVICE)->getString());
 #endif
     } else {
 #ifdef __SWITCH__
