@@ -129,7 +129,8 @@ void Player::onLoadEvent() {
     if (file.mediaInfo.playbackInfo.position > 0) {
         std::string msg = "Resume playback at "
                           + pplay::Utility::formatTime(file.mediaInfo.playbackInfo.position) + " ?";
-        if (main->getMessageBox()->show("RESUME", msg, "RESUME", "RESTART") == MessageBox::LEFT) {
+        if (main->getMessageBox()->show("What are we doing ?", msg,
+                                        "Resume", "Restart") == MessageBox::LEFT) {
             mpv->seek(file.mediaInfo.playbackInfo.position);
         }
     }

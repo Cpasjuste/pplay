@@ -68,7 +68,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     // font
     font = new C2DFont();
     font->loadFromFile(getIo()->getRomFsPath() + "skin/font.ttf");
-    font->setFilter(Texture::Filter::Point);
+    font->setFilter(Texture::Filter::Linear);
     font->setOffset({0, -4});
 
     statusBox = new StatusBox(this, {0, getSize().y - 16});
@@ -133,6 +133,8 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     messageBox->setOutlineThickness(2);
     messageBox->getTitleText()->setOutlineThickness(0);
     messageBox->getMessageText()->setOutlineThickness(0);
+    messageBox->getButton(0)->setOutlineThickness(3);
+    messageBox->getButton(1)->setOutlineThickness(3);
     add(messageBox);
 
     scrapper = new Scrapper(this);
