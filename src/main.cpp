@@ -313,7 +313,7 @@ int main() {
     Vector2f size = {1280, 720};
 
 #ifdef __SWITCH__
-#ifndef __NET_DEBUG__
+#ifdef NDEBUG
     socketInitializeDefault();
 #endif
     appletMainLoop();
@@ -340,7 +340,7 @@ int main() {
     usbHsFsExit();
     appletUnhook(&applet_hook_cookie);
     appletUnlockExit();
-#ifndef __NET_DEBUG__
+#ifdef NDEBUG
     socketExit();
 #endif
 #endif
