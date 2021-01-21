@@ -217,11 +217,9 @@ bool Filer::getDir(const std::string &p) {
     // sort after title have been scrapped
     std::sort(files.begin(), files.end(), compare);
 
-    if (files.size() > 1) {
-        if (files.at(0).name != "..") {
-            Io::File file("..", "..", Io::Type::Directory, 0, COLOR_BLUE);
-            files.insert(files.begin(), MediaFile{file, MediaInfo(file)});
-        }
+    if (files.empty() || files.at(0).name != "..") {
+        Io::File file("..", "..", Io::Type::Directory, 0, COLOR_BLUE);
+        files.insert(files.begin(), MediaFile{file, MediaInfo(file)});
     }
 
     setSelection(0);
