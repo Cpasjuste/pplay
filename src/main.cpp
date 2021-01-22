@@ -35,9 +35,6 @@ static void on_applet_hook(AppletHookType hook, void *arg) {
                 }
             }
             break;
-        case AppletHookType_OnPerformanceMode:
-            break;
-
         default:
             break;
     }
@@ -212,9 +209,9 @@ void Main::show(MenuType type) {
             }
         }
 #ifdef __SWITCH__
-        } else if (type == MenuType::Usb) {
-            usbInit();
-            filer->getDir(config->getOption(OPT_UMS_DEVICE)->getString());
+    } else if (type == MenuType::Usb) {
+        usbInit();
+        filer->getDir(config->getOption(OPT_UMS_DEVICE)->getString());
 #endif
     } else {
 #ifdef __SWITCH__
