@@ -20,7 +20,7 @@ Mpv::Mpv(const std::string &configPath, bool initRender) {
     mpv_set_option_string(handle, "config", "yes");
     mpv_set_option_string(handle, "config-dir", configPath.c_str());
     mpv_set_option_string(handle, "terminal", "yes");
-    mpv_set_option_string(handle, "msg-level", "all=v");
+    //mpv_set_option_string(handle, "msg-level", "all=v");
     mpv_set_option_string(handle, "vd-lavc-threads", "4");
     mpv_set_option_string(handle, "vd-lavc-fast", "yes");
     mpv_set_option_string(handle, "vd-lavc-skiploopfilter", "all");
