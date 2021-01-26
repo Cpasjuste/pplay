@@ -34,7 +34,7 @@ MenuMain::MenuMain(Main *main, const c2d::FloatRect &rect, const std::vector<Men
 #ifdef __SWITCH__
     std::string umsPath;
     it.clear();
-    for(int i = 0; i <= 9; i++) {
+    for (int i = 0; i <= 9; i++) {
         umsPath = "ums" + std::to_string(i) + ":/";
         it.emplace_back(umsPath, "", MenuItem::Position::Top);
     }
@@ -57,9 +57,9 @@ void MenuMain::onOptionSelection(MenuItem *item) {
         setVisibility(Visibility::Hidden, true);
         menuMainOptions->setVisibility(Visibility::Visible);
 #ifdef __SWITCH__
-        } else if (item->name == "USB") {
-            setVisibility(Visibility::Hidden, true);
-            main->show(Main::MenuType::Usb);
+    } else if (item->name == "Usb") {
+        setVisibility(Visibility::Hidden, true);
+        main->show(Main::MenuType::Usb);
 #endif
     } else if (item->name == "Exit") {
         main->quit();
@@ -88,8 +88,8 @@ bool MenuMain::isMenuVisible() {
     return isVisible()
            || menuMainOptions->isVisible()
            || menuMainOptionsCpu->isVisible()
-#ifdef __SWITCH__
-            || menuMainOptionsUsb->isVisible()
+           #ifdef __SWITCH__
+           || menuMainOptionsUsb->isVisible()
 #endif
             ;
 }
