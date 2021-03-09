@@ -5,10 +5,10 @@
 #ifndef PPLAY_TEXT_ICON_H
 #define PPLAY_TEXT_ICON_H
 
-#include "cross2d/skeleton/sfml/RoundedRectangleShape.h"
+#include "cross2d/skeleton/sfml/RectangleShape.hpp"
 #include "cross2d/skeleton/sfml/Text.hpp"
 
-class TextIcon : public c2d::RoundedRectangleShape {
+class TextIcon : public c2d::RectangleShape {
 
 public:
 

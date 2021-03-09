@@ -218,7 +218,7 @@ bool Filer::getDir(const std::string &p) {
     std::sort(files.begin(), files.end(), compare);
 
     if (files.empty() || files.at(0).name != "..") {
-        Io::File file("..", "..", Io::Type::Directory, 0, COLOR_BLUE);
+        Io::File file("..", "..", Io::Type::Directory, 0);
         files.insert(files.begin(), MediaFile{file, MediaInfo(file)});
     }
 

@@ -2,27 +2,28 @@
 // Created by cpasjuste on 01/04/19.
 //
 
-#include "cross2d/c2d.h"
 #include "text_icon.h"
 
 using namespace c2d;
 
 TextIcon::TextIcon(const std::string &str, unsigned int fontSize, Font *font, const Color &color)
-        : RoundedRectangleShape({32, 32}) {
+        : RectangleShape({32, 32}) {
 
     text = new Text(str, fontSize, font);
     text->setOrigin(Origin::Center);
     setString(str);
-    add(text);
+    RectangleShape::add(text);
 
-    setFillColor(color);
-    setOutlineColor(color);
-    setOutlineThickness(1);
+    RectangleShape::setFillColor(color);
+    RectangleShape::setOutlineColor(color);
+    RectangleShape::setOutlineThickness(1);
+    RectangleShape::setCornersRadius(5);
+    RectangleShape::setCornerPointCount(8);
 }
 
 void TextIcon::setFillColor(const Color &color) {
     text->setFillColor(color);
-    RoundedRectangleShape::setFillColor(Color::Transparent);
+    RectangleShape::setFillColor(Color::Transparent);
 }
 
 void TextIcon::setString(const std::string &string) {

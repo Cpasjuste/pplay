@@ -20,7 +20,6 @@ public:
         path = file.path;
         type = file.type;
         size = file.size;
-        color = file.color;
         mediaInfo = media;
     }
 

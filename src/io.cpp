@@ -62,7 +62,7 @@ std::vector<c2d::Io::File> Io::getDirList(const pplay::Io::DeviceType &type, con
             return files;
         }
         // add up/back ("..")
-        files.emplace_back("..", "..", Io::Type::Directory, 0, c2d::Color::Blue);
+        files.emplace_back("..", "..", Io::Type::Directory, 0);
 
         for (int i = 0; i < browser->links.size(); i++) {
             // skip apache2 stuff
