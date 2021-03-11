@@ -119,7 +119,7 @@ GLOBALREF int FtpDelete(const char *fnm, netbuf *nControl);
 GLOBALREF void FtpQuit(netbuf *nControl);
 
 // pplay
-const std::vector<c2d::Io::File> FtpDirList(const char *path, netbuf *nControl);
+std::vector<c2d::Io::File> FtpDirList(const char *path, netbuf *nControl);
 
 #ifdef __cplusplus
 };

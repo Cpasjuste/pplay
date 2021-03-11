@@ -5,6 +5,7 @@
 #include <regex>
 #include "io.h"
 #include "media_info.h"
+#include "ftplib.h"
 #include "Browser/Browser.hpp"
 
 using namespace pplay;
@@ -35,6 +36,9 @@ Io::Io() : c2d::C2DIo() {
     browser->set_handle_redirect(true);
     browser->set_handle_ssl(false);
     browser->fetch_forms(false);
+
+    // ftp io
+    FtpInit();
 }
 
 std::vector<c2d::Io::File> Io::getDirList(const pplay::Io::DeviceType &type, const std::vector<std::string> &extensions,
@@ -61,6 +65,7 @@ std::vector<c2d::Io::File> Io::getDirList(const pplay::Io::DeviceType &type, con
         if (browser->error() || browser->links.size() < 1) {
             return files;
         }
+
         // add up/back ("..")
         files.emplace_back("..", "..", Io::Type::Directory, 0);
 
@@ -87,12 +92,58 @@ std::vector<c2d::Io::File> Io::getDirList(const pplay::Io::DeviceType &type, con
         if (sort) {
             std::sort(files.begin(), files.end(), compare);
         }
+    } else if (type == DeviceType::Ftp) {
+        std::string ftp_path = path;
+        if (!c2d::Utility::endsWith(ftp_path, "/")) {
+            ftp_path += "/";
+        }
+        // split user/pwd/host/port/path
+        // TODO: check for nullptr etc..
+        size_t colon_2 = find_Nth(ftp_path, 2, ":");
+        size_t colon_3 = ftp_path.find_last_of(':');
+        size_t at = ftp_path.find_last_of('@');
+        size_t last_slash = find_Nth(ftp_path, 3, "/");
+        std::string user = ftp_path.substr(6, colon_2 - 6);
+        std::string pwd = ftp_path.substr(colon_2 + 1, at - colon_2 - 1);
+        std::string host = ftp_path.substr(at + 1, colon_3 - at - 1);
+        std::string port = ftp_path.substr(colon_3 + 1, ftp_path.find('/', colon_3) - (colon_3 + 1));
+        std::string host_port = host + ":" + port;
+        std::string new_path = ftp_path.substr(last_slash, ftp_path.length() - last_slash);
+        if (c2d::Utility::startWith(new_path, "/")) {
+            new_path.erase(0, 1);
+        }
+
+        printf("user: %s, pwd: %s, host: %s, port: %s, path: %s\n",
+               user.c_str(), pwd.c_str(), host.c_str(), port.c_str(), new_path.c_str());
+
+        netbuf *ftp_con = nullptr;
+        if (!FtpConnect(host_port.c_str(), &ftp_con)) {
+            printf("could not connect to ftp server");
+            return files;
+        }
+
+        if (!FtpLogin(user.c_str(), pwd.c_str(), ftp_con)) {
+            printf("could not connect to ftp server");
+            FtpQuit(ftp_con);
+            return files;
+        }
+        
+        std::vector<Io::File> _files = FtpDirList(new_path.c_str(), ftp_con);
+        _files.insert(_files.begin(), Io::File("..", "..", Io::Type::Directory, 0));
+        for (auto &file : _files) {
+            if (file.path != "..") {
+                file.path = ftp_path + file.name;
+            }
+            files.push_back(file);
+        }
+
+        FtpQuit(ftp_con);
     }
 
     // remove items by extensions, if provided
     if (!extensions.empty()) {
         files.erase(
-                std::remove_if(files.begin(), files.end(), [extensions](const Io::File& file) {
+                std::remove_if(files.begin(), files.end(), [extensions](const Io::File &file) {
                     for (auto &ext : extensions) {
                         if (c2d::Utility::endsWith(file.name, ext, false)) {
                             return false;

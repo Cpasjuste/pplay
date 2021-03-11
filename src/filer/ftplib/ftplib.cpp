@@ -1156,7 +1156,7 @@ static int FtpXfer(const char *localfile, const char *path,
     return rv;
 }
 
-const std::vector<c2d::Io::File> FtpDirList(const char *p, netbuf *nControl) {
+std::vector<c2d::Io::File> FtpDirList(const char *p, netbuf *nControl) {
 
     int len;
     char *buf;
