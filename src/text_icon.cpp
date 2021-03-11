@@ -14,7 +14,7 @@ TextIcon::TextIcon(const std::string &str, unsigned int fontSize, Font *font, co
     setString(str);
     RectangleShape::add(text);
 
-    RectangleShape::setFillColor(color);
+    RectangleShape::setFillColor(Color::Transparent);
     RectangleShape::setOutlineColor(color);
     RectangleShape::setOutlineThickness(1);
     RectangleShape::setCornersRadius(5);

@@ -22,7 +22,7 @@ StatusBox::StatusBox(Main *m, const c2d::Vector2f &position)
     icon->setPosition(icon->getSize().x / 2 + 8, getSize().y / 2);
     icon->setFillColor(COLOR_FONT);
     icon->setAlpha(200);
-    icon->add(new TweenRotation(0, 360, 2, TweenLoop::Loop));
+    icon->add(new TweenRotation(360, 0, 2, TweenLoop::Loop, TweenState::Playing));
     add(icon);
 
     titleText = new Text("Please Wait...", main->getFontSize(Main::FontSize::Medium), main->getFont());

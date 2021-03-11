@@ -37,11 +37,11 @@ ScrapView::ScrapView(Main *m, const c2d::FloatRect &rect) : Rectangle(rect) {
     poster->add(new TweenAlpha(0, 255, 0.3f));
     add(poster);
 
-    Vector2f pos{poster->getPosition().x + 216, poster->getPosition().y + 16};
+    Vector2f pos{poster->getPosition().x + 216, poster->getPosition().y + 10};
     Vector2f size{getSize().x - pos.x - 16, 180};
 
     // title
-    title = new C2DText("TITLE", main->getFontSize(Main::FontSize::Medium), main->getFont());
+    title = new C2DText("TITLE", main->getFontSize(Main::FontSize::Big), main->getFont());
     title->setPosition(pos.x, pos.y);
     add(title);
 
