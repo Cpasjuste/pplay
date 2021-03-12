@@ -47,6 +47,11 @@ using namespace c2d::config;
 using namespace pplay;
 
 Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
+
+#ifndef NDEBUG
+    Renderer::setPrintStats(true);
+#endif
+
     // custom io
     pplayIo = new pplay::Io();
 

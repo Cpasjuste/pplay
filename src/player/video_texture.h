@@ -18,6 +18,10 @@ public:
 
     void hideFade();
 
+    mpv_render_context *getContext();
+
+    bool fboUpdate = false;
+
 private:
 
     void onDraw(c2d::Transform &transform, bool draw = true) override;

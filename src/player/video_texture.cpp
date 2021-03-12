@@ -7,9 +7,15 @@
 
 using namespace c2d;
 
+static void on_mpv_render_update(void *ctx) {
+    ((VideoTexture *) ctx)->fboUpdate = true;
+}
+
 VideoTexture::VideoTexture(const c2d::Vector2f &size, Mpv *m) : GLTextureBuffer(size, Format::RGBA8) {
 
     mpv = m;
+
+    mpv_render_context_set_update_callback(mpv->getContext(), on_mpv_render_update, this);
 
     // fade
     fade = new C2DTexture(c2d_renderer->getIo()->getRomFsPath() + "skin/fade.png");
@@ -18,7 +24,7 @@ VideoTexture::VideoTexture(const c2d::Vector2f &size, Mpv *m) : GLTextureBuffer(
     fade->setAlpha(0);
     fadeTween = new TweenAlpha(0, 255, 0.5f);
     fade->add(fadeTween);
-    add(fade);
+    GLTextureBuffer::add(fade);
 }
 
 void VideoTexture::hideFade() {
@@ -29,12 +35,16 @@ void VideoTexture::showFade() {
     fadeTween->play(TweenDirection::Forward);
 }
 
+mpv_render_context *VideoTexture::getContext() {
+    return mpv->getContext();
+}
+
 void VideoTexture::onDraw(c2d::Transform &transform, bool draw) {
 
-    if (draw && mpv && mpv->isAvailable()) {
+    if (draw && fboUpdate) {
         int flip_y{0};
         mpv_opengl_fbo mpv_fbo{
-                .fbo = fbo,
+                .fbo = (int) fbo,
                 .w = (int) getSize().x, .h = (int) getSize().y,
                 .internal_format = GL_RGBA8};
         mpv_render_param r_params[] = {
@@ -43,10 +53,8 @@ void VideoTexture::onDraw(c2d::Transform &transform, bool draw) {
                 {MPV_RENDER_PARAM_INVALID,    nullptr}
         };
 
-        GLint vp[4];
-        glGetIntegerv(GL_VIEWPORT, vp);
         mpv_render_context_render(mpv->getContext(), r_params);
-        glViewport(vp[0], vp[1], (GLsizei) vp[2], (GLsizei) vp[3]);
+        fboUpdate = false;
     }
 
     GLTextureBuffer::onDraw(transform, draw);
