@@ -28,6 +28,9 @@ Mpv::Mpv(const std::string &configPath, bool initRender) {
     mpv_set_option_string(handle, "vd-lavc-skiploopfilter", "all");
     mpv_set_option_string(handle, "audio-channels", "stereo");
     mpv_set_option_string(handle, "video-timing-offset", "0");
+#ifdef __LINUX__
+    mpv_set_option_string(handle, "hwdec", "auto-safe");
+#endif
     if (!initRender) {
         mpv_set_option_string(handle, "vid", "no");
         mpv_set_option_string(handle, "aid", "no");
@@ -252,7 +255,7 @@ MediaInfo Mpv::getMediaInfo(const c2d::Io::File &file) {
     mediaInfo.videos.clear();
     mediaInfo.audios.clear();
     mediaInfo.subtitles.clear();
-    for (auto &stream : streams) {
+    for (auto &stream: streams) {
         if (stream.type == "video") {
             mediaInfo.videos.push_back(stream);
         } else if (stream.type == "audio") {
