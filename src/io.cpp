@@ -127,10 +127,10 @@ std::vector<c2d::Io::File> Io::getDirList(const pplay::Io::DeviceType &type, con
             FtpQuit(ftp_con);
             return files;
         }
-        
+
         std::vector<Io::File> _files = FtpDirList(new_path.c_str(), ftp_con);
         _files.insert(_files.begin(), Io::File("..", "..", Io::Type::Directory, 0));
-        for (auto &file : _files) {
+        for (auto &file: _files) {
             if (file.path != "..") {
                 file.path = ftp_path + file.name;
             }
@@ -144,7 +144,7 @@ std::vector<c2d::Io::File> Io::getDirList(const pplay::Io::DeviceType &type, con
     if (!extensions.empty()) {
         files.erase(
                 std::remove_if(files.begin(), files.end(), [extensions](const Io::File &file) {
-                    for (auto &ext : extensions) {
+                    for (auto &ext: extensions) {
                         if (c2d::Utility::endsWith(file.name, ext, false)) {
                             return false;
                         }
@@ -156,7 +156,7 @@ std::vector<c2d::Io::File> Io::getDirList(const pplay::Io::DeviceType &type, con
     return files;
 }
 
-Io::DeviceType Io::getType(const std::string &path) const {
+Io::DeviceType Io::getDeviceType(const std::string &path) const {
 
     Io::DeviceType type = Io::DeviceType::Sdmc;
 

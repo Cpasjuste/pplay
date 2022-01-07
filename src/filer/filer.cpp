@@ -195,7 +195,7 @@ bool Filer::getDir(const std::string &p) {
     }
 
     std::vector<std::string> ext = pplay::Utility::getMediaExtensions();
-    pplay::Io::DeviceType type = ((pplay::Io *) main->getIo())->getType(p);
+    pplay::Io::DeviceType type = ((pplay::Io *) main->getIo())->getDeviceType(p);
     std::vector<Io::File> _files =
             ((pplay::Io *) main->getIo())->getDirList(type, ext, path, false);
 
@@ -256,7 +256,7 @@ void Filer::exit() {
         return;
     }
 
-    pplay::Io::DeviceType type = ((pplay::Io *) main->getIo())->getType(p);
+    pplay::Io::DeviceType type = ((pplay::Io *) main->getIo())->getDeviceType(p);
     if (type != pplay::Io::DeviceType::Sdmc) {
         std::string s = p;
         if (!Utility::endsWith(s, "/")) {

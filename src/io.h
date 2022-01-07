@@ -26,7 +26,23 @@ namespace pplay {
         std::vector<Io::File> getDirList(const DeviceType &type, const std::vector<std::string> &extensions,
                                          const std::string &path, bool sort = false, bool showHidden = false);
 
-        DeviceType getType(const std::string &path) const;
+        DeviceType getDeviceType(const std::string &path) const;
+
+#ifdef __PS4__
+
+        std::string getHomePath() override {
+            return "/data/pplay/";
+        }
+
+        std::string getDataPath() override {
+            return "/data/pplay/";
+        }
+
+        std::string getRomFsPath() {
+            return "/data/pplay/";
+        }
+
+#endif
 
     private:
 

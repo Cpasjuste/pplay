@@ -30,7 +30,7 @@ project(pplay)
 
 # pplay version
 set(VERSION_MAJOR "3")
-set(VERSION_MINOR "5")
+set(VERSION_MINOR "6")
 set(PROJECT_AUTHOR "Cpasjuste")
 set(TITLE_ID "PPLAY0001")
 
@@ -78,7 +78,25 @@ if (PLATFORM_SWITCH)
     #####################
     set(MPV_LIBRARIES mpv)
     list(APPEND PPLAY_INC)
-    list(APPEND PPLAY_LDFLAGS swscale swresample avformat avfilter avcodec avutil lzma opus vpx ass freetype fribidi png bz2 usbhsfs ntfs-3g lwext4)
+    list(APPEND PPLAY_LDFLAGS
+            swscale swresample avformat avfilter avcodec avutil
+            lzma opus vpx ass freetype fribidi png bz2 usbhsfs ntfs-3g lwext4
+            )
+elseif (PLATFORM_PS4)
+    set(PS4_PKG_TITLE "PPLAY")
+    set(PS4_PKG_TITLE_ID "PPLA00001")
+    set(PS4_PKG_VERSION "03.60")
+    find_package(BZip2 REQUIRED)
+    list(APPEND PPLAY_INC ${BZIP2_INCLUDE_DIR})
+    list(APPEND PPLAY_LDFLAGS ${BZIP2_LIBRARIES})
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules/")
+    find_package(MPV REQUIRED)
+    list(APPEND PPLAY_INC ${MPV_INCLUDE_DIRS})
+    list(APPEND PPLAY_LDFLAGS
+            ${MPV_LIBRARY}
+            swscale swresample avformat avfilter avcodec avutil
+            opus ass freetype fribidi png bz2
+            )
 elseif (PLATFORM_LINUX)
     #####################
     # LINUX PLATORM
