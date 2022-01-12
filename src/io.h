@@ -38,7 +38,7 @@ namespace pplay {
             return "/data/pplay/";
         }
 
-        std::string getRomFsPath() {
+        std::string getRomFsPath() override {
             return "/data/pplay/";
         }
 
