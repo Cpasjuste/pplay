@@ -34,16 +34,14 @@ set(VERSION_MINOR "6")
 set(PROJECT_AUTHOR "Cpasjuste")
 set(TITLE_ID "PPLAY0001")
 
-set(PPLAY_INC
-        src
-        src/filer
-        src/filer/Browser
-        src/filer/ftplib
-        src/menus
-        src/player
-        src/scrapper
-        )
+# deps
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+find_package(BZip2 REQUIRED)
+find_package(MPV REQUIRED)
+find_package(ffmpeg COMPONENTS avfilter avcodec avformat avutil swscale swresample)
+find_package(ass)
 
+# sources
 file(GLOB PPLAY_SRC
         src/*.c*
         src/filer/*.c*
@@ -54,15 +52,37 @@ file(GLOB PPLAY_SRC
         src/scrapper/*.c*
         )
 
+# includes
+set(PPLAY_INC
+        src
+        src/filer
+        src/filer/Browser
+        src/filer/ftplib
+        src/menus
+        src/player
+        src/scrapper
+        ${MPV_INCLUDE_DIRS}
+        ${ASS_INCLUDE_DIRS}
+        ${FFMPEG_INCLUDE_DIRS}
+        ${BZIP2_INCLUDE_DIR}
+        )
+
+# cflags
 set(PPLAY_CFLAGS
         -D__PPLAY__
         -D__VERSION_MAJOR__=${VERSION_MAJOR}
         -D__VERSION_MINOR__=${VERSION_MINOR}
-        -DM_PI=3.14159265358979323846
-        -DM_SQRT2=1.41421356237309504880
+        #-DM_PI=3.14159265358979323846
+        #-DM_SQRT2=1.41421356237309504880
         )
 
-set(PPLAY_LDFLAGS)
+# ldflags
+set(PPLAY_LDFLAGS
+        ${MPV_LIBRARY}
+        ${ASS_LIBRARIES}
+        ${FFMPEG_LIBRARIES}
+        ${BZIP2_LIBRARIES}
+        )
 
 if (BUILD_SMBCLIENT)
     list(APPEND PPLAY_CFLAGS -D__SMB_SUPPORT__)
@@ -86,28 +106,16 @@ elseif (PLATFORM_PS4)
     set(PS4_PKG_TITLE "PPLAY")
     set(PS4_PKG_TITLE_ID "PPLA00001")
     set(PS4_PKG_VERSION "03.06")
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
-    find_package(BZip2 REQUIRED)
-    find_package(MPV REQUIRED)
     list(APPEND PPLAY_SRC src/ps4/ps4.c)
-    list(APPEND PPLAY_INC ${BZIP2_INCLUDE_DIR} ${MPV_INCLUDE_DIRS})
+    list(APPEND PPLAY_INC)
     list(APPEND PPLAY_LDFLAGS
-            ${MPV_LIBRARY} ${BZIP2_LIBRARIES}
-            swscale swresample avformat avfilter avcodec avutil
-            opus ass freetype fribidi png bz2
+            opus freetype fribidi png bz2
             usermem SceLibcInternal
             )
 elseif (PLATFORM_LINUX)
     #####################
     # LINUX PLATORM
     #####################
-    find_package(BZip2 REQUIRED)
-    list(APPEND PPLAY_INC ${BZIP2_INCLUDE_DIR})
-    list(APPEND PPLAY_LDFLAGS ${BZIP2_LIBRARIES})
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
-    find_package(MPV REQUIRED)
-    list(APPEND PPLAY_INC ${MPV_INCLUDE_DIRS})
-    list(APPEND PPLAY_LDFLAGS ${MPV_LIBRARY})
 endif ()
 
 #####################
@@ -117,7 +125,7 @@ add_executable(${CMAKE_PROJECT_NAME} ${PPLAY_SRC})
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${PPLAY_INC})
 target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE ${PPLAY_CFLAGS})
 target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>)
-target_link_libraries(${CMAKE_PROJECT_NAME} cross2d ${MPV_LIBRARIES} pscrap ${PPLAY_LDFLAGS})
+target_link_libraries(${CMAKE_PROJECT_NAME} cross2d pscrap ${PPLAY_LDFLAGS})
 
 #####################
 # targets
