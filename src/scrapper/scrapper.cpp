@@ -23,7 +23,7 @@ static void find_medias(Main *main, const std::string &path) {
         return;
     }
 
-    for (auto &file : files) {
+    for (auto &file: files) {
         if (!main->getScrapper()->running) {
             break;
         }
@@ -60,7 +60,7 @@ static std::string clean_name(const std::string &name) {
         }
     }
     if (!cut) {
-        for (auto &token : tokens) {
+        for (auto &token: tokens) {
             if (token != nullptr) {
                 size_t pos = search.rfind(token);
                 if ((pos != std::string::npos) && (pos > 1)) {
@@ -81,8 +81,8 @@ static int scrap_thread(void *ptr) {
 
     while (scrapper->running) {
 
-        SDL_LockMutex(scrapper->mutex);
-        SDL_CondWait(scrapper->cond, scrapper->mutex);
+        scrapper->mutex->lock();
+        scrapper->cond->wait(scrapper->mutex);
 
 #ifdef __SWITCH__
         appletSetMediaPlaybackState(true);
@@ -137,18 +137,10 @@ static int scrap_thread(void *ptr) {
 #ifdef __SWITCH__
         appletSetMediaPlaybackState(false);
 #endif
-        SDL_UnlockMutex(scrapper->mutex);
+        scrapper->mutex->unlock();
     }
 
     return 0;
-}
-
-Scrapper::Scrapper(Main *m) {
-
-    main = m;
-    mutex = SDL_CreateMutex();
-    cond = SDL_CreateCond();
-    thread = SDL_CreateThread(scrap_thread, "scrap_thread", (void *) this);
 }
 
 int Scrapper::scrap(const std::string &p) {
@@ -158,17 +150,29 @@ int Scrapper::scrap(const std::string &p) {
     }
 
     path = p;
-    SDL_CondSignal(cond);
+    cond->signal();
 
     return 0;
+}
+
+Scrapper::Scrapper(Main *m) {
+
+    main = m;
+    mutex = new c2d::C2DMutex();
+    cond = new c2d::C2DCond();
+    thread = new c2d::C2DThread(scrap_thread, (void *) this);
 }
 
 Scrapper::~Scrapper() {
 
     scrapping = false;
     running = false;
-    SDL_CondSignal(cond);
-    SDL_WaitThread(thread, nullptr);
-    SDL_DestroyCond(cond);
+    cond->signal();
+    thread->join();
+
+    delete (mutex);
+    delete (cond);
+    delete (thread);
+
     printf("Scrapper::~Scrapper\n");
 }

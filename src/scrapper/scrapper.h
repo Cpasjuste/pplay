@@ -5,7 +5,6 @@
 #ifndef PPLAY_SCRAPPER_H
 #define PPLAY_SCRAPPER_H
 
-#include <SDL2/SDL_thread.h>
 #include "cross2d/skeleton/sfml/RectangleShape.hpp"
 
 class Main;
@@ -24,9 +23,9 @@ namespace pplay {
 
         Main *main;
         std::string path;
-        SDL_mutex *mutex = nullptr;
-        SDL_cond *cond = nullptr;
-        SDL_Thread *thread = nullptr;
+        c2d::C2DMutex *mutex = nullptr;
+        c2d::C2DCond *cond = nullptr;
+        c2d::C2DThread *thread = nullptr;
         bool scrapping = false;
         bool running = true;
     };
