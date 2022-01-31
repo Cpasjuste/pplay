@@ -75,7 +75,7 @@ void Player::onLoadEvent() {
     if (!file.mediaInfo.videos.empty()) {
         // videos menu options
         std::vector<MenuItem> items;
-        for (auto &stream : file.mediaInfo.videos) {
+        for (auto &stream: file.mediaInfo.videos) {
             items.emplace_back(stream.title + "\n" + stream.language + " " + stream.codec + " "
                                + std::to_string(stream.width) + "x" + std::to_string(stream.height),
                                "", MenuItem::Position::Top, stream.id);
@@ -91,7 +91,7 @@ void Player::onLoadEvent() {
     if (!file.mediaInfo.audios.empty()) {
         // audios menu options
         std::vector<MenuItem> items;
-        for (auto &stream : file.mediaInfo.audios) {
+        for (auto &stream: file.mediaInfo.audios) {
             items.emplace_back(stream.title + "\n" + stream.language + " "
                                + stream.codec + " " + std::to_string(stream.channels) + "ch "
                                + std::to_string(stream.sample_rate / 1000) + " Khz",
@@ -109,7 +109,7 @@ void Player::onLoadEvent() {
         // subtitles menu options
         std::vector<MenuItem> items;
         items.emplace_back("None", "", MenuItem::Position::Top, -1);
-        for (auto &stream : file.mediaInfo.subtitles) {
+        for (auto &stream: file.mediaInfo.subtitles) {
             items.emplace_back(stream.title + "\nLang: " + stream.language, "", MenuItem::Position::Top, stream.id);
         }
         menuSubtitlesStreams = new MenuVideoSubmenu(
@@ -134,6 +134,14 @@ void Player::onLoadEvent() {
             mpv->seek(file.mediaInfo.playbackInfo.position);
         }
     }
+
+    /* TODO
+    texture = new VideoTexture({(float) file.mediaInfo.videos.at(0).width,
+                                (float) file.mediaInfo.videos.at(0).height}, mpv);
+    texture->setOutlineColor(Color::Red);
+    texture->setOutlineThickness(4);
+    add(texture);
+    */
 
     resume();
     setFullscreen(true);

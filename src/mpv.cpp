@@ -23,11 +23,11 @@ Mpv::Mpv(const std::string &configPath, bool initRender) {
     mpv_set_option_string(handle, "terminal", "yes");
     mpv_set_option_string(handle, "msg-level", "all=v");
 #endif
-    mpv_set_option_string(handle, "vd-lavc-threads", "4");
+    mpv_set_option_string(handle, "vd-lavc-threads", "8");
     //mpv_set_option_string(handle, "vd-lavc-fast", "yes");
     mpv_set_option_string(handle, "vd-lavc-skiploopfilter", "all");
     mpv_set_option_string(handle, "audio-channels", "stereo");
-    mpv_set_option_string(handle, "video-timing-offset", "0");
+    //mpv_set_option_string(handle, "stream-buffer-size", "2MiB");
 #ifdef __LINUX__
     mpv_set_option_string(handle, "hwdec", "auto-safe");
 #endif

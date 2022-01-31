@@ -40,6 +40,9 @@ static void on_applet_hook(AppletHookType hook, void *arg) {
     }
 }
 
+#elif __PS4__
+#include <orbis/Sysmodule.h>
+extern "C" int sceSystemServiceLoadExec(const char *path, const char *args[]);
 #endif
 
 using namespace c2d;
@@ -56,7 +59,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     pplayIo = new pplay::Io();
 
     // configure input
-    getInput()->setRepeatDelay(INPUT_DELAY);
+    Main::getInput()->setRepeatDelay(INPUT_DELAY);
 
     // create a timer
     timer = new C2DClock();
@@ -69,34 +72,34 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
 
     // font
     font = new C2DFont();
-    font->loadFromFile(getIo()->getRomFsPath() + "skin/font.ttf");
+    font->loadFromFile(Main::getIo()->getRomFsPath() + "skin/font.ttf");
     font->setFilter(Texture::Filter::Linear);
     font->setOffset({0, -4});
 
-    statusBox = new StatusBox(this, {0, getSize().y - 16});
+    statusBox = new StatusBox(this, {0, Main::getSize().y - 16});
     statusBox->setOrigin(Origin::BottomLeft);
     statusBox->setLayer(10);
-    add(statusBox);
+    Main::add(statusBox);
 
     // media information cache
-    getIo()->create(getIo()->getDataPath() + "cache");
+    Main::getIo()->create(Main::getIo()->getDataPath() + "cache");
 
     // create filer
-    FloatRect filerRect = {0, 0, getSize().x, getSize().y};
+    FloatRect filerRect = {0, 0, Main::getSize().x, Main::getSize().y};
     filer = new Filer(this, "/", filerRect);
     filer->setLayer(1);
-    add(filer);
+    Main::add(filer);
     filer->getDir(config->getOption(OPT_LAST_PATH)->getString());
 
     // status bar
     statusBar = new StatusBar(this);
     statusBar->setLayer(10);
-    add(statusBar);
+    Main::add(statusBar);
 
     // ffmpeg player
     player = new Player(this);
     player->setLayer(2);
-    add(player);
+    Main::add(player);
 
     // main menu
     std::vector<MenuItem> items;
@@ -107,10 +110,10 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     items.emplace_back("Network", "network.png", MenuItem::Position::Top);
     items.emplace_back("Options", "options.png", MenuItem::Position::Top);
     items.emplace_back("Exit", "exit.png", MenuItem::Position::Bottom);
-    menu_main = new MenuMain(this, {-250 * scaling, 0, 250 * scaling, getSize().y}, items);
+    menu_main = new MenuMain(this, {-250 * scaling, 0, 250 * scaling, Main::getSize().y}, items);
     menu_main->setVisibility(Visibility::Hidden, false);
     menu_main->setLayer(3);
-    add(menu_main);
+    Main::add(menu_main);
 
     // video menu
     items.clear();
@@ -118,16 +121,16 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     items.emplace_back("Audio", "audio.png", MenuItem::Position::Top);
     items.emplace_back("Subtitles", "subtitles.png", MenuItem::Position::Top);
     items.emplace_back("Stop", "exit.png", MenuItem::Position::Bottom);
-    menu_video = new MenuVideo(this, {getSize().x, 0, 250 * scaling, getSize().y}, items);
+    menu_video = new MenuVideo(this, {Main::getSize().x, 0, 250 * scaling, Main::getSize().y}, items);
     menu_video->setVisibility(Visibility::Hidden, false);
     menu_video->setLayer(3);
-    add(menu_video);
+    Main::add(menu_video);
 
     // a messagebox...
-    float w = getSize().x / 3;
-    float h = getSize().y / 3;
-    messageBox = new MessageBox({getSize().x / 2, getSize().y / 2, w, h},
-                                getInput(), getFont(), getFontSize(Main::FontSize::Medium));
+    float w = Main::getSize().x / 3;
+    float h = Main::getSize().y / 3;
+    messageBox = new MessageBox({Main::getSize().x / 2, Main::getSize().y / 2, w, h},
+                                Main::getInput(), Main::getFont(), (int) getFontSize(Main::FontSize::Medium));
     messageBox->setOrigin(Origin::Center);
     messageBox->setFillColor(COLOR_BG);
     messageBox->setAlpha(240);
@@ -137,7 +140,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     messageBox->getMessageText()->setOutlineThickness(0);
     messageBox->getButton(0)->setOutlineThickness(3);
     messageBox->getButton(1)->setOutlineThickness(3);
-    add(messageBox);
+    Main::add(messageBox);
 
     scrapper = new Scrapper(this);
     //scrapper->scrap("/home/cpasjuste/dev/multi/videos/");
@@ -214,9 +217,9 @@ void Main::show(MenuType type) {
             }
         }
 #ifdef __SWITCH__
-    } else if (type == MenuType::Usb) {
-        usbInit();
-        filer->getDir(config->getOption(OPT_UMS_DEVICE)->getString());
+        } else if (type == MenuType::Usb) {
+            usbInit();
+            filer->getDir(config->getOption(OPT_UMS_DEVICE)->getString());
 #endif
     } else {
 #ifdef __SWITCH__
@@ -312,7 +315,7 @@ c2d::Io *Main::getIo() {
 
 int main() {
 
-    Vector2f size = {1280, 720};
+    Vector2f size = {C2D_SCREEN_WIDTH, C2D_SCREEN_HEIGHT};
 
 #ifdef __SWITCH__
 #ifdef NDEBUG
@@ -322,6 +325,8 @@ int main() {
     if (appletGetOperationMode() == AppletOperationMode_Console) {
         size = {1920, 1080};
     }
+#elif __PS4__
+    sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NET);
 #endif
 
     Main *main = new Main(size);
@@ -345,6 +350,9 @@ int main() {
 #ifdef NDEBUG
     socketExit();
 #endif
+#elif __PS4__
+    sceSystemServiceLoadExec((char *) "exit", nullptr);
+    while (true) {}
 #endif
 
     return 0;

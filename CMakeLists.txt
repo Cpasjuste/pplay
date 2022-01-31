@@ -85,17 +85,17 @@ if (PLATFORM_SWITCH)
 elseif (PLATFORM_PS4)
     set(PS4_PKG_TITLE "PPLAY")
     set(PS4_PKG_TITLE_ID "PPLA00001")
-    set(PS4_PKG_VERSION "03.60")
+    set(PS4_PKG_VERSION "03.06")
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
     find_package(BZip2 REQUIRED)
-    list(APPEND PPLAY_INC ${BZIP2_INCLUDE_DIR})
-    list(APPEND PPLAY_LDFLAGS ${BZIP2_LIBRARIES})
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules/")
     find_package(MPV REQUIRED)
-    list(APPEND PPLAY_INC ${MPV_INCLUDE_DIRS})
+    list(APPEND PPLAY_SRC src/ps4/ps4.c)
+    list(APPEND PPLAY_INC ${BZIP2_INCLUDE_DIR} ${MPV_INCLUDE_DIRS})
     list(APPEND PPLAY_LDFLAGS
-            ${MPV_LIBRARY}
+            ${MPV_LIBRARY} ${BZIP2_LIBRARIES}
             swscale swresample avformat avfilter avcodec avutil
             opus ass freetype fribidi png bz2
+            usermem SceLibcInternal
             )
 elseif (PLATFORM_LINUX)
     #####################
@@ -104,7 +104,7 @@ elseif (PLATFORM_LINUX)
     find_package(BZip2 REQUIRED)
     list(APPEND PPLAY_INC ${BZIP2_INCLUDE_DIR})
     list(APPEND PPLAY_LDFLAGS ${BZIP2_LIBRARIES})
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules/")
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
     find_package(MPV REQUIRED)
     list(APPEND PPLAY_INC ${MPV_INCLUDE_DIRS})
     list(APPEND PPLAY_LDFLAGS ${MPV_LIBRARY})
