@@ -4,3 +4,6 @@
 [submodule "pscrap"]
 	path = pscrap
 	url = https://github.com/Cpasjuste/pscrap.git
+[submodule "libsmb2"]
+	path = libsmb2
+	url = https://github.com/sahlberg/libsmb2.git

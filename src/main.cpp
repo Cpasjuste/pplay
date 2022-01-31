@@ -8,10 +8,6 @@
 #include "menu_video.h"
 #include "scrapper.h"
 
-#ifdef __SMB_SUPPORT__
-#include "filers/filer_smb.h"
-#endif
-
 #ifdef __SWITCH__
 
 static AppletHookCookie applet_hook_cookie;
@@ -143,8 +139,6 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     Main::add(messageBox);
 
     scrapper = new Scrapper(this);
-    //scrapper->scrap("/home/cpasjuste/dev/multi/videos/");
-    //scrapper->scrap("http://192.168.0.2/files/Videos");
 }
 
 Main::~Main() {

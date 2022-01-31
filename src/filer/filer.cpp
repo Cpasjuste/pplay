@@ -257,7 +257,7 @@ void Filer::exit() {
     }
 
     pplay::Io::DeviceType type = ((pplay::Io *) main->getIo())->getDeviceType(p);
-    if (type != pplay::Io::DeviceType::Sdmc) {
+    if (type != pplay::Io::DeviceType::Local) {
         std::string s = p;
         if (!Utility::endsWith(s, "/")) {
             s += "/";

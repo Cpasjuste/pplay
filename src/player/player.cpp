@@ -46,10 +46,12 @@ bool Player::load(const MediaFile &f) {
 
     file = f;
     std::string path = file.path;
-#ifdef __SMB_SUPPORT__
+#ifdef __SMB2__
+#if 0
     if (Utility::startWith(path, "smb://")) {
         std::replace(path.begin(), path.end(), '\\', '/');
     }
+#endif
 #endif
 
     int res = mpv->load(path, Mpv::LoadType::Replace, "pause=yes,speed=1");

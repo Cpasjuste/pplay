@@ -7,6 +7,14 @@
 
 #include "cross2d/c2d.h"
 
+#ifdef __SMB2__
+
+#include "smb2.h"
+#include "libsmb2.h"
+#include "libsmb2-raw.h"
+
+#endif
+
 class Browser;
 
 namespace pplay {
@@ -20,7 +28,7 @@ namespace pplay {
         ~Io() override;
 
         enum class DeviceType {
-            Sdmc, Http, Ftp
+            Local, Http, Ftp, Smb
         };
 
         std::vector<Io::File> getDirList(const DeviceType &type, const std::vector<std::string> &extensions,
@@ -38,15 +46,24 @@ namespace pplay {
             return "/data/pplay/";
         }
 
+#ifndef NDEBUG
         std::string getRomFsPath() override {
             return "/data/pplay/";
         }
+#else
+        std::string getRomFsPath() override {
+            return "/app0/";
+        }
+#endif
 
 #endif
 
     private:
 
         Browser *browser;
+#ifdef __SMB2__
+        smb2_context *smb2;
+#endif
 
     };
 }

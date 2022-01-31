@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.2)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
 ####################
@@ -14,8 +14,7 @@ set(PLATFORM_VITA OFF CACHE BOOL "Sony PS Vita platform target")
 ####################
 # BUILD OPTIONS
 ####################
-# needs libsmbclient port to the switch...
-set(BUILD_SMBCLIENT OFF CACHE BOOL "Build with smbclient support")
+set(OPTION_SMB2 OFF CACHE BOOL "Build with smb2 support")
 
 ###################
 # MODULES
@@ -39,7 +38,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 find_package(BZip2 REQUIRED)
 find_package(MPV REQUIRED)
 find_package(ffmpeg COMPONENTS avfilter avcodec avformat avutil swscale swresample)
-find_package(ass)
+find_package(ass REQUIRED)
 
 # sources
 file(GLOB PPLAY_SRC
@@ -84,9 +83,13 @@ set(PPLAY_LDFLAGS
         ${BZIP2_LIBRARIES}
         )
 
-if (BUILD_SMBCLIENT)
-    list(APPEND PPLAY_CFLAGS -D__SMB_SUPPORT__)
-    list(APPEND PPLAY_LDFLAGS dsm tasn1)
+if (OPTION_SMB2)
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+    set(OPENSSL_INCLUDE_DIR "" CACHE STRING "" FORCE)
+    add_subdirectory(libsmb2)
+    list(APPEND PPLAY_CFLAGS -D__SMB2__)
+    list(APPEND PPLAY_INC libsmb2/include libsmb2/include/smb2)
+    list(APPEND PPLAY_LDFLAGS smb2)
 endif ()
 
 #####################

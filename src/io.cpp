@@ -10,12 +10,11 @@
 
 using namespace pplay;
 
-static size_t find_Nth(const std::string &str, unsigned n, const std::string &find) {
-
+static size_t find_Nth(const std::string &str, unsigned int n, const std::string &find) {
     size_t pos = std::string::npos, from = 0;
-    unsigned i = 0;
+    unsigned int i = 0;
 
-    if (0 == n) {
+    if (n == 0) {
         return std::string::npos;
     }
 
@@ -39,6 +38,13 @@ Io::Io() : c2d::C2DIo() {
 
     // ftp io
     FtpInit();
+
+#if 0
+    smb2 = smb2_init_context();
+    if (!smb2) {
+        printf("Io::Io: failed to init smb2 context\n");
+    }
+#endif
 }
 
 std::vector<c2d::Io::File> Io::getDirList(const pplay::Io::DeviceType &type, const std::vector<std::string> &extensions,
@@ -46,9 +52,9 @@ std::vector<c2d::Io::File> Io::getDirList(const pplay::Io::DeviceType &type, con
 
     std::vector<c2d::Io::File> files;
 
-    printf("Io::getDir(%s)\n", path.c_str());
+    printf("Io::getDirList(%s)\n", path.c_str());
 
-    if (type == DeviceType::Sdmc) {
+    if (type == DeviceType::Local) {
         files = c2d::C2DIo::getDirList(path, sort, showHidden);
     } else if (type == DeviceType::Http) {
         std::string http_path = path;
@@ -113,17 +119,17 @@ std::vector<c2d::Io::File> Io::getDirList(const pplay::Io::DeviceType &type, con
             new_path.erase(0, 1);
         }
 
-        printf("user: %s, pwd: %s, host: %s, port: %s, path: %s\n",
+        printf("Io::getDirList: user: %s, pwd: %s, host: %s, port: %s, path: %s\n",
                user.c_str(), pwd.c_str(), host.c_str(), port.c_str(), new_path.c_str());
 
         netbuf *ftp_con = nullptr;
         if (!FtpConnect(host_port.c_str(), &ftp_con)) {
-            printf("could not connect to ftp server");
+            printf("Io::getDirList: could not connect to ftp server");
             return files;
         }
 
         if (!FtpLogin(user.c_str(), pwd.c_str(), ftp_con)) {
-            printf("could not connect to ftp server");
+            printf("Io::getDirList: could not connect to ftp server");
             FtpQuit(ftp_con);
             return files;
         }
@@ -139,7 +145,77 @@ std::vector<c2d::Io::File> Io::getDirList(const pplay::Io::DeviceType &type, con
 
         FtpQuit(ftp_con);
     }
+#ifdef __SMB2__
+    else if (type == DeviceType::Smb) {
+        std::string smb_path = path;
+        if (!c2d::Utility::endsWith(smb_path, "/")) {
+            smb_path += "/";
+        }
 
+        smb2 = smb2_init_context();
+        if (!smb2) {
+            printf("Io::getDirList: failed to init smb2 context\n");
+            return files;
+        }
+
+        // parse smb path
+        smb2_url *url = smb2_parse_url(smb2, smb_path.c_str());
+        if (!url) {
+            printf("Io::getDirList: failed to parse url: %s\n", smb2_get_error(smb2));
+            smb2_destroy_context(smb2);
+            return files;
+        }
+
+        smb2_set_domain(smb2, "WORKGROUP");
+        smb2_set_user(smb2, "cpasjuste");
+        smb2_set_password(smb2, "xxxxx");
+
+        // set security
+        smb2_set_security_mode(smb2, SMB2_NEGOTIATE_SIGNING_ENABLED);
+        if (smb2_connect_share(smb2, url->server, url->share, nullptr) < 0) {
+            printf("Io::getDirList: smb2_connect_share failed: %s\n", smb2_get_error(smb2));
+            smb2_destroy_url(url);
+            smb2_destroy_context(smb2);
+            return files;
+        }
+
+        // open dir
+        smb2dir *dir = smb2_opendir(smb2, url->path);
+        if (!dir) {
+            printf("Io::getDirList: smb2_opendir failed: %s\n", smb2_get_error(smb2));
+            // cleanup
+            smb2_destroy_url(url);
+            smb2_disconnect_share(smb2);
+            smb2_destroy_context(smb2);
+            return files;
+        }
+
+        // get dir list
+        smb2dirent *ent;
+        while ((ent = smb2_readdir(smb2, dir))) {
+            switch (ent->st.smb2_type) {
+                case SMB2_TYPE_FILE:
+                    files.emplace_back(ent->name, smb_path + ent->name,
+                                       Io::Type::File, ent->st.smb2_size);
+                    break;
+                case SMB2_TYPE_DIRECTORY:
+                    if (ent->name[0] != '.') {
+                        files.emplace_back(ent->name, smb_path + ent->name, Io::Type::Directory);
+                    }
+                    break;
+                case SMB2_TYPE_LINK:
+                default:
+                    break;
+            }
+        }
+
+        // cleanup
+        smb2_destroy_url(url);
+        smb2_closedir(smb2, dir);
+        smb2_disconnect_share(smb2);
+        smb2_destroy_context(smb2);
+    }
+#endif
     // remove items by extensions, if provided
     if (!extensions.empty()) {
         files.erase(
@@ -158,12 +234,14 @@ std::vector<c2d::Io::File> Io::getDirList(const pplay::Io::DeviceType &type, con
 
 Io::DeviceType Io::getDeviceType(const std::string &path) const {
 
-    Io::DeviceType type = Io::DeviceType::Sdmc;
+    Io::DeviceType type = Io::DeviceType::Local;
 
     if (c2d::Utility::startWith(path, "http://")) {
         type = pplay::Io::DeviceType::Http;
     } else if (c2d::Utility::startWith(path, "ftp://")) {
         type = pplay::Io::DeviceType::Ftp;
+    } else if (c2d::Utility::startWith(path, "smb://")) {
+        type = pplay::Io::DeviceType::Smb;
     }
 
     return type;

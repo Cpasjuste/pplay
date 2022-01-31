@@ -76,6 +76,8 @@ Mpv::~Mpv() {
 
 int Mpv::load(const std::string &file, LoadType loadType, const std::string &options) {
 
+    printf("Mpv::load(%s)\n", file.c_str());
+
     if (handle) {
         std::string type = "replace";
         if (loadType == LoadType::Append) {
