@@ -19,7 +19,7 @@ class Browser;
 
 namespace pplay {
 
-    class Io : c2d::C2DIo {
+    class Io : public c2d::C2DIo {
 
     public:
 
@@ -34,7 +34,7 @@ namespace pplay {
         std::vector<Io::File> getDirList(const DeviceType &type, const std::vector<std::string> &extensions,
                                          const std::string &path, bool sort = false, bool showHidden = false);
 
-        DeviceType getDeviceType(const std::string &path) const;
+        DeviceType getDeviceType(const std::string &path);
 
 #ifdef __PS4__
 
@@ -46,15 +46,15 @@ namespace pplay {
             return "/data/pplay/";
         }
 
-#ifndef NDEBUG
+//#ifndef NDEBUG
         std::string getRomFsPath() override {
             return "/data/pplay/";
         }
-#else
-        std::string getRomFsPath() override {
-            return "/app0/";
-        }
-#endif
+//#else
+//        std::string getRomFsPath() override {
+//            return "/app0/";
+//        }
+//#endif
 
 #endif
 

@@ -16,26 +16,31 @@ Player::Player(Main *_main) : Rectangle(_main->getSize()) {
     main = _main;
 
     Vector2f pos = main->getSize();
-    setPosition(pos);
-    setOrigin(Origin::BottomRight);
+    Player::setPosition(pos);
+    Player::setOrigin(Origin::BottomRight);
 
     tweenScale = new TweenScale({0.25f, 0.25f}, {1.0f, 1.0f}, 0.5f);
-    add(tweenScale);
+    Player::add(tweenScale);
     tweenPosition = new TweenPosition({pos.x - 16, pos.y - 16}, {pos}, 0.5f);
-    add(tweenPosition);
+    Player::add(tweenPosition);
 
-    setVisibility(Visibility::Hidden);
+    Player::setVisibility(Visibility::Hidden);
 
     mpv = new Mpv(main->getIo()->getDataPath() + "mpv", true);
 
-    // TODO: create texture of video size?
-    texture = new VideoTexture(pos, mpv);
+#ifndef FULL_TEXTURE_TEST
+    texture = new VideoTexture(main, pos);
     texture->setOutlineColor(Color::Red);
     texture->setOutlineThickness(4);
-    add(texture);
+#else
+    texture = new VideoTexture(main, {64, 64});
+    texture->setOrigin(Origin::Center);
+    texture->setPosition(Vector2f(Player::getSize().x / 2, Player::getSize().y / 2));
+#endif
+    Player::add(texture);
 
     osd = new PlayerOSD(main);
-    add(osd);
+    Player::add(osd);
 }
 
 Player::~Player() {
@@ -137,13 +142,14 @@ void Player::onLoadEvent() {
         }
     }
 
-    /* TODO
-    texture = new VideoTexture({(float) file.mediaInfo.videos.at(0).width,
-                                (float) file.mediaInfo.videos.at(0).height}, mpv);
-    texture->setOutlineColor(Color::Red);
-    texture->setOutlineThickness(4);
-    add(texture);
-    */
+#ifdef FULL_TEXTURE_TEST
+    texture->resize({file.mediaInfo.videos.at(0).width,
+                     file.mediaInfo.videos.at(0).height});
+    float scaling = std::min(
+            getSize().x / texture->getSize().x,
+            getSize().y / texture->getSize().y);
+    texture->setScale(scaling, scaling);
+#endif
 
     resume();
     setFullscreen(true);
@@ -211,57 +217,60 @@ void Player::onUpdate() {
                     main->getStatus()->show("Please Wait...", "Loading... " + file.name, true);
                     break;
                 case MPV_EVENT_END_FILE:
-                    //auto ef = (mpv_event_end_file *) event->data;
-                    //printf("MPV_EVENT_END_FILE: %i\n", ef->reason);
+                    printf("MPV_EVENT_END_FILE\n");
                     onStopEvent(((mpv_event_end_file *) event->data)->reason);
                     break;
-                case MPV_EVENT_SHUTDOWN:
-                    printf("MPV_EVENT_SHUTDOWN\n");
-                    break;
-                case MPV_EVENT_LOG_MESSAGE:
-                    break;
-                case MPV_EVENT_GET_PROPERTY_REPLY:
-                    break;
-                case MPV_EVENT_SET_PROPERTY_REPLY:
-                    break;
-                case MPV_EVENT_COMMAND_REPLY:
-                    break;
-                case MPV_EVENT_TRACKS_CHANGED:
-                    break;
-                case MPV_EVENT_TRACK_SWITCHED:
-                    break;
-                case MPV_EVENT_IDLE:
-                    break;
-                case MPV_EVENT_PAUSE:
-                    break;
-                case MPV_EVENT_UNPAUSE:
-                    break;
-                case MPV_EVENT_TICK:
-                    break;
-                case MPV_EVENT_SCRIPT_INPUT_DISPATCH:
-                    break;
-                case MPV_EVENT_CLIENT_MESSAGE:
-                    break;
-                case MPV_EVENT_VIDEO_RECONFIG:
-                    break;
-                case MPV_EVENT_AUDIO_RECONFIG:
-                    break;
-                case MPV_EVENT_METADATA_UPDATE:
-                    break;
-                case MPV_EVENT_SEEK:
-                    break;
-                case MPV_EVENT_PLAYBACK_RESTART:
-                    printf("MPV_EVENT_PLAYBACK_RESTART\n");
-                    break;
-                case MPV_EVENT_PROPERTY_CHANGE:
-                    break;
-                case MPV_EVENT_CHAPTER_CHANGE:
-                    break;
-                case MPV_EVENT_QUEUE_OVERFLOW:
-                    break;
-                case MPV_EVENT_HOOK:
-                    break;
-                case MPV_EVENT_NONE:
+#if 0
+                    case MPV_EVENT_SHUTDOWN:
+                        printf("MPV_EVENT_SHUTDOWN\n");
+                        break;
+                    case MPV_EVENT_LOG_MESSAGE:
+                        break;
+                    case MPV_EVENT_GET_PROPERTY_REPLY:
+                        break;
+                    case MPV_EVENT_SET_PROPERTY_REPLY:
+                        break;
+                    case MPV_EVENT_COMMAND_REPLY:
+                        break;
+                    case MPV_EVENT_TRACKS_CHANGED:
+                        break;
+                    case MPV_EVENT_TRACK_SWITCHED:
+                        break;
+                    case MPV_EVENT_IDLE:
+                        break;
+                    case MPV_EVENT_PAUSE:
+                        break;
+                    case MPV_EVENT_UNPAUSE:
+                        break;
+                    case MPV_EVENT_TICK:
+                        break;
+                    case MPV_EVENT_SCRIPT_INPUT_DISPATCH:
+                        break;
+                    case MPV_EVENT_CLIENT_MESSAGE:
+                        break;
+                    case MPV_EVENT_VIDEO_RECONFIG:
+                        break;
+                    case MPV_EVENT_AUDIO_RECONFIG:
+                        break;
+                    case MPV_EVENT_METADATA_UPDATE:
+                        break;
+                    case MPV_EVENT_SEEK:
+                        break;
+                    case MPV_EVENT_PLAYBACK_RESTART:
+                        printf("MPV_EVENT_PLAYBACK_RESTART\n");
+                        break;
+                    case MPV_EVENT_PROPERTY_CHANGE:
+                        break;
+                    case MPV_EVENT_CHAPTER_CHANGE:
+                        break;
+                    case MPV_EVENT_QUEUE_OVERFLOW:
+                        break;
+                    case MPV_EVENT_HOOK:
+                        break;
+                    case MPV_EVENT_NONE:
+                        break;
+#endif
+                default:
                     break;
             }
         }

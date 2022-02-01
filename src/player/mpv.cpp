@@ -2,7 +2,7 @@
 // Created by cpasjuste on 02/04/19.
 //
 
-#include <SDL2/SDL_video.h>
+#include <SDL_video.h>
 #include "mpv.h"
 
 static void *get_proc_address_mpv(void *unused, const char *name) {
@@ -23,12 +23,23 @@ Mpv::Mpv(const std::string &configPath, bool initRender) {
     mpv_set_option_string(handle, "terminal", "yes");
     mpv_set_option_string(handle, "msg-level", "all=v");
 #endif
+#ifdef __SWITCH__
+    mpv_set_option_string(handle, "vd-lavc-threads", "4");
+#else
     mpv_set_option_string(handle, "vd-lavc-threads", "8");
+#endif
     //mpv_set_option_string(handle, "vd-lavc-fast", "yes");
-    mpv_set_option_string(handle, "vd-lavc-skiploopfilter", "all");
+    //TODO: verify speed on switch (enabling this create visual artifacts)
+    // mpv_set_option_string(handle, "vd-lavc-skiploopfilter", "all");
     mpv_set_option_string(handle, "audio-channels", "stereo");
-    //mpv_set_option_string(handle, "stream-buffer-size", "2MiB");
-#ifdef __LINUX__
+#ifdef FULL_TEXTURE_TEST
+    mpv_set_option_string(handle, "video-unscaled", "yes");
+#endif
+    // TODO: test this on switch/ps4
+    mpv_set_option_string(handle, "fbo-format", "rgba8");
+    //mpv_set_option_string(handle, "opengl-pbo", "yes");
+
+#if defined(__LINUX__) && defined(NDEBUG)
     mpv_set_option_string(handle, "hwdec", "auto-safe");
 #endif
     if (!initRender) {
@@ -75,7 +86,6 @@ Mpv::~Mpv() {
 }
 
 int Mpv::load(const std::string &file, LoadType loadType, const std::string &options) {
-
     printf("Mpv::load(%s)\n", file.c_str());
 
     if (handle) {

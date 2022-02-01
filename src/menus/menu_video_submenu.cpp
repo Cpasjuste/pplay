@@ -15,7 +15,7 @@ MenuVideoSubmenu::MenuVideoSubmenu(
     this->type = type;
 
     // highlight
-    highlight_selection = new Highlight({getSize().x, BUTTON_HEIGHT * main->getScaling()},
+    highlight_selection = new Highlight({getSize().x, BUTTON_HEIGHT * main->getScaling().y},
                                         Highlight::CursorPosition::Left);
     highlight_selection->setFillColor(COLOR_BLUE);
     highlight_selection->setAlpha(40);

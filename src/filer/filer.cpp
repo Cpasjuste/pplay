@@ -11,38 +11,41 @@
 
 using namespace c2d;
 
-Filer::Filer(Main *m, const std::string &path, const c2d::FloatRect &rect) : Rectangle(rect) {
+Filer::Filer(Main *m, const std::string &path, const c2d::FloatRect &rect) :
+        Rectangle(m->getScaled(rect)) {
 
     main = m;
 
     // force scrap view width to scrapped backdrop width
-    scrapView = new ScrapView(main, {rect.width - 780, 0, 780, rect.height});
-    add(scrapView);
+    scrapView = new ScrapView(main, {rect.width - (780 * m->getScaling().x), 0,
+                                     780 * m->getScaling().x, rect.height});
+    Filer::add(scrapView);
 
-    Vector2f size = {rect.width - 670, rect.height - 64};
+    /// scaling this too much is not pretty, so no scaling for filer
+    Vector2f size = {rect.width - (670 * m->getScaling().x), rect.height - (64 * m->getScaling().y)};
+
     // highlight
-    highlight = new Highlight({size.x, ITEM_HEIGHT * main->getScaling()}, Highlight::CursorPosition::Left);
-    add(highlight);
+    highlight = new Highlight({size.x, (float) ITEM_HEIGHT * m->getScaling().y}, Highlight::CursorPosition::Left);
+    Filer::add(highlight);
 
-    // items
-    item_height = ITEM_HEIGHT * main->getScaling();
+    // files items
+    item_height = highlight->getSize().y;
     item_max = (int) (size.y / item_height);
-    if ((item_max * item_height) < size.y) {
+    if (((float) item_max * item_height) < size.y) {
         item_height = size.y / (float) item_max;
     }
 
     for (unsigned int i = 0; i < (unsigned int) item_max; i++) {
-        FloatRect r = {0, (item_height * i) + 1, size.x - 2, item_height - 2};
+        FloatRect r = {0, item_height * (float) i, size.x, item_height};
         items.emplace_back(new FilerItem(main, r));
-        add(items[i]);
+        Filer::add(items[i]);
     }
 
     // tween
-    add(new TweenAlpha(0, 255, 0.5f));
+    Filer::add(new TweenAlpha(0, 255, 0.5f));
 }
 
 void Filer::setMediaInfo(const MediaFile &target, const MediaInfo &mediaInfo) {
-
     for (size_t i = 0; i < files.size(); i++) {
         if (files[i].path == target.path) {
             files[i].mediaInfo = mediaInfo;
@@ -53,7 +56,6 @@ void Filer::setMediaInfo(const MediaFile &target, const MediaInfo &mediaInfo) {
 }
 
 void Filer::setScrapInfo(const Io::File &target, const std::vector<pscrap::Movie> &movies) {
-
     for (size_t i = 0; i < files.size(); i++) {
         if (files[i].path == target.path) {
             files[i].movies = movies;
@@ -64,7 +66,6 @@ void Filer::setScrapInfo(const Io::File &target, const std::vector<pscrap::Movie
 }
 
 void Filer::setSelection(int index) {
-
     item_index = index;
     int page = item_index / item_max;
     unsigned int index_start = (unsigned int) page * item_max;
@@ -103,16 +104,14 @@ void Filer::setSelection(int index) {
 }
 
 MediaFile Filer::getSelection() const {
-
     if (!files.empty() && files.size() > (unsigned int) item_index) {
         return files[item_index];
     }
 
-    return MediaFile();
+    return {};
 }
 
 bool Filer::onInput(c2d::Input::Player *players) {
-
     if (main->getMenuMain()->isMenuVisible()
         || main->getPlayer()->isFullscreen()) {
         return false;
@@ -160,7 +159,6 @@ bool Filer::onInput(c2d::Input::Player *players) {
 }
 
 void Filer::onUpdate() {
-
     if (dirty) {
         setSelection(item_index);
         dirty = false;
@@ -170,7 +168,6 @@ void Filer::onUpdate() {
 }
 
 static bool compare(const MediaFile &a, const MediaFile &b) {
-
     if (a.type == Io::Type::Directory && b.type != Io::Type::Directory) {
         return true;
     }
@@ -185,7 +182,6 @@ static bool compare(const MediaFile &a, const MediaFile &b) {
 }
 
 bool Filer::getDir(const std::string &p) {
-
     printf("getDir(%s)\n", p.c_str());
 
     files.clear();
@@ -199,7 +195,7 @@ bool Filer::getDir(const std::string &p) {
     std::vector<Io::File> _files =
             ((pplay::Io *) main->getIo())->getDirList(type, ext, path, false);
 
-    for (auto &file : _files) {
+    for (auto &file: _files) {
         MediaFile mf(file, MediaInfo(file));
         if (file.type == Io::Type::File) {
             pscrap::Search search;
@@ -228,7 +224,6 @@ bool Filer::getDir(const std::string &p) {
 }
 
 void Filer::enter(int index) {
-
     MediaFile file = getSelection();
     bool success;
 
@@ -249,7 +244,6 @@ void Filer::enter(int index) {
 }
 
 void Filer::exit() {
-
     std::string p = path;
 
     if (p == "/" || p.find('/') == std::string::npos) {

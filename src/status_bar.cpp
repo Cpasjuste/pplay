@@ -62,7 +62,7 @@ public:
     RectangleShape *percentRect = nullptr;
 };
 
-StatusBar::StatusBar(Main *main) : GradientRectangle({0, 0, main->getSize().x, 32 * main->getScaling()}) {
+StatusBar::StatusBar(Main *main) : GradientRectangle({0, 0, main->getSize().x, 32 * main->getScaling().y}) {
 
 #ifdef __SWITCH__
     psmInitialize();

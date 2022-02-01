@@ -53,6 +53,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
 
     // custom io
     pplayIo = new pplay::Io();
+    Main::setIo(pplayIo);
 
     // configure input
     Main::getInput()->setRepeatDelay(INPUT_DELAY);
@@ -64,13 +65,13 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     config = new PPLAYConfig(this);
 
     // scaling
-    scaling = size.x / 1280.0f;
+    scaling = {size.x / 1280.0f, size.y / 720.0f};
 
     // font
     font = new C2DFont();
     font->loadFromFile(Main::getIo()->getRomFsPath() + "skin/font.ttf");
-    font->setFilter(Texture::Filter::Linear);
-    font->setOffset({0, -4});
+    font->setFilter(Texture::Filter::Point);
+    font->setOffset({0, -4.0f * scaling.y});
 
     statusBox = new StatusBox(this, {0, Main::getSize().y - 16});
     statusBox->setOrigin(Origin::BottomLeft);
@@ -106,7 +107,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     items.emplace_back("Network", "network.png", MenuItem::Position::Top);
     items.emplace_back("Options", "options.png", MenuItem::Position::Top);
     items.emplace_back("Exit", "exit.png", MenuItem::Position::Bottom);
-    menu_main = new MenuMain(this, {-250 * scaling, 0, 250 * scaling, Main::getSize().y}, items);
+    menu_main = new MenuMain(this, {-250 * scaling.x, 0, 250 * scaling.x, Main::getSize().y}, items);
     menu_main->setVisibility(Visibility::Hidden, false);
     menu_main->setLayer(3);
     Main::add(menu_main);
@@ -117,7 +118,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     items.emplace_back("Audio", "audio.png", MenuItem::Position::Top);
     items.emplace_back("Subtitles", "subtitles.png", MenuItem::Position::Top);
     items.emplace_back("Stop", "exit.png", MenuItem::Position::Bottom);
-    menu_video = new MenuVideo(this, {Main::getSize().x, 0, 250 * scaling, Main::getSize().y}, items);
+    menu_video = new MenuVideo(this, {Main::getSize().x, 0, 250 * scaling.x, Main::getSize().y}, items);
     menu_video->setVisibility(Visibility::Hidden, false);
     menu_video->setLayer(3);
     Main::add(menu_video);
@@ -146,7 +147,6 @@ Main::~Main() {
     delete (config);
     delete (timer);
     delete (font);
-    delete (pplayIo);
 }
 
 bool Main::onInput(c2d::Input::Player *players) {
@@ -287,12 +287,17 @@ StatusBox *Main::getStatus() {
     return statusBox;
 }
 
-float Main::getScaling() {
+Vector2f Main::getScaling() {
     return scaling;
 }
 
 unsigned int Main::getFontSize(FontSize fontSize) {
-    return (unsigned int) ((float) fontSize * scaling);
+    /// scaling this too much on large screen is not pretty
+    //if (getSize().x > 1280) {
+    //    return (unsigned int) fontSize;
+    //} else {
+    return (unsigned int) ((float) fontSize * scaling.y);
+    //}
 }
 
 StatusBar *Main::getStatusBar() {
@@ -303,13 +308,9 @@ pplay::Scrapper *Main::getScrapper() {
     return scrapper;
 }
 
-c2d::Io *Main::getIo() {
-    return (c2d::Io *) pplayIo;
-}
-
 int main() {
 
-    Vector2f size = {C2D_SCREEN_WIDTH, C2D_SCREEN_HEIGHT};
+    Vector2f size = {1650, 928};
 
 #ifdef __SWITCH__
 #ifdef NDEBUG

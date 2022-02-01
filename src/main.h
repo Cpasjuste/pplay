@@ -18,6 +18,8 @@
 #include "io.h"
 #include "usbfs.h"
 
+//#define FULL_TEXTURE_TEST 1
+
 #define INPUT_DELAY 500
 #define ICON_SIZE 24
 #define BUTTON_HEIGHT 64
@@ -55,8 +57,8 @@ public:
 
     enum class FontSize {
         Small = 16,
-        Medium = 22,
-        Big = 26
+        Medium = 18,
+        Big = 22
     };
 
     explicit Main(const c2d::Vector2f &size);
@@ -91,9 +93,20 @@ public:
 
     pplay::Scrapper *getScrapper();
 
-    c2d::Io *getIo() override;
+    c2d::Vector2f getScaling();
 
-    float getScaling();
+    c2d::Vector2f getScaled(const c2d::Vector2f &v) {
+        return {v.x * scaling.x, v.y * scaling.y};
+    }
+
+    c2d::Vector2f getScaled(float x, float y) {
+        return {x * scaling.x, y * scaling.y};
+    }
+
+    c2d::FloatRect getScaled(const c2d::FloatRect &rect) {
+        return {rect.left * scaling.x, rect.top * scaling.y,
+                rect.width * scaling.x, rect.height * scaling.y};
+    }
 
     unsigned int getFontSize(FontSize fontSize);
 
@@ -105,20 +118,20 @@ private:
 
     void onUpdate() override;
 
-    pplay::Io *pplayIo = nullptr;
-    c2d::Font *font = nullptr;
-    c2d::Clock *timer = nullptr;
-    c2d::MessageBox *messageBox = nullptr;
-    StatusBox *statusBox = nullptr;
-    PPLAYConfig *config = nullptr;
-    Filer *filer = nullptr;
-    StatusBar *statusBar = nullptr;
-    Player *player = nullptr;
-    MenuMain *menu_main = nullptr;
-    MenuVideo *menu_video = nullptr;
-    pplay::Scrapper *scrapper = nullptr;
+    pplay::Io *pplayIo;
+    c2d::Font *font;
+    c2d::Clock *timer;
+    c2d::MessageBox *messageBox;
+    StatusBox *statusBox;
+    PPLAYConfig *config;
+    Filer *filer;
+    StatusBar *statusBar;
+    Player *player;
+    MenuMain *menu_main;
+    MenuVideo *menu_video;
+    pplay::Scrapper *scrapper;
     unsigned int oldKeys = 0;
-    float scaling = 1;
+    c2d::Vector2f scaling = {1, 1};
 
     bool exit = false;
     bool running = true;

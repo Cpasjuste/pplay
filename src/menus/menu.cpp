@@ -16,7 +16,7 @@ MenuButton::MenuButton(Main *main, const MenuItem &item, const FloatRect &rect) 
     if (!item.icon.empty()) {
         icon = new C2DTexture(main->getIo()->getRomFsPath() + "skin/" + item.icon);
         icon->setOrigin(Origin::Left);
-        icon->setPosition(16 * main->getScaling(), getSize().y / 2);
+        icon->setPosition(16 * main->getScaling().x, getSize().y / 2);
         icon->setScale(main->getSize().x / 1920, main->getSize().y / 1080);
         icon->setFillColor(COLOR_FONT);
         add(icon);
@@ -26,11 +26,11 @@ MenuButton::MenuButton(Main *main, const MenuItem &item, const FloatRect &rect) 
     name->setOrigin(Origin::Left);
     name->setFillColor(COLOR_FONT);
     if (!item.icon.empty()) {
-        name->setPosition((ICON_SIZE + 32) * main->getScaling(), getSize().y / 2);
-        name->setSizeMax((getSize().x - ICON_SIZE + 32) * main->getScaling(), 0);
+        name->setPosition((ICON_SIZE + 32) * main->getScaling().x, getSize().y / 2);
+        name->setSizeMax((getSize().x - ICON_SIZE + 32) * main->getScaling().x, 0);
     } else {
-        name->setPosition(16 * main->getScaling(), getSize().y / 2);
-        name->setSizeMax((getSize().x - (16 * main->getScaling())) * main->getScaling(), 0);
+        name->setPosition(16 * main->getScaling().x, getSize().y / 2);
+        name->setSizeMax((getSize().x - (16 * main->getScaling().x)) * main->getScaling().x, 0);
     }
     add(name);
 }
@@ -46,7 +46,7 @@ Menu::Menu(Main *m, const c2d::FloatRect &rect, const std::string &_title,
     setOutlineThickness(2);
 
     // highlight
-    highlight = new Highlight({getSize().x, BUTTON_HEIGHT * main->getScaling()});
+    highlight = new Highlight({getSize().x, BUTTON_HEIGHT * main->getScaling().y});
     highlight->setOrigin(Origin::Left);
     highlight->setPosition(0, 200);
     add(highlight);
@@ -59,20 +59,20 @@ Menu::Menu(Main *m, const c2d::FloatRect &rect, const std::string &_title,
     add(title);
 
     // options
-    FloatRect top = {0, 200, getSize().x, BUTTON_HEIGHT * main->getScaling()};
-    FloatRect bottom = {0, getSize().y - 32, getSize().x, BUTTON_HEIGHT * main->getScaling()};
+    FloatRect top = {0, 200, getSize().x, BUTTON_HEIGHT * main->getScaling().y};
+    FloatRect bottom = {0, getSize().y - 32, getSize().x, BUTTON_HEIGHT * main->getScaling().y};
 
     for (auto &item : items) {
         if (item.position == MenuItem::Position::Top) {
             auto *option = new MenuButton(main, item, top);
             add(option);
             buttons.push_back(option);
-            top.top += 64 * main->getScaling();
+            top.top += 64 * main->getScaling().y;
         } else {
             auto *option = new MenuButton(main, item, bottom);
             add(option);
             buttons.push_back(option);
-            bottom.top -= 64 * main->getScaling();
+            bottom.top -= 64 * main->getScaling().y;
         }
     }
 

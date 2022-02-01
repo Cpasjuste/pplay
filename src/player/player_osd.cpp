@@ -15,17 +15,17 @@ PlayerOSD::PlayerOSD(Main *m) : Rectangle({64, 64}) {
 
     main = m;
 
-    setSize(main->getSize().x - (200 * main->getScaling()), OSD_HEIGHT * main->getScaling());
+    setSize(main->getSize().x - (200 * main->getScaling().x), OSD_HEIGHT * main->getScaling().y);
     setPosition(main->getSize().x / 2, main->getSize().y + getSize().y);
     setOrigin(Origin::Bottom);
 
-    highlight = new Highlight({getSize().y, 64 * main->getScaling()});
+    highlight = new Highlight({getSize().y, 64 * main->getScaling().y});
     highlight->setOrigin(Origin::Left);
     highlight->setRotation(90);
-    highlight->setPosition(64 * main->getScaling(), 0);
+    highlight->setPosition(64 * main->getScaling().x, 0);
     add(highlight);
 
-    progress = new Progress({0, 0, getSize().x, 6 * main->getScaling()});
+    progress = new Progress({0, 0, getSize().x, 6 * main->getScaling().y});
     progress->setFgColor(COLOR_RED);
     progress->setBgColor(COLOR_GRAY);
     progress->setOutlineThickness(0);
@@ -33,61 +33,61 @@ PlayerOSD::PlayerOSD(Main *m) : Rectangle({64, 64}) {
 
     progress_text = new Text("00:00:00", main->getFontSize(Main::FontSize::Medium), main->getFont());
     progress_text->setOrigin(Origin::Left);
-    progress_text->setPosition((-100 + 20) * main->getScaling(), getSize().y / 2);
+    progress_text->setPosition((-100 + 20) * main->getScaling().x, getSize().y / 2);
     add(progress_text);
 
     duration_text = new Text("00:00:00", main->getFontSize(Main::FontSize::Medium), main->getFont());
     duration_text->setOrigin(Origin::Left);
-    duration_text->setPosition(getSize().x - (20 * main->getScaling()), getSize().y / 2);
+    duration_text->setPosition(getSize().x - (20 * main->getScaling().x), getSize().y / 2);
     add(duration_text);
 
     auto btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_pause.png");
-    btn->setScale(main->getScaling(), main->getScaling());
-    btn->setPosition(64 * 1 * main->getScaling(), getSize().y / 2);
+    btn->setScale(main->getScaling());
+    btn->setPosition(64 * 1 * main->getScaling().x, getSize().y / 2);
     btn->setOrigin(Origin::Center);
     add(btn);
     buttons.push_back(btn);
 
     // left buttons
     btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_seek_backward_10.png");
-    btn->setScale(main->getScaling(), main->getScaling());
-    btn->setPosition(64 * 2 * main->getScaling(), getSize().y / 2);
+    btn->setScale(main->getScaling());
+    btn->setPosition(64 * 2 * main->getScaling().x, getSize().y / 2);
     btn->setOrigin(Origin::Center);
     add(btn);
     buttons.push_back(btn);
 
     btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_seek_backward_1.png");
-    btn->setScale(main->getScaling(), main->getScaling());
-    btn->setPosition(64 * 3 * main->getScaling(), getSize().y / 2);
+    btn->setScale(main->getScaling());
+    btn->setPosition(64 * 3 * main->getScaling().x, getSize().y / 2);
     btn->setOrigin(Origin::Center);
     add(btn);
     buttons.push_back(btn);
 
     // right buttons
     btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_seek_forward_1.png");
-    btn->setScale(main->getScaling(), main->getScaling());
-    btn->setPosition(getSize().x - (64 * 3 * main->getScaling()), getSize().y / 2);
+    btn->setScale(main->getScaling());
+    btn->setPosition(getSize().x - (64 * 3 * main->getScaling().x), getSize().y / 2);
     btn->setOrigin(Origin::Center);
     add(btn);
     buttons.push_back(btn);
 
     btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_seek_forward_10.png");
-    btn->setScale(main->getScaling(), main->getScaling());
-    btn->setPosition(getSize().x - (64 * 2 * main->getScaling()), getSize().y / 2);
+    btn->setScale(main->getScaling());
+    btn->setPosition(getSize().x - (64 * 2 * main->getScaling().x), getSize().y / 2);
     btn->setOrigin(Origin::Center);
     add(btn);
     buttons.push_back(btn);
 
     btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_stop.png");
-    btn->setScale(main->getScaling(), main->getScaling());
-    btn->setPosition(getSize().x - (64 * 1 * main->getScaling()), getSize().y / 2);
+    btn->setScale(main->getScaling());
+    btn->setPosition(getSize().x - (64 * 1 * main->getScaling().x), getSize().y / 2);
     btn->setOrigin(Origin::Center);
     add(btn);
     buttons.push_back(btn);
 
     // btn_play for btn_pause
     btn_play = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_play.png");
-    btn_play->setScale(main->getScaling(), main->getScaling());
+    btn_play->setScale(main->getScaling());
     btn_play->setPosition(buttons.at((size_t) ButtonID::Pause)->getPosition().x, getSize().y / 2);
     btn_play->setOrigin(Origin::Center);
     btn_play->setVisibility(Visibility::Hidden);
@@ -97,7 +97,7 @@ PlayerOSD::PlayerOSD(Main *m) : Rectangle({64, 64}) {
     title = new Text("Unknown Title", main->getFontSize(Main::FontSize::Medium), main->getFont());
     title->setFillColor(COLOR_RED);
     title->setOrigin(Origin::Left);
-    title->setPosition((64 * 3 + 50) * main->getScaling(), getSize().y / 2);
+    title->setPosition((64 * 3 + 50) * main->getScaling().x, getSize().y / 2);
     title->setSizeMax(buttons.at((int) ButtonID::SeekForward1)->getPosition().x - title->getPosition().x - 32, 0);
     add(title);
 

@@ -16,55 +16,56 @@ ScrapView::ScrapView(Main *m, const c2d::FloatRect &rect) : Rectangle(rect) {
     // backdrop
     backdrop = new Sprite();
     backdrop->setOrigin(Origin::BottomRight);
-    backdrop->setPosition(getSize());
+    backdrop->setPosition(ScrapView::getSize());
     backdrop->setVisibility(Visibility::Hidden);
     backdrop->setAlpha(0);
     backdrop->add(new TweenAlpha(0, 255, 0.3f));
-    add(backdrop);
+    ScrapView::add(backdrop);
 
     // backdrop fade
     fade = new C2DTexture(main->getIo()->getRomFsPath() + "skin/fade.png");
     fade->setOrigin(Origin::BottomRight);
     fade->setPosition(backdrop->getPosition());
     fade->setFillColor(Color::Black);
-    add(fade);
+    ScrapView::add(fade);
 
     // poster
     poster = new Sprite();
-    poster->setPosition(64, 32);
+    poster->setPosition(main->getScaled(64, 32));
     poster->setVisibility(Visibility::Hidden);
     poster->setAlpha(0);
     poster->add(new TweenAlpha(0, 255, 0.3f));
-    add(poster);
+    ScrapView::add(poster);
 
-    Vector2f pos{poster->getPosition().x + 216, poster->getPosition().y + 10};
-    Vector2f size{getSize().x - pos.x - 16, 180};
+    Vector2f pos{poster->getPosition().x + (216 * main->getScaling().x),
+                 poster->getPosition().y + (10 * main->getScaling().y)};
+    Vector2f size{ScrapView::getSize().x - pos.x - (16 * main->getScaling().x), 180 * main->getScaling().y};
 
     // title
     title = new C2DText("TITLE", main->getFontSize(Main::FontSize::Big), main->getFont());
-    title->setPosition(pos.x, pos.y);
-    add(title);
+    title->setPosition({pos.x, pos.y});
+    ScrapView::add(title);
 
     // text
     overview = new C2DText("", main->getFontSize(Main::FontSize::Small), main->getFont());
     overview->setFillColor(COLOR_FONT);
-    overview->setPosition(pos.x, pos.y + 70);
+    overview->setPosition(pos.x, pos.y + (70 * main->getScaling().y));
     overview->setOverflow(Text::NewLine);
     overview->setSizeMax(size.x, size.y);
-    add(overview);
+    ScrapView::add(overview);
 
     resolution_icon = new TextIcon("1080p", main->getFontSize(Main::FontSize::Small), main->getFont());
-    resolution_icon->setPosition(pos.x, 80);
-    add(resolution_icon);
+    resolution_icon->setPosition(pos.x, (80 * main->getScaling().y));
+    ScrapView::add(resolution_icon);
     video_icon = new TextIcon("h264", main->getFontSize(Main::FontSize::Small), main->getFont());
-    video_icon->setPosition(pos.x + 64, 80);
-    add(video_icon);
+    video_icon->setPosition(pos.x + (64 * main->getScaling().x), (80 * main->getScaling().y));
+    ScrapView::add(video_icon);
     audio_icon = new TextIcon("DTS", main->getFontSize(Main::FontSize::Small), main->getFont());
-    audio_icon->setPosition(pos.x + 64 * 2, 80);
-    add(audio_icon);
+    audio_icon->setPosition(pos.x + (64 * main->getScaling().x) * 2, (80 * main->getScaling().y));
+    ScrapView::add(audio_icon);
     subs_icon = new TextIcon("SUBS", main->getFontSize(Main::FontSize::Small), main->getFont());
-    subs_icon->setPosition(pos.x + 64 * 3, 80);
-    add(subs_icon);
+    subs_icon->setPosition(pos.x + (64 * main->getScaling().x) * 3, (80 * main->getScaling().y));
+    ScrapView::add(subs_icon);
 
     clock = new C2DClock();
 }
@@ -156,17 +157,12 @@ void ScrapView::onUpdate() {
             // load backdrop if available
             std::string tex_path = pplay::Utility::getMediaBackdropPath(file);
             if (main->getIo()->exist(tex_path)) {
-                fade->setVisibility(Visibility::Visible);
                 backdrop_texture = new C2DTexture(tex_path);
                 backdrop->setTexture(backdrop_texture, true);
                 backdrop->setVisibility(Visibility::Visible, true);
-                if (backdrop_texture->getTextureRect().width != 780) {
-                    // scaling
-                    float scaling = std::min(
-                            getSize().x / backdrop_texture->getTextureRect().width,
-                            getSize().y / backdrop_texture->getTextureRect().height);
-                    backdrop->setScale(scaling, scaling);
-                }
+                backdrop->setSize(main->getScaled(780, 439));
+                fade->setSize(backdrop->getSize());
+                fade->setVisibility(Visibility::Visible);
             }
 
             // load poster if available
@@ -175,13 +171,7 @@ void ScrapView::onUpdate() {
                 poster_texture = new C2DTexture(tex_path);
                 poster->setTexture(poster_texture, true);
                 poster->setVisibility(Visibility::Visible, true);
-                if (poster_texture->getTextureRect().width != 200) {
-                    // scaling
-                    float scaling = std::min(
-                            getSize().x / poster_texture->getTextureRect().width,
-                            getSize().y / poster_texture->getTextureRect().height);
-                    poster->setScale(scaling, scaling);
-                }
+                poster->setSize(main->getScaled(200, 300));
             }
         }
     }

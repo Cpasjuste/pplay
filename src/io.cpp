@@ -38,13 +38,6 @@ Io::Io() : c2d::C2DIo() {
 
     // ftp io
     FtpInit();
-
-#if 0
-    smb2 = smb2_init_context();
-    if (!smb2) {
-        printf("Io::Io: failed to init smb2 context\n");
-    }
-#endif
 }
 
 std::vector<c2d::Io::File> Io::getDirList(const pplay::Io::DeviceType &type, const std::vector<std::string> &extensions,
@@ -232,7 +225,7 @@ std::vector<c2d::Io::File> Io::getDirList(const pplay::Io::DeviceType &type, con
     return files;
 }
 
-Io::DeviceType Io::getDeviceType(const std::string &path) const {
+Io::DeviceType Io::getDeviceType(const std::string &path) {
 
     Io::DeviceType type = Io::DeviceType::Local;
 

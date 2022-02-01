@@ -11,21 +11,24 @@
 
 using namespace c2d;
 
-FilerItem::FilerItem(Main *main, const c2d::FloatRect &rect, const MediaFile &file) : Rectangle(rect) {
+FilerItem::FilerItem(Main *m, const c2d::FloatRect &rect, const MediaFile &f) : Rectangle(rect) {
 
-    this->main = main;
-    this->file = file;
+    main = m;
+    file = f;
 
-    textTitle = new Text(file.name, main->getFontSize(Main::FontSize::Medium), main->getFont());
-    textTitle->setPosition(16, 4);
-    textTitle->setSizeMax(getSize().x - 64, 0);
-    add(textTitle);
+    textTitle = new Text(file.name.empty() ? "AjIilp" : file.name,
+                         main->getFontSize(Main::FontSize::Medium), main->getFont());
+    textTitle->setOrigin(Origin::Left);
+    textTitle->setPosition(16, (FilerItem::getSize().y / 4) + 3);
+    textTitle->setSizeMax(FilerItem::getSize().x - 64, 0);
+    FilerItem::add(textTitle);
 
-    textInfo = new Text("INFO", main->getFontSize(Main::FontSize::Small), main->getFont());
-    textInfo->setPosition(16, textTitle->getPosition().y + main->getFontSize(Main::FontSize::Medium) + 4);
-    textInfo->setSizeMax(getSize().x - 64, 0);
+    textInfo = new Text("INFO", main->getFontSize(Main::FontSize::Small) - 2, main->getFont());
+    textInfo->setOrigin(Origin::Left);
+    textInfo->setPosition(16, (((FilerItem::getSize().y / 4) * 3) - (2 * main->getScaling().y) + 3));
+    textInfo->setSizeMax(FilerItem::getSize().x - 64, 0);
     textInfo->setFillColor(COLOR_FONT);
-    add(textInfo);
+    FilerItem::add(textInfo);
 }
 
 void FilerItem::setFile(const MediaFile &f) {

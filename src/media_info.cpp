@@ -5,7 +5,6 @@
 #include <fstream>
 #include <iostream>
 
-#include "cross2d/c2d.h"
 #include "media_info.h"
 #include "utility.h"
 

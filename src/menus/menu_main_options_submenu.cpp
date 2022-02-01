@@ -17,7 +17,7 @@ MenuMainOptionsSubmenu::MenuMainOptionsSubmenu(
     option_name = optionName;
 
     // highlight
-    highlight_selection = new Highlight({getSize().x, BUTTON_HEIGHT * main->getScaling()},
+    highlight_selection = new Highlight({getSize().x, BUTTON_HEIGHT * main->getScaling().x},
                                         Highlight::CursorPosition::Left);
     highlight_selection->setFillColor(COLOR_BLUE);
     highlight_selection->setAlpha(40);

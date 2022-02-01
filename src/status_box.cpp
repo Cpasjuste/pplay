@@ -10,40 +10,42 @@
 using namespace c2d;
 
 StatusBox::StatusBox(Main *m, const c2d::Vector2f &position)
-        : Rectangle({(m->getSize().x - 64) * m->getScaling(), 48 * m->getScaling()}) {
+        : Rectangle(m->getScaled({64, 48})) {
 
     main = m;
-    pos = position;
-    setPosition(position);
+    pos = m->getScaled(position);
+    StatusBox::setPosition(pos);
 
     icon = new C2DTexture(main->getIo()->getRomFsPath() + "skin/wait.png");
     icon->setOrigin(Origin::Center);
-    icon->setScale(main->getSize().x / 1920, main->getSize().y / 1080);
-    icon->setPosition(icon->getSize().x / 2 + 8, getSize().y / 2);
+    icon->setPosition(icon->getSize().x / 2 + (8 * m->getScaling().x), StatusBox::getSize().y / 2);
+    icon->setScale(main->getScaling());
     icon->setFillColor(COLOR_FONT);
     icon->setAlpha(200);
     icon->add(new TweenRotation(360, 0, 2, TweenLoop::Loop, TweenState::Playing));
-    add(icon);
+    StatusBox::add(icon);
 
     titleText = new Text("Please Wait...", main->getFontSize(Main::FontSize::Medium), main->getFont());
     titleText->setFillColor(COLOR_RED);
-    titleText->setPosition(icon->getSize().x + 16, 4);
-    add(titleText);
+    titleText->setPosition(icon->getSize().x + (16 * m->getScaling().x), (4 * m->getScaling().y));
+    StatusBox::add(titleText);
 
     messageText = new Text("Doing something in background, please wait",
                            main->getFontSize(Main::FontSize::Small), main->getFont());
     messageText->setFillColor(COLOR_FONT);
-    messageText->setPosition(icon->getSize().x + 16,
-                             titleText->getPosition().y + main->getFontSize(Main::FontSize::Medium) + 4);
-    messageText->setSizeMax(getSize().x - icon->getSize().x - 16, 0);
-    add(messageText);
+    messageText->setPosition(icon->getSize().x + (16 * m->getScaling().x),
+                             titleText->getPosition().y
+                             + (float) main->getFontSize(Main::FontSize::Medium)
+                             + (4 * m->getScaling().y));
+    messageText->setSizeMax(StatusBox::getSize().x - icon->getSize().x - (16 * m->getScaling().x), 0);
+    StatusBox::add(messageText);
 
     clock = new C2DClock();
     mutex = SDL_CreateMutex();
 
     tween = new TweenAlpha(0, 255, 0.5f);
-    add(tween);
-    setVisibility(Visibility::Hidden);
+    StatusBox::add(tween);
+    StatusBox::setVisibility(Visibility::Hidden);
 }
 
 StatusBox::~StatusBox() {
@@ -82,10 +84,10 @@ void StatusBox::onDraw(c2d::Transform &transform, bool draw) {
     PlayerOSD *osd = main->getPlayer()->getOSD();
     if (osd && osd->isVisible()) {
         FloatRect bounds = main->getPlayer()->getOSD()->getGlobalBounds();
-        setPosition(pos.x, bounds.top - 32);
+        setPosition(pos.x, bounds.top - (32 * main->getScaling().y));
     } else {
         FloatRect bounds = main->getMenuMain()->getGlobalBounds();
-        setPosition(bounds.left + bounds.width + pos.x, main->getSize().y - 16);
+        setPosition(bounds.left + bounds.width + pos.x, main->getSize().y - (16 * main->getScaling().x));
     }
 
     SDL_LockMutex(mutex);
