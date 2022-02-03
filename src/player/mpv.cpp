@@ -25,23 +25,24 @@ Mpv::Mpv(const std::string &configPath, bool initRender) {
 #endif
 #ifdef __SWITCH__
     mpv_set_option_string(handle, "vd-lavc-threads", "4");
+    // TODO: test this
+    mpv_set_option_string(handle, "opengl-pbo", "yes");
 #else
-    mpv_set_option_string(handle, "vd-lavc-threads", "8");
+    mpv_set_option_string(handle, "vd-lavc-threads", "6");
 #endif
-    //mpv_set_option_string(handle, "vd-lavc-fast", "yes");
-    //TODO: verify speed on switch (enabling this create visual artifacts)
-    // mpv_set_option_string(handle, "vd-lavc-skiploopfilter", "all");
     mpv_set_option_string(handle, "audio-channels", "stereo");
 #ifdef FULL_TEXTURE_TEST
     mpv_set_option_string(handle, "video-unscaled", "yes");
 #endif
-    // TODO: test this on switch/ps4
     mpv_set_option_string(handle, "fbo-format", "rgba8");
-    //mpv_set_option_string(handle, "opengl-pbo", "yes");
+    //TODO: should add this as option
+    //mpv_set_option_string(handle, "vd-lavc-skiploopfilter", "all");
+    //mpv_set_option_string(handle, "vd-lavc-fast", "yes");
 
 #if defined(__LINUX__) && defined(NDEBUG)
     mpv_set_option_string(handle, "hwdec", "auto-safe");
 #endif
+
     if (!initRender) {
         mpv_set_option_string(handle, "vid", "no");
         mpv_set_option_string(handle, "aid", "no");

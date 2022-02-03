@@ -74,7 +74,7 @@ bool Utility::isMedia(const c2d::Io::File &file) {
 
     if (file.type == c2d::Io::Type::File) {
         std::vector<std::string> extensions = getMediaExtensions();
-        for (auto &ext : extensions) {
+        for (auto &ext: extensions) {
             if (c2d::Utility::endsWith(file.name, ext, false)) {
                 return true;
             }
@@ -131,6 +131,14 @@ static double roundOff(double n) {
     int i = (int) lround(d);//(int) (d + 0.5);
     d = (float) i / 100.0;
     return d;
+}
+
+c2d::Vector2f Utility::ceil(const c2d::Vector2f &v) {
+    return {std::ceil(v.x), std::ceil(v.y)};
+}
+
+c2d::Vector2f Utility::ceil(float x, float y) {
+    return ceil({x, y});
 }
 
 std::string Utility::formatSize(size_t size) {

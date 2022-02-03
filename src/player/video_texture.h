@@ -6,7 +6,6 @@
 #define PPLAY_VIDEO_TEXTURE_H
 
 #include "player.h"
-#include "gradient_rectangle.h"
 
 class VideoTexture : public c2d::GLTextureBuffer {
 

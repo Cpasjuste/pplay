@@ -35,16 +35,8 @@ void VideoTexture::showFade() {
 
 void VideoTexture::onDraw(c2d::Transform &transform, bool draw) {
 
-    // sync
-    while (!(mpv_render_context_update(main->getPlayer()->getMpv()->getContext()) & MPV_RENDER_UPDATE_FRAME)) {
-        if (main->getPlayer()->getMpv()->isPaused()
-            || main->getPlayer()->getMpv()->isStopped()) {
-            return GLTextureBuffer::onDraw(transform, draw);
-        }
-        main->delay(1);
-    }
-
-    if (draw) {
+    bool update = mpv_render_context_update(main->getPlayer()->getMpv()->getContext()) & MPV_RENDER_UPDATE_FRAME;
+    if (draw && update) {
         int flip_y{0};
         mpv_opengl_fbo mpv_fbo{
                 .fbo = (int) fbo,

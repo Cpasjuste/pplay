@@ -19,13 +19,13 @@ FilerItem::FilerItem(Main *m, const c2d::FloatRect &rect, const MediaFile &f) : 
     textTitle = new Text(file.name.empty() ? "AjIilp" : file.name,
                          main->getFontSize(Main::FontSize::Medium), main->getFont());
     textTitle->setOrigin(Origin::Left);
-    textTitle->setPosition(16, (FilerItem::getSize().y / 4) + 3);
+    textTitle->setPosition(pplay::Utility::ceil(16, (FilerItem::getSize().y / 4) + 3));
     textTitle->setSizeMax(FilerItem::getSize().x - 64, 0);
     FilerItem::add(textTitle);
 
-    textInfo = new Text("INFO", main->getFontSize(Main::FontSize::Small) - 2, main->getFont());
+    textInfo = new Text("INFO", main->getFontSize(Main::FontSize::Small), main->getFont());
     textInfo->setOrigin(Origin::Left);
-    textInfo->setPosition(16, (((FilerItem::getSize().y / 4) * 3) - (2 * main->getScaling().y) + 3));
+    textInfo->setPosition(pplay::Utility::ceil(16, ((FilerItem::getSize().y / 4) * 3) - (2 * main->getScaling().y)));
     textInfo->setSizeMax(FilerItem::getSize().x - 64, 0);
     textInfo->setFillColor(COLOR_FONT);
     FilerItem::add(textInfo);

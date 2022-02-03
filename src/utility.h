@@ -37,6 +37,10 @@ namespace pplay {
 
         static std::string formatSize(size_t size);
 
+        static c2d::Vector2f ceil(const c2d::Vector2f &v);
+
+        static c2d::Vector2f ceil(float x, float y);
+
         static void setCpuClock(const CpuClock &clock);
 
     };

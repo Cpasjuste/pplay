@@ -17,20 +17,19 @@ MenuMainOptionsSubmenu::MenuMainOptionsSubmenu(
     option_name = optionName;
 
     // highlight
-    highlight_selection = new Highlight({getSize().x, BUTTON_HEIGHT * main->getScaling().x},
+    highlight_selection = new Highlight({MenuMainOptionsSubmenu::getSize().x, BUTTON_HEIGHT * main->getScaling().x},
                                         Highlight::CursorPosition::Left);
     highlight_selection->setFillColor(COLOR_BLUE);
-    highlight_selection->setAlpha(40);
+    highlight_selection->setAlpha(60);
     highlight_selection->setCursorColor(COLOR_RED);
     highlight_selection->setOrigin(Origin::Left);
     highlight_selection->setPosition(0, 200);
     highlight_selection->setLayer(-1);
-    add(highlight_selection);
+    MenuMainOptionsSubmenu::add(highlight_selection);
 }
 
 void MenuMainOptionsSubmenu::setSelection(const std::string &name) {
-
-    for (auto btn : buttons) {
+    for (auto btn: buttons) {
         if (Utility::toLower(btn->item.name) == Utility::toLower(name)) {
             highlight_selection->tweenTo(btn->getPosition());
         }
@@ -38,7 +37,6 @@ void MenuMainOptionsSubmenu::setSelection(const std::string &name) {
 }
 
 void MenuMainOptionsSubmenu::onOptionSelection(MenuItem *item) {
-
     if (option_name == OPT_CPU_BOOST) {
         if (item->name == "Enabled") {
             pplay::Utility::setCpuClock(pplay::Utility::CpuClock::Max);
@@ -53,7 +51,6 @@ void MenuMainOptionsSubmenu::onOptionSelection(MenuItem *item) {
 }
 
 bool MenuMainOptionsSubmenu::onInput(c2d::Input::Player *players) {
-
     if (players[0].keys & Input::Right || players[0].keys & Input::Key::Fire2) {
         setVisibility(Visibility::Hidden, true);
         main->getMenuMain()->getMenuMainOptions()->setVisibility(Visibility::Visible, true);

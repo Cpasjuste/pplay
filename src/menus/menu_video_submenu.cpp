@@ -15,19 +15,18 @@ MenuVideoSubmenu::MenuVideoSubmenu(
     this->type = type;
 
     // highlight
-    highlight_selection = new Highlight({getSize().x, BUTTON_HEIGHT * main->getScaling().y},
+    highlight_selection = new Highlight({MenuVideoSubmenu::getSize().x, BUTTON_HEIGHT * main->getScaling().y},
                                         Highlight::CursorPosition::Left);
     highlight_selection->setFillColor(COLOR_BLUE);
-    highlight_selection->setAlpha(40);
+    highlight_selection->setAlpha(60);
     highlight_selection->setCursorColor(COLOR_RED);
     highlight_selection->setOrigin(Origin::Left);
-    highlight_selection->setPosition(0, 200);
+    highlight_selection->setPosition(0, 200 * main->getScaling().y);
     highlight_selection->setLayer(-1);
-    add(highlight_selection);
+    MenuVideoSubmenu::add(highlight_selection);
 }
 
 void MenuVideoSubmenu::setSelection(int streamType) {
-
     int stream_id = -1;
     if (streamType == MENU_VIDEO_TYPE_VID) {
         stream_id = main->getPlayer()->getVideoStream();
@@ -37,7 +36,7 @@ void MenuVideoSubmenu::setSelection(int streamType) {
         stream_id = main->getPlayer()->getSubtitleStream();
     }
 
-    for (auto &button : buttons) {
+    for (auto &button: buttons) {
         if (button->item.id == stream_id) {
             highlight_selection->tweenTo(button->getPosition());
             break;
@@ -46,7 +45,6 @@ void MenuVideoSubmenu::setSelection(int streamType) {
 }
 
 void MenuVideoSubmenu::onOptionSelection(MenuItem *item) {
-
     if (item->position == MenuItem::Position::Top) {
         std::string name = item->name;
         std::replace(name.begin(), name.end(), '\n', ' ');
@@ -70,7 +68,6 @@ void MenuVideoSubmenu::onOptionSelection(MenuItem *item) {
 }
 
 bool MenuVideoSubmenu::onInput(c2d::Input::Player *players) {
-
     if (players[0].keys & Input::Left || players[0].keys & Input::Key::Fire2) {
         setVisibility(Visibility::Hidden, true);
         main->getMenuVideo()->setVisibility(Visibility::Visible, true);

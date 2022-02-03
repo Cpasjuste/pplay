@@ -106,15 +106,11 @@ if (PLATFORM_SWITCH)
             lzma opus vpx ass freetype fribidi png bz2 usbhsfs ntfs-3g lwext4
             )
 elseif (PLATFORM_PS4)
-    set(PS4_PKG_TITLE "PPLAY")
+    set(PS4_PKG_TITLE "pplay @ cpasjuste")
     set(PS4_PKG_TITLE_ID "PPLA00001")
     set(PS4_PKG_VERSION "03.06")
-    list(APPEND PPLAY_SRC src/ps4/ps4.c)
     list(APPEND PPLAY_INC)
-    list(APPEND PPLAY_LDFLAGS
-            opus freetype fribidi png bz2
-            usermem SceLibcInternal
-            )
+    list(APPEND PPLAY_LDFLAGS opus freetype fribidi png bz2)
 elseif (PLATFORM_LINUX)
     #####################
     # LINUX PLATORM

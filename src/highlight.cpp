@@ -12,23 +12,22 @@ using namespace c2d;
 Highlight::Highlight(const c2d::Vector2f &size, const CursorPosition &pos) : Rectangle(size) {
 
     gradientRectangle = new GradientRectangle({0, 0, size.x, size.y});
-    gradientRectangle->setColor(COLOR_HIGHLIGHT, Color::Transparent);
-    if (pos == CursorPosition::Left) {
-        gradientRectangle->setOrigin(Origin::BottomRight);
-        gradientRectangle->setRotation(180);
-    }
-    add(gradientRectangle);
+    gradientRectangle->setColor(COLOR_HIGHLIGHT, Color::Transparent,
+                                pos == CursorPosition::Left ? GradientRectangle::Direction::Right
+                                                            : GradientRectangle::Direction::Left);
+    Highlight::add(gradientRectangle);
 
     cursor = new RectangleShape(Vector2f{6, size.y});
     cursor->setFillColor(COLOR_BLUE);
     if (pos == CursorPosition::Right) {
         cursor->move(size.x - 4, 0);
     }
-    add(cursor);
+    Highlight::add(cursor);
 
-    tween = new TweenPosition(getPosition(), getPosition(), (float) INPUT_DELAY / 2);
+    tween = new TweenPosition(Highlight::getPosition(),
+                              Highlight::getPosition(), (float) INPUT_DELAY / 2);
     tween->setState(TweenState::Stopped);
-    add(tween);
+    Highlight::add(tween);
 }
 
 void Highlight::setAlpha(uint8_t alpha, bool  /*recursive*/) {

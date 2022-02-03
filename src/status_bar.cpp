@@ -4,11 +4,12 @@
 
 #include <sstream>
 #include <iomanip>
-#include <time.h>
+#include <ctime>
 
 #include "cross2d/c2d.h"
-#include "status_bar.h"
 #include "main.h"
+#include "status_bar.h"
+#include "utility.h"
 
 #ifdef __SWITCH__
 
@@ -22,24 +23,30 @@ class Battery : public RectangleShape {
 
 public:
 
-    explicit Battery(const FloatRect &rect) : RectangleShape(rect) {
+    explicit Battery(const FloatRect &rect, const Vector2f &scaling) : RectangleShape({0, 0}) {
 
-        setFillColor(Color::Transparent);
-        setOutlineColor(COLOR_FONT);
-        setOutlineThickness(1);
+        float outline = std::ceil(scaling.x);
+        Battery::setFillColor(Color::Transparent);
+        Battery::setOutlineColor(COLOR_FONT);
+        Battery::setOutlineThickness(outline);
+        Battery::setOrigin(Origin::Right);
+        Battery::setPosition((rect.width - (8 * scaling.x)) + outline, (rect.height / 2) + outline);
+        Battery::setSize(32 * scaling.x, rect.height - (scaling.y * 16));
 
-        RectangleShape *rightRect = new RectangleShape({4, rect.height / 3});
-        rightRect->setFillColor(COLOR_FONT);
-        rightRect->setOrigin(Origin::Left);
-        rightRect->setPosition(rect.width, rect.height / 2);
-        add(rightRect);
+        maxWidth = Battery::getSize().x - (4 * scaling.x);
+        Vector2f size = {maxWidth, Battery::getSize().y - (4 * scaling.y)};
+        batteryRect = new RectangleShape(size);
+        batteryRect->setFillColor(COLOR_FONT);
+        batteryRect->setOrigin(Origin::Right);
+        batteryRect->setPosition(Battery::getSize().x - (2 * scaling.x),
+                                 (Battery::getSize().y + (outline / 2)) / 2);
+        Battery::add(batteryRect);
 
-        Vector2f size = {rect.width - 4, rect.height - 4};
-        percentRect = new RectangleShape(size);
-        percentRect->setFillColor(COLOR_FONT);
-        percentRect->setOrigin(Origin::Left);
-        percentRect->setPosition(2, rect.height / 2);
-        add(percentRect);
+        auto leftRect = new RectangleShape({scaling.x * 6, rect.height / 3});
+        leftRect->setFillColor(COLOR_FONT);
+        leftRect->setOrigin(Origin::Right);
+        leftRect->setPosition(0, batteryRect->getPosition().y);
+        Battery::add(leftRect);
     }
 
     void onUpdate() override {
@@ -48,44 +55,56 @@ public:
             return;
         }
 
-        unsigned int percent = 100;
 #ifdef __SWITCH__
         psmGetBatteryChargePercentage(&percent);
 #endif
-        float width = ((float) percent / 100) * (getSize().x - 2);
-        percentRect->setSize(std::min(width, getSize().x - 4), percentRect->getSize().y);
-        percentRect->setFillColor(percent > 15 ? COLOR_FONT : Color::Red);
+        percent = std::clamp((int) percent, 1, 100);
+
+        float width = ((float) percent / 100) * maxWidth;
+        if (width != batteryRect->getSize().x) {
+            batteryRect->setSize(std::max(width, 2.0f), batteryRect->getSize().y);
+            if (percent < 15) {
+                batteryRect->setFillColor(Color::Red);
+            } else if (percent < 30) {
+                batteryRect->setFillColor(Color::Orange);
+            } else {
+                batteryRect->setFillColor(COLOR_FONT);
+            }
+        }
 
         RectangleShape::onUpdate();
     }
 
-    RectangleShape *percentRect = nullptr;
+    RectangleShape *batteryRect = nullptr;
+    unsigned int percent = 100;
+    float maxWidth;
 };
 
-StatusBar::StatusBar(Main *main) : GradientRectangle({0, 0, main->getSize().x, 32 * main->getScaling().y}) {
+StatusBar::StatusBar(Main *main)
+        : GradientRectangle({0, 0,
+                             main->getSize().x, 32 * main->getScaling().y}) {
 
 #ifdef __SWITCH__
     psmInitialize();
 #endif
 
-    float height = getLocalBounds().height;
+    setColor(COLOR_BG, Color::Transparent, Direction::Left);
+    StatusBar::setPosition(0, -StatusBar::getSize().y);
+    StatusBar::add(new TweenPosition(StatusBar::getPosition(), {0, 0}, 0.5f));
 
-    setColor(COLOR_BG, Color::Transparent);
-    setPosition(0, -height);
-    add(new TweenPosition(getPosition(), {0, 0}, 0.5f));
-
-    battery = new Battery({main->getSize().x - 16, height / 2 + 1, (height - 16) * 2, height / 2});
-    battery->setOrigin(Origin::Right);
-    add(battery);
+    battery = new Battery(StatusBar::getGlobalBounds(), main->getScaling());
+    StatusBar::add(battery);
 
     // time
     timeText = new Text("12:00", main->getFontSize(Main::FontSize::Medium), main->getFont());
     timeText->setOrigin(Origin::Right);
-    timeText->setPosition(battery->getPosition().x - timeText->getLocalBounds().width, height / 2);
+    timeText->setPosition(pplay::Utility::ceil(
+            battery->getPosition().x - battery->getSize().x - (main->getScaling().x * 20),
+            StatusBar::getSize().y / 2));
     timeText->setFillColor(COLOR_FONT);
-    add(timeText);
+    StatusBar::add(timeText);
 
-    setVisibility(Visibility::Visible, true);
+    StatusBar::setVisibility(Visibility::Visible, true);
 }
 
 void StatusBar::onUpdate() {

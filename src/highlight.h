@@ -5,8 +5,6 @@
 #ifndef PPLAY_HIGHLIGHT_H
 #define PPLAY_HIGHLIGHT_H
 
-#include "gradient_rectangle.h"
-
 class Highlight : public c2d::Rectangle {
 
 public:
@@ -28,7 +26,7 @@ public:
 
 private:
 
-    GradientRectangle *gradientRectangle;
+    c2d::GradientRectangle *gradientRectangle;
     c2d::RectangleShape *cursor;
     c2d::TweenPosition *tween;
 

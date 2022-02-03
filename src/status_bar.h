@@ -5,13 +5,11 @@
 #ifndef PPLAY_STATUSBAR_H
 #define PPLAY_STATUSBAR_H
 
-#include "gradient_rectangle.h"
-
 class Main;
 
 class Battery;
 
-class StatusBar : public GradientRectangle {
+class StatusBar : public c2d::GradientRectangle {
 
 public:
 

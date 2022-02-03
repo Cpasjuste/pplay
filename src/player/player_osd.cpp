@@ -15,96 +15,97 @@ PlayerOSD::PlayerOSD(Main *m) : Rectangle({64, 64}) {
 
     main = m;
 
-    setSize(main->getSize().x - (200 * main->getScaling().x), OSD_HEIGHT * main->getScaling().y);
-    setPosition(main->getSize().x / 2, main->getSize().y + getSize().y);
-    setOrigin(Origin::Bottom);
+    PlayerOSD::setSize(main->getSize().x - (200 * main->getScaling().x), OSD_HEIGHT * main->getScaling().y);
+    PlayerOSD::setPosition(main->getSize().x / 2, main->getSize().y + PlayerOSD::getSize().y);
+    PlayerOSD::setOrigin(Origin::Bottom);
 
-    highlight = new Highlight({getSize().y, 64 * main->getScaling().y});
+    highlight = new Highlight({PlayerOSD::getSize().y, 64 * main->getScaling().y});
     highlight->setOrigin(Origin::Left);
     highlight->setRotation(90);
     highlight->setPosition(64 * main->getScaling().x, 0);
-    add(highlight);
+    PlayerOSD::add(highlight);
 
-    progress = new Progress({0, 0, getSize().x, 6 * main->getScaling().y});
+    progress = new Progress({0, 0, PlayerOSD::getSize().x, 6 * main->getScaling().y});
     progress->setFgColor(COLOR_RED);
     progress->setBgColor(COLOR_GRAY);
-    progress->setOutlineThickness(0);
-    add(progress);
+    PlayerOSD::add(progress);
 
     progress_text = new Text("00:00:00", main->getFontSize(Main::FontSize::Medium), main->getFont());
     progress_text->setOrigin(Origin::Left);
-    progress_text->setPosition((-100 + 20) * main->getScaling().x, getSize().y / 2);
-    add(progress_text);
+    progress_text->setPosition(pplay::Utility::ceil((-100 + 20) * main->getScaling().x, PlayerOSD::getSize().y / 2));
+    PlayerOSD::add(progress_text);
 
     duration_text = new Text("00:00:00", main->getFontSize(Main::FontSize::Medium), main->getFont());
     duration_text->setOrigin(Origin::Left);
-    duration_text->setPosition(getSize().x - (20 * main->getScaling().x), getSize().y / 2);
-    add(duration_text);
+    duration_text->setPosition(
+            pplay::Utility::ceil(PlayerOSD::getSize().x - (20 * main->getScaling().x), PlayerOSD::getSize().y / 2));
+    PlayerOSD::add(duration_text);
 
     auto btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_pause.png");
     btn->setScale(main->getScaling());
-    btn->setPosition(64 * 1 * main->getScaling().x, getSize().y / 2);
+    btn->setPosition(64 * 1 * main->getScaling().x, PlayerOSD::getSize().y / 2);
     btn->setOrigin(Origin::Center);
-    add(btn);
+    PlayerOSD::add(btn);
     buttons.push_back(btn);
 
     // left buttons
     btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_seek_backward_10.png");
     btn->setScale(main->getScaling());
-    btn->setPosition(64 * 2 * main->getScaling().x, getSize().y / 2);
+    btn->setPosition(64 * 2 * main->getScaling().x, PlayerOSD::getSize().y / 2);
     btn->setOrigin(Origin::Center);
-    add(btn);
+    PlayerOSD::add(btn);
     buttons.push_back(btn);
 
     btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_seek_backward_1.png");
     btn->setScale(main->getScaling());
-    btn->setPosition(64 * 3 * main->getScaling().x, getSize().y / 2);
+    btn->setPosition(64 * 3 * main->getScaling().x, PlayerOSD::getSize().y / 2);
     btn->setOrigin(Origin::Center);
-    add(btn);
+    PlayerOSD::add(btn);
     buttons.push_back(btn);
 
     // right buttons
     btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_seek_forward_1.png");
     btn->setScale(main->getScaling());
-    btn->setPosition(getSize().x - (64 * 3 * main->getScaling().x), getSize().y / 2);
+    btn->setPosition(PlayerOSD::getSize().x - (64 * 3 * main->getScaling().x), PlayerOSD::getSize().y / 2);
     btn->setOrigin(Origin::Center);
-    add(btn);
+    PlayerOSD::add(btn);
     buttons.push_back(btn);
 
     btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_seek_forward_10.png");
     btn->setScale(main->getScaling());
-    btn->setPosition(getSize().x - (64 * 2 * main->getScaling().x), getSize().y / 2);
+    btn->setPosition(PlayerOSD::getSize().x - (64 * 2 * main->getScaling().x), PlayerOSD::getSize().y / 2);
     btn->setOrigin(Origin::Center);
-    add(btn);
+    PlayerOSD::add(btn);
     buttons.push_back(btn);
 
     btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_stop.png");
     btn->setScale(main->getScaling());
-    btn->setPosition(getSize().x - (64 * 1 * main->getScaling().x), getSize().y / 2);
+    btn->setPosition(PlayerOSD::getSize().x - (64 * 1 * main->getScaling().x), PlayerOSD::getSize().y / 2);
     btn->setOrigin(Origin::Center);
-    add(btn);
+    PlayerOSD::add(btn);
     buttons.push_back(btn);
 
     // btn_play for btn_pause
     btn_play = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_play.png");
     btn_play->setScale(main->getScaling());
-    btn_play->setPosition(buttons.at((size_t) ButtonID::Pause)->getPosition().x, getSize().y / 2);
+    btn_play->setPosition(buttons.at((size_t) ButtonID::Pause)->getPosition().x, PlayerOSD::getSize().y / 2);
     btn_play->setOrigin(Origin::Center);
     btn_play->setVisibility(Visibility::Hidden);
-    add(btn_play);
+    PlayerOSD::add(btn_play);
 
     // TITLE
     title = new Text("Unknown Title", main->getFontSize(Main::FontSize::Medium), main->getFont());
     title->setFillColor(COLOR_RED);
     title->setOrigin(Origin::Left);
-    title->setPosition((64 * 3 + 50) * main->getScaling().x, getSize().y / 2);
+    title->setPosition(pplay::Utility::ceil((64 * 3 + 50) * main->getScaling().x, PlayerOSD::getSize().y / 2));
     title->setSizeMax(buttons.at((int) ButtonID::SeekForward1)->getPosition().x - title->getPosition().x - 32, 0);
-    add(title);
+    PlayerOSD::add(title);
 
-    add(new TweenPosition({getPosition().x, getPosition().y},
-                          {getPosition().x, getPosition().y - getSize().y}, 0.5f));
+    PlayerOSD::add(new TweenPosition({PlayerOSD::getPosition().x, PlayerOSD::getPosition().y},
+                                     {PlayerOSD::getPosition().x, PlayerOSD::getPosition().y - PlayerOSD::getSize().y},
+                                     0.5f));
 
-    setVisibility(Visibility::Hidden);
+    PlayerOSD::setVisibility(Visibility::Hidden);
 
     clock.restart();
 }

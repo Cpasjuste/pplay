@@ -37,7 +37,9 @@ static void on_applet_hook(AppletHookType hook, void *arg) {
 }
 
 #elif __PS4__
+
 #include <orbis/Sysmodule.h>
+
 extern "C" int sceSystemServiceLoadExec(const char *path, const char *args[]);
 #endif
 
@@ -48,7 +50,7 @@ using namespace pplay;
 Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
 
 #ifndef NDEBUG
-    Renderer::setPrintStats(true);
+    //Renderer::setPrintStats(true);
 #endif
 
     // custom io
@@ -68,10 +70,10 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     scaling = {size.x / 1280.0f, size.y / 720.0f};
 
     // font
-    font = new C2DFont();
+    font = new Font();
     font->loadFromFile(Main::getIo()->getRomFsPath() + "skin/font.ttf");
     font->setFilter(Texture::Filter::Point);
-    font->setOffset({0, -4.0f * scaling.y});
+    font->setOffset({0, -4.0f});
 
     statusBox = new StatusBox(this, {0, Main::getSize().y - 16});
     statusBox->setOrigin(Origin::BottomLeft);
@@ -292,12 +294,7 @@ Vector2f Main::getScaling() {
 }
 
 unsigned int Main::getFontSize(FontSize fontSize) {
-    /// scaling this too much on large screen is not pretty
-    //if (getSize().x > 1280) {
-    //    return (unsigned int) fontSize;
-    //} else {
     return (unsigned int) ((float) fontSize * scaling.y);
-    //}
 }
 
 StatusBar *Main::getStatusBar() {
@@ -310,7 +307,7 @@ pplay::Scrapper *Main::getScrapper() {
 
 int main() {
 
-    Vector2f size = {1650, 928};
+    Vector2f size = {1680, 945};
 
 #ifdef __SWITCH__
 #ifdef NDEBUG
