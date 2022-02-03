@@ -13,7 +13,6 @@ using namespace pscrap;
 static std::vector<c2d::Io::File> scrapList;
 
 static void find_medias(Main *main, const std::string &path) {
-
     std::vector<std::string> ext = pplay::Utility::getMediaExtensions();
     pplay::Io::DeviceType type = ((pplay::Io *) main->getIo())->getDeviceType(path);
     std::vector<c2d::Io::File> files =
@@ -59,6 +58,7 @@ static std::string clean_name(const std::string &name) {
             break;
         }
     }
+
     if (!cut) {
         for (auto &token: tokens) {
             if (token != nullptr) {

@@ -16,6 +16,8 @@ Filer::Filer(Main *m, const std::string &path, const c2d::FloatRect &rect) :
 
     main = m;
 
+    mutex = new C2DMutex();
+
     // force scrap view width to scrapped backdrop width
     scrapView = new ScrapView(main, {rect.width - (780 * m->getScaling().x), 0,
                                      780 * m->getScaling().x, rect.height});
@@ -46,6 +48,7 @@ Filer::Filer(Main *m, const std::string &path, const c2d::FloatRect &rect) :
 }
 
 void Filer::setMediaInfo(const MediaFile &target, const MediaInfo &mediaInfo) {
+    mutex->lock();
     for (size_t i = 0; i < files.size(); i++) {
         if (files[i].path == target.path) {
             files[i].mediaInfo = mediaInfo;
@@ -53,9 +56,11 @@ void Filer::setMediaInfo(const MediaFile &target, const MediaInfo &mediaInfo) {
             break;
         }
     }
+    mutex->unlock();
 }
 
 void Filer::setScrapInfo(const Io::File &target, const std::vector<pscrap::Movie> &movies) {
+    mutex->lock();
     for (size_t i = 0; i < files.size(); i++) {
         if (files[i].path == target.path) {
             files[i].movies = movies;
@@ -63,12 +68,15 @@ void Filer::setScrapInfo(const Io::File &target, const std::vector<pscrap::Movie
             break;
         }
     }
+    mutex->unlock();
 }
 
 void Filer::setSelection(int index) {
     item_index = index;
     int page = item_index / item_max;
     unsigned int index_start = (unsigned int) page * item_max;
+
+    mutex->lock();
 
     for (unsigned int i = 0; i < (unsigned int) item_max; i++) {
         if (index_start + i >= files.size()) {
@@ -101,12 +109,16 @@ void Filer::setSelection(int index) {
     } else {
         highlight->setVisibility(Visibility::Visible);
     }
+
+    mutex->unlock();
 }
 
 MediaFile Filer::getSelection() const {
+    mutex->lock();
     if (!files.empty() && files.size() > (unsigned int) item_index) {
         return files[item_index];
     }
+    mutex->unlock();
 
     return {};
 }
@@ -117,6 +129,10 @@ bool Filer::onInput(c2d::Input::Player *players) {
         return false;
     }
 
+    mutex->lock();
+    size_t filesSize = files.size();
+    mutex->unlock();
+
     unsigned int keys = players[0].keys;
 
     if (keys & c2d::Input::Start || keys & c2d::Input::Select) {
@@ -124,12 +140,12 @@ bool Filer::onInput(c2d::Input::Player *players) {
     } else if (keys & Input::Key::Up) {
         item_index--;
         if (item_index < 0)
-            item_index = (int) (files.size() - 1);
+            item_index = (int) (filesSize - 1);
         setSelection(item_index);
         scrapView->unload();
     } else if (keys & Input::Key::Down) {
         item_index++;
-        if (item_index >= (int) files.size()) {
+        if (item_index >= (int) filesSize) {
             item_index = 0;
         }
         setSelection(item_index);
@@ -184,6 +200,7 @@ static bool compare(const MediaFile &a, const MediaFile &b) {
 bool Filer::getDir(const std::string &p) {
     printf("getDir(%s)\n", p.c_str());
 
+    mutex->lock();
     files.clear();
     path = p;
     if (path.size() > 1 && Utility::endsWith(path, "/")) {
@@ -218,6 +235,7 @@ bool Filer::getDir(const std::string &p) {
         files.insert(files.begin(), MediaFile{file, MediaInfo(file)});
     }
 
+    mutex->unlock();
     setSelection(0);
 
     return true;
@@ -272,7 +290,10 @@ void Filer::exit() {
     if (getDir(p)) {
         if (!item_index_prev.empty()) {
             int last = (int) item_index_prev.size() - 1;
-            if (item_index_prev[last] < (int) files.size()) {
+            mutex->lock();
+            size_t filesSize = files.size();
+            mutex->unlock();
+            if (item_index_prev[last] < (int) filesSize) {
                 item_index = item_index_prev[last];
             }
             item_index_prev.erase(item_index_prev.end() - 1);
@@ -287,4 +308,8 @@ void Filer::clearHistory() {
 
 std::string Filer::getPath() {
     return path;
+}
+
+Filer::~Filer() {
+    delete (mutex);
 }
