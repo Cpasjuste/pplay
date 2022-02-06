@@ -58,7 +58,12 @@ public:
 #ifdef __SWITCH__
         psmGetBatteryChargePercentage(&percent);
 #endif
-        percent = std::clamp((int) percent, 1, 100);
+        // ps4: not std::clamp
+        if (percent < 1) {
+            percent = 1;
+        } else if (percent > 100) {
+            percent = 100;
+        }
 
         float width = ((float) percent / 100) * maxWidth;
         if (width != batteryRect->getSize().x) {

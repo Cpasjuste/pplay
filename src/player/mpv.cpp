@@ -5,11 +5,20 @@
 #include <SDL_video.h>
 #include "mpv.h"
 
+#ifdef __PS4__
+extern "C" int ps4_mpv_use_precompiled_shaders;
+extern "C" int ps4_mpv_dump_shaders;
+#endif
+
 static void *get_proc_address_mpv(void *unused, const char *name) {
     return SDL_GL_GetProcAddress(name);
 }
 
 Mpv::Mpv(const std::string &configPath, bool initRender) {
+#ifdef __PS4__
+    ps4_mpv_use_precompiled_shaders = 1;
+    ps4_mpv_dump_shaders = 0;
+#endif
 
     handle = mpv_create();
     if (!handle) {
@@ -38,6 +47,8 @@ Mpv::Mpv(const std::string &configPath, bool initRender) {
     //TODO: should add this as option
     //mpv_set_option_string(handle, "vd-lavc-skiploopfilter", "all");
     //mpv_set_option_string(handle, "vd-lavc-fast", "yes");
+
+    mpv_set_option_string(handle, "blend-subtitles", "video");
 
 #if defined(__LINUX__) && defined(NDEBUG)
     mpv_set_option_string(handle, "hwdec", "auto-safe");
