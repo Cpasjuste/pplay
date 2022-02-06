@@ -2,7 +2,6 @@
 // Created by cpasjuste on 07/12/18.
 //
 
-#include "cross2d/c2d.h"
 #include "main.h"
 #include "utility.h"
 #include "menu_main_options_submenu.h"

@@ -304,7 +304,7 @@ pplay::Scrapper *Main::getScrapper() {
 
 int main() {
 
-    Vector2f size = {1680, 945};
+    Vector2f size = {C2D_SCREEN_WIDTH, C2D_SCREEN_HEIGHT};
 
 #ifdef __SWITCH__
 #ifdef NDEBUG

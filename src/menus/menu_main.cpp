@@ -52,7 +52,7 @@ void MenuMain::onOptionSelection(MenuItem *item) {
     } else if (item->name == "Network") {
         setVisibility(Visibility::Hidden, true);
         main->show(Main::MenuType::Network);
-    } else if (item->name == "Options") {
+    } else if (item->name == "Options" && !menuMainOptions->getButtons().empty()) {
         setVisibility(Visibility::Hidden, true);
         menuMainOptions->setVisibility(Visibility::Visible);
 #ifdef __SWITCH__
@@ -73,7 +73,7 @@ bool MenuMain::onInput(c2d::Input::Player *players) {
 
     if (players[0].keys & Input::Left) {
         MenuItem *item = getSelection();
-        if (item->name == "Options" && !menuMainOptions->getButtons().empty()) {
+        if (item->name == "Options") {
             onOptionSelection(item);
         }
         return true;
