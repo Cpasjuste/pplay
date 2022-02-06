@@ -18,7 +18,9 @@ PPLAYConfig::PPLAYConfig(Main *main, int version)
     addOption({OPT_LAST_PATH, main->getIo()->getDataPath()});
     addOption({OPT_CACHE_MEDIA_INFO, (int) 1});
     //addOption({OPT_BUFFER, "Low"}); // Low, Medium, High, VeryHigh
+#ifdef __SWITCH__
     addOption({OPT_CPU_BOOST, "Disabled"}); // Disabled, Enabled
+#endif
     addOption({OPT_TMDB_LANGUAGE, "en-US"});
 
     // load the configuration from file, overwriting default values

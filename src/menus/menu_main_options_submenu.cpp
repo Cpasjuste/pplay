@@ -37,6 +37,7 @@ void MenuMainOptionsSubmenu::setSelection(const std::string &name) {
 }
 
 void MenuMainOptionsSubmenu::onOptionSelection(MenuItem *item) {
+#ifdef __SWITCH__
     if (option_name == OPT_CPU_BOOST) {
         if (item->name == "Enabled") {
             pplay::Utility::setCpuClock(pplay::Utility::CpuClock::Max);
@@ -44,7 +45,7 @@ void MenuMainOptionsSubmenu::onOptionSelection(MenuItem *item) {
             pplay::Utility::setCpuClock(pplay::Utility::CpuClock::Min);
         }
     }
-
+#endif
     main->getConfig()->getOption(option_name)->setString(item->name);
     main->getConfig()->save();
     setSelection(item->name);

@@ -173,7 +173,6 @@ bool Main::onInput(c2d::Input::Player *players) {
 }
 
 void Main::onUpdate() {
-
     unsigned int keys = getInput()->getKeys(0);
     if (keys != Input::Key::Delay) {
         bool changed = (oldKeys ^ keys) != 0;
@@ -196,7 +195,6 @@ void Main::onUpdate() {
 }
 
 void Main::show(MenuType type) {
-
     if (player->getMpv()->isStopped() && player->isFullscreen()) {
         player->setFullscreen(false);
     }
@@ -245,7 +243,6 @@ void Main::setRunningStop() {
 }
 
 void Main::quit() {
-
     // TODO: save network path
     config->getOption(OPT_LAST_PATH)->setString(filer->getPath());
     config->save();

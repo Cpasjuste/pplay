@@ -370,10 +370,10 @@ void Player::pause() {
 
 void Player::resume() {
     mpv->resume();
+#ifdef __SWITCH__
     if (main->getConfig()->getOption(OPT_CPU_BOOST)->getString() == "Enabled") {
         pplay::Utility::setCpuClock(pplay::Utility::CpuClock::Max);
     }
-#ifdef __SWITCH__
     appletSetMediaPlaybackState(true);
 #endif
 }

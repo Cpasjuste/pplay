@@ -60,6 +60,10 @@ public:
 
     virtual MenuItem *getSelection();
 
+    virtual std::vector<MenuButton *> getButtons() {
+        return buttons;
+    }
+
 protected:
 
     bool onInput(c2d::Input::Player *players) override;
