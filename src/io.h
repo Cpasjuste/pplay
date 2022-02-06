@@ -46,15 +46,17 @@ namespace pplay {
             return "/data/pplay/";
         }
 
-//#ifndef NDEBUG
+#ifndef NDEBUG
         std::string getRomFsPath() override {
             return "/data/pplay/";
         }
-//#else
-//        std::string getRomFsPath() override {
-//            return "/app0/";
-//        }
-//#endif
+#else
+
+        std::string getRomFsPath() override {
+            return "/app0/";
+        }
+
+#endif
 
 #endif
 
