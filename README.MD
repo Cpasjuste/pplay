@@ -1,7 +1,7 @@
 pPlay
 ======
 
-![](https://github.com/Cpasjuste/pplay/raw/master/screenshot.png)
+![](https://github.com/Cpasjuste/pplay/raw/master/screenshot.png)![](https://github.com/Cpasjuste/pplay/raw/master/screenshot2.png)
 
 pPlay is a video player for the Nintendo Switch. pPlay support most popular video format, subtitles, http and ftp streaming and more. 
 pPlay use the [MPV](https://mpv.io/) interface to handle ffmpeg interoperability, which provide a fast, stable and powerful experience.
