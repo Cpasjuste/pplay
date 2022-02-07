@@ -28,16 +28,16 @@ StatusBox::StatusBox(Main *m, const c2d::Vector2f &position)
 
     titleText = new Text("Please Wait...", main->getFontSize(Main::FontSize::Medium), main->getFont());
     titleText->setFillColor(COLOR_RED);
-    titleText->setPosition(pplay::Utility::ceil(icon->getSize().x + (16 * m->getScaling().x), (4 * m->getScaling().y)));
+    titleText->setPosition(icon->getSize().x + (16 * m->getScaling().x), (4 * m->getScaling().y));
     StatusBox::add(titleText);
 
     messageText = new Text("Doing something in background, please wait",
                            main->getFontSize(Main::FontSize::Small), main->getFont());
     messageText->setFillColor(COLOR_FONT);
-    messageText->setPosition(pplay::Utility::ceil(icon->getSize().x + (16 * m->getScaling().x),
+    messageText->setPosition(icon->getSize().x + (16 * m->getScaling().x),
                                                   titleText->getPosition().y
                                                   + (float) main->getFontSize(Main::FontSize::Medium) +
-                                                  (4 * m->getScaling().y)));
+                                                  (4 * m->getScaling().y));
     messageText->setSizeMax(StatusBox::getSize().x - icon->getSize().x - (16 * m->getScaling().x), 0);
     StatusBox::add(messageText);
 

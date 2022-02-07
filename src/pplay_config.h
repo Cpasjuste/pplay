@@ -22,7 +22,7 @@ class PPLAYConfig : public c2d::config::Config {
 
 public:
 
-    PPLAYConfig(Main *main, int version = 1);
+    explicit PPLAYConfig(Main *main, int version = 1);
 };
 
 #endif //PPLAY_CONFIG_H

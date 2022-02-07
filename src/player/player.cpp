@@ -59,6 +59,13 @@ bool Player::load(const MediaFile &f) {
 #endif
 #endif
 
+    // disable subtitles if slang option not set in "mpv.conf" (overridden by "watch_later")
+    char *slang = mpv_get_property_string(mpv->getHandle(), "slang");
+    if (strlen(slang) <= 0) {
+        printf("slang not set, disabling subtitles by default");
+        mpv_set_option_string(mpv->getHandle(), "sid", "no");
+    }
+
     int res = mpv->load(path, Mpv::LoadType::Replace, "pause=yes,speed=1");
     if (res != 0) {
         main->getStatus()->show("Error...", "Could not play file:\n" + std::string(mpv_error_string(res)));
@@ -70,8 +77,7 @@ bool Player::load(const MediaFile &f) {
 }
 
 void Player::onLoadEvent() {
-
-    // load/update media information (include playback info)
+    // load/update media information
     file.mediaInfo = mpv->getMediaInfo(file);
     file.mediaInfo.save(file);
 
@@ -89,11 +95,11 @@ void Player::onLoadEvent() {
         }
         menuVideoStreams = new MenuVideoSubmenu(
                 main, main->getMenuVideo()->getGlobalBounds(), "VIDEO", items, MENU_VIDEO_TYPE_VID);
-        menuVideoStreams->setSelection(MENU_VIDEO_TYPE_VID);
         menuVideoStreams->setVisibility(Visibility::Hidden, false);
         menuVideoStreams->setLayer(3);
         add(menuVideoStreams);
     }
+
     // build audio track selection menu
     if (!file.mediaInfo.audios.empty()) {
         // audios menu options
@@ -106,11 +112,11 @@ void Player::onLoadEvent() {
         }
         menuAudioStreams = new MenuVideoSubmenu(
                 main, main->getMenuVideo()->getGlobalBounds(), "AUDIO", items, MENU_VIDEO_TYPE_AUD);
-        menuAudioStreams->setSelection(MENU_VIDEO_TYPE_AUD);
         menuAudioStreams->setVisibility(Visibility::Hidden, false);
         menuAudioStreams->setLayer(3);
         add(menuAudioStreams);
     }
+
     // build subtitles track selection menu
     if (!file.mediaInfo.subtitles.empty()) {
         // subtitles menu options
@@ -121,25 +127,9 @@ void Player::onLoadEvent() {
         }
         menuSubtitlesStreams = new MenuVideoSubmenu(
                 main, main->getMenuVideo()->getGlobalBounds(), "SUBTITLES", items, MENU_VIDEO_TYPE_SUB);
-        menuSubtitlesStreams->setSelection(MENU_VIDEO_TYPE_SUB);
         menuSubtitlesStreams->setVisibility(Visibility::Hidden, false);
         menuSubtitlesStreams->setLayer(3);
         add(menuSubtitlesStreams);
-    }
-
-    // restore saved tracks id
-    setVideoStream(file.mediaInfo.playbackInfo.vid_id);
-    setAudioStream(file.mediaInfo.playbackInfo.aud_id);
-    setSubtitleStream(file.mediaInfo.playbackInfo.sub_id);
-
-    // resume playback if wanted
-    if (file.mediaInfo.playbackInfo.position > 0) {
-        std::string msg = "Resume playback at "
-                          + pplay::Utility::formatTime(file.mediaInfo.playbackInfo.position) + " ?";
-        if (main->getMessageBox()->show("What are we doing ?", msg,
-                                        "Resume", "Restart") == MessageBox::LEFT) {
-            mpv->seek(file.mediaInfo.playbackInfo.position);
-        }
     }
 
 #ifdef FULL_TEXTURE_TEST
@@ -156,7 +146,6 @@ void Player::onLoadEvent() {
 }
 
 void Player::onStopEvent(int reason) {
-
     main->getStatus()->hide();
     main->getMenuVideo()->reset();
     osd->reset();
@@ -164,12 +153,7 @@ void Player::onStopEvent(int reason) {
     if (reason == MPV_END_FILE_REASON_ERROR) {
         main->getStatus()->show("Error...", "Could not load file");
         printf("Player::load: could not load file\n");
-    } else if (reason == MPV_END_FILE_REASON_EOF) {
-        file.mediaInfo.playbackInfo.position = 0;
     }
-
-    // save mediaInfo (again, for playback position, tracks id..)
-    file.mediaInfo.save(file);
 
     // audio
     if (menuAudioStreams != nullptr) {
@@ -200,76 +184,24 @@ void Player::onStopEvent(int reason) {
 }
 
 void Player::onUpdate() {
-
     //TODO: cache-buffering-state
-    // handle mpv events
     if (mpv->isAvailable()) {
         mpv_event *event = mpv->getEvent();
         if (event != nullptr) {
             switch (event->event_id) {
+                case MPV_EVENT_START_FILE:
+                    printf("MPV_EVENT_START_FILE\n");
+                    main->getStatus()->show("Please Wait...", "Loading... " + file.name, true);
+                    break;
                 case MPV_EVENT_FILE_LOADED:
                     printf("MPV_EVENT_FILE_LOADED\n");
                     onLoadEvent();
                     main->getStatus()->hide();
                     break;
-                case MPV_EVENT_START_FILE:
-                    printf("MPV_EVENT_START_FILE\n");
-                    main->getStatus()->show("Please Wait...", "Loading... " + file.name, true);
-                    break;
                 case MPV_EVENT_END_FILE:
                     printf("MPV_EVENT_END_FILE\n");
                     onStopEvent(((mpv_event_end_file *) event->data)->reason);
                     break;
-#if 0
-                    case MPV_EVENT_SHUTDOWN:
-                        printf("MPV_EVENT_SHUTDOWN\n");
-                        break;
-                    case MPV_EVENT_LOG_MESSAGE:
-                        break;
-                    case MPV_EVENT_GET_PROPERTY_REPLY:
-                        break;
-                    case MPV_EVENT_SET_PROPERTY_REPLY:
-                        break;
-                    case MPV_EVENT_COMMAND_REPLY:
-                        break;
-                    case MPV_EVENT_TRACKS_CHANGED:
-                        break;
-                    case MPV_EVENT_TRACK_SWITCHED:
-                        break;
-                    case MPV_EVENT_IDLE:
-                        break;
-                    case MPV_EVENT_PAUSE:
-                        break;
-                    case MPV_EVENT_UNPAUSE:
-                        break;
-                    case MPV_EVENT_TICK:
-                        break;
-                    case MPV_EVENT_SCRIPT_INPUT_DISPATCH:
-                        break;
-                    case MPV_EVENT_CLIENT_MESSAGE:
-                        break;
-                    case MPV_EVENT_VIDEO_RECONFIG:
-                        break;
-                    case MPV_EVENT_AUDIO_RECONFIG:
-                        break;
-                    case MPV_EVENT_METADATA_UPDATE:
-                        break;
-                    case MPV_EVENT_SEEK:
-                        break;
-                    case MPV_EVENT_PLAYBACK_RESTART:
-                        printf("MPV_EVENT_PLAYBACK_RESTART\n");
-                        break;
-                    case MPV_EVENT_PROPERTY_CHANGE:
-                        break;
-                    case MPV_EVENT_CHAPTER_CHANGE:
-                        break;
-                    case MPV_EVENT_QUEUE_OVERFLOW:
-                        break;
-                    case MPV_EVENT_HOOK:
-                        break;
-                    case MPV_EVENT_NONE:
-                        break;
-#endif
                 default:
                     break;
             }
@@ -282,7 +214,6 @@ void Player::onUpdate() {
 }
 
 bool Player::onInput(c2d::Input::Player *players) {
-
     unsigned int keys = players[0].keys;
 
     if (mpv->isStopped()
@@ -325,34 +256,39 @@ bool Player::onInput(c2d::Input::Player *players) {
 }
 
 void Player::setVideoStream(int streamId) {
-    if (streamId > -1) {
-        mpv->setVid(streamId);
-        file.mediaInfo.playbackInfo.vid_id = streamId;
-    }
+    printf("Player::setVideoStream: %i\n", streamId);
+    //if (streamId > -2) {
+    mpv->setVid(streamId);
+    //file.mediaInfo.playbackInfo.vid_id = streamId;
+    //}
 }
 
 void Player::setAudioStream(int streamId) {
-    if (streamId > -1) {
-        mpv->setAid(streamId);
-        file.mediaInfo.playbackInfo.aud_id = streamId;
-    }
+    printf("Player::setAudioStream: %i\n", streamId);
+    //if (streamId > -2) {
+    mpv->setAid(streamId);
+    //file.mediaInfo.playbackInfo.aud_id = streamId;
+    //}
 }
 
 void Player::setSubtitleStream(int streamId) {
+    printf("Player::setSubtitleStream: %i\n", streamId);
+    //if (streamId > -2) {
     mpv->setSid(streamId);
-    file.mediaInfo.playbackInfo.sub_id = streamId;
+    //file.mediaInfo.playbackInfo.sub_id = streamId;
+    //}
 }
 
 int Player::getVideoStream() {
-    return file.mediaInfo.playbackInfo.vid_id;
+    return mpv->getVid();
 }
 
 int Player::getAudioStream() {
-    return file.mediaInfo.playbackInfo.aud_id;
+    return mpv->getAid();
 }
 
 int Player::getSubtitleStream() {
-    return file.mediaInfo.playbackInfo.sub_id;
+    return mpv->getSid();
 }
 
 void Player::setSpeed(double speed) {
@@ -379,10 +315,7 @@ void Player::resume() {
 }
 
 void Player::stop() {
-    if (!mpv->isStopped()) {
-        file.mediaInfo.playbackInfo.position = (int) mpv->getPosition();
-        mpv->stop();
-    }
+    mpv->stop();
 }
 
 bool Player::isFullscreen() {

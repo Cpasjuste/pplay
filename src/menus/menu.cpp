@@ -27,10 +27,10 @@ MenuButton::MenuButton(Main *main, const MenuItem &item, const FloatRect &rect) 
     name->setOrigin(Origin::Left);
     name->setFillColor(COLOR_FONT);
     if (!item.icon.empty()) {
-        name->setPosition(pplay::Utility::ceil((ICON_SIZE + 32) * main->getScaling().x, MenuButton::getSize().y / 2));
+        name->setPosition((ICON_SIZE + 32) * main->getScaling().x, MenuButton::getSize().y / 2);
         name->setSizeMax((MenuButton::getSize().x - ICON_SIZE + 32) * main->getScaling().x, 0);
     } else {
-        name->setPosition(pplay::Utility::ceil(16 * main->getScaling().x, MenuButton::getSize().y / 2));
+        name->setPosition(16 * main->getScaling().x, MenuButton::getSize().y / 2);
         name->setSizeMax((MenuButton::getSize().x - (16 * main->getScaling().x)) * main->getScaling().x, 0);
     }
     MenuButton::add(name);
@@ -54,7 +54,7 @@ Menu::Menu(Main *m, const c2d::FloatRect &rect, const std::string &_title,
     // title
     title = new Text(_title, main->getFontSize(Main::FontSize::Big), main->getFont());
     title->setStyle(Text::Underlined);
-    title->setPosition(pplay::Utility::ceil(main->getScaled(32, 32)));
+    title->setPosition(main->getScaled(32, 32));
     title->setFillColor(COLOR_FONT);
     Menu::add(title);
 

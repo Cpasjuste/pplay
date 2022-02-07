@@ -32,13 +32,13 @@ PlayerOSD::PlayerOSD(Main *m) : Rectangle({64, 64}) {
 
     progress_text = new Text("00:00:00", main->getFontSize(Main::FontSize::Medium), main->getFont());
     progress_text->setOrigin(Origin::Left);
-    progress_text->setPosition(pplay::Utility::ceil((-100 + 20) * main->getScaling().x, PlayerOSD::getSize().y / 2));
+    progress_text->setPosition((-100 + 20) * main->getScaling().x, PlayerOSD::getSize().y / 2);
     PlayerOSD::add(progress_text);
 
     duration_text = new Text("00:00:00", main->getFontSize(Main::FontSize::Medium), main->getFont());
     duration_text->setOrigin(Origin::Left);
     duration_text->setPosition(
-            pplay::Utility::ceil(PlayerOSD::getSize().x - (20 * main->getScaling().x), PlayerOSD::getSize().y / 2));
+            PlayerOSD::getSize().x - (20 * main->getScaling().x), PlayerOSD::getSize().y / 2);
     PlayerOSD::add(duration_text);
 
     auto btn = new C2DTexture(main->getIo()->getRomFsPath() + "skin/btn_pause.png");
@@ -97,7 +97,7 @@ PlayerOSD::PlayerOSD(Main *m) : Rectangle({64, 64}) {
     title = new Text("Unknown Title", main->getFontSize(Main::FontSize::Medium), main->getFont());
     title->setFillColor(COLOR_RED);
     title->setOrigin(Origin::Left);
-    title->setPosition(pplay::Utility::ceil((64 * 3 + 50) * main->getScaling().x, PlayerOSD::getSize().y / 2));
+    title->setPosition((64 * 3 + 50) * main->getScaling().x, PlayerOSD::getSize().y / 2);
     title->setSizeMax(buttons.at((int) ButtonID::SeekForward1)->getPosition().x - title->getPosition().x - 32, 0);
     PlayerOSD::add(title);
 

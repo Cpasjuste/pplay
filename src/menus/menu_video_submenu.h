@@ -20,7 +20,9 @@ public:
 
     bool onInput(c2d::Input::Player *players) override;
 
-    void setSelection(int streamType);
+    void setSelection(int streamId);
+
+    void setVisibility(c2d::Visibility visibility, bool tweenPlay = true) override;
 
     int type;
     Highlight *highlight_selection;

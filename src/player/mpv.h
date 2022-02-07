@@ -28,6 +28,8 @@ public:
 
     int load(const std::string &file, LoadType loadType, const std::string &options);
 
+    int save();
+
     int pause();
 
     int resume();
@@ -42,9 +44,15 @@ public:
 
     int setVid(int id);
 
+    int getVid();
+
     int setAid(int id);
 
+    int getAid();
+
     int setSid(int id);
+
+    int getSid();
 
     int getVideoBitrate();
 

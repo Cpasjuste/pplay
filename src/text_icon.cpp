@@ -30,5 +30,5 @@ void TextIcon::setFillColor(const Color &color) {
 void TextIcon::setString(const std::string &string) {
     text->setString(string);
     setSize(text->getLocalBounds().width + 8, (float) text->getCharacterSize() + 6);
-    text->setPosition(pplay::Utility::ceil(getSize().x / 2, (getSize().y / 2) + 1));
+    text->setPosition(getSize().x / 2, (getSize().y / 2) + 1);
 }

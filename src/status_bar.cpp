@@ -103,9 +103,8 @@ StatusBar::StatusBar(Main *main)
     // time
     timeText = new Text("12:00", main->getFontSize(Main::FontSize::Medium), main->getFont());
     timeText->setOrigin(Origin::Right);
-    timeText->setPosition(pplay::Utility::ceil(
-            battery->getPosition().x - battery->getSize().x - (main->getScaling().x * 20),
-            StatusBar::getSize().y / 2));
+    timeText->setPosition(battery->getPosition().x - battery->getSize().x - (main->getScaling().x * 20),
+                          StatusBar::getSize().y / 2);
     timeText->setFillColor(COLOR_FONT);
     StatusBar::add(timeText);
 

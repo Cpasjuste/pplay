@@ -28,9 +28,10 @@ Mpv::Mpv(const std::string &configPath, bool initRender) {
 
     mpv_set_option_string(handle, "config", "yes");
     mpv_set_option_string(handle, "config-dir", configPath.c_str());
+    mpv_set_option_string(handle, "osd-level", "0");
 #ifndef NDEBUG
     mpv_set_option_string(handle, "terminal", "yes");
-    mpv_set_option_string(handle, "msg-level", "all=v");
+    mpv_set_option_string(handle, "msg-level", "all=info");
 #endif
 #ifdef __SWITCH__
     mpv_set_option_string(handle, "vd-lavc-threads", "4");
@@ -47,8 +48,6 @@ Mpv::Mpv(const std::string &configPath, bool initRender) {
     //TODO: should add this as option
     //mpv_set_option_string(handle, "vd-lavc-skiploopfilter", "all");
     //mpv_set_option_string(handle, "vd-lavc-fast", "yes");
-
-    mpv_set_option_string(handle, "blend-subtitles", "video");
 
 #if defined(__LINUX__) && defined(NDEBUG)
     mpv_set_option_string(handle, "hwdec", "auto-safe");
@@ -99,7 +98,6 @@ Mpv::~Mpv() {
 
 int Mpv::load(const std::string &file, LoadType loadType, const std::string &options) {
     printf("Mpv::load(%s)\n", file.c_str());
-
     if (handle) {
         std::string type = "replace";
         if (loadType == LoadType::Append) {
@@ -114,6 +112,10 @@ int Mpv::load(const std::string &file, LoadType loadType, const std::string &opt
     return -1;
 }
 
+int Mpv::save() {
+    return mpv_command_string(handle, "write-watch-later-config");
+}
+
 int Mpv::pause() {
     return mpv_command_string(handle, "set pause yes");
 }
@@ -123,11 +125,12 @@ int Mpv::resume() {
 }
 
 int Mpv::stop() {
+    save();
     return mpv_command_string(handle, "stop");
 }
 
 int Mpv::seek(double position) {
-    std::string cmd = "no-osd seek " + std::to_string(position) + " absolute";
+    std::string cmd = "seek " + std::to_string(position) + " absolute";
     return mpv_command_string(handle, cmd.c_str());
 }
 
@@ -143,25 +146,39 @@ double Mpv::getSpeed() {
 }
 
 int Mpv::setVid(int id) {
-    if (id > -1) {
-        std::string cmd = "no-osd set vid " + std::to_string(id);
-        return mpv_command_string(handle, cmd.c_str());
-    }
-    return -1;
+    std::string cmd = "set vid ";
+    cmd += id < 0 ? "no" : std::to_string(id);
+    return mpv_command_string(handle, cmd.c_str());
 }
 
 int Mpv::setAid(int id) {
-    if (id > -1) {
-        std::string cmd = "no-osd set aid " + std::to_string(id);
-        return mpv_command_string(handle, cmd.c_str());
-    }
-    return -1;
+    std::string cmd = "set aid ";
+    cmd += id < 0 ? "no" : std::to_string(id);
+    return mpv_command_string(handle, cmd.c_str());
 }
 
 int Mpv::setSid(int id) {
-    std::string cmd = "no-osd set sid ";
+    std::string cmd = "set sid ";
     cmd += id < 0 ? "no" : std::to_string(id);
     return mpv_command_string(handle, cmd.c_str());
+}
+
+int Mpv::getVid() {
+    int64_t vid = -1;
+    mpv_get_property(handle, "vid", MPV_FORMAT_INT64, &vid);
+    return (int) vid;
+}
+
+int Mpv::getAid() {
+    int64_t aid = -1;
+    mpv_get_property(handle, "aid", MPV_FORMAT_INT64, &aid);
+    return (int) aid;
+}
+
+int Mpv::getSid() {
+    int64_t sid = -1;
+    mpv_get_property(handle, "sid", MPV_FORMAT_INT64, &sid);
+    return (int) sid;
 }
 
 int Mpv::getVideoBitrate() {
@@ -217,7 +234,6 @@ mpv_render_context *Mpv::getContext() {
 }
 
 MediaInfo Mpv::getMediaInfo(const c2d::Io::File &file) {
-
     MediaInfo mediaInfo(file);
     std::vector<MediaInfo::Track> streams;
 

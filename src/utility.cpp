@@ -133,14 +133,6 @@ static double roundOff(double n) {
     return d;
 }
 
-c2d::Vector2f Utility::ceil(const c2d::Vector2f &v) {
-    return {std::ceil(v.x), std::ceil(v.y)};
-}
-
-c2d::Vector2f Utility::ceil(float x, float y) {
-    return ceil({x, y});
-}
-
 std::string Utility::formatSize(size_t size) {
 
     static const char *sizes[] = {"B", "KB", "MB", "GB"};
