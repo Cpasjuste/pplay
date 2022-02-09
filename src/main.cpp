@@ -57,6 +57,9 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     pplayIo = new pplay::Io();
     Main::setIo(pplayIo);
 
+    // create pplay data directory
+    pplayIo->create(pplayIo->getDataPath() + "mpv");
+
     // configure input
     Main::getInput()->setRepeatDelay(INPUT_DELAY);
 

@@ -28,11 +28,12 @@ Mpv::Mpv(const std::string &configPath, bool initRender) {
 
     mpv_set_option_string(handle, "config", "yes");
     mpv_set_option_string(handle, "config-dir", configPath.c_str());
-    mpv_set_option_string(handle, "osd-level", "0");
+    mpv_set_option_string(handle, "osd-scale", "0.5");
 #ifndef NDEBUG
     mpv_set_option_string(handle, "terminal", "yes");
     mpv_set_option_string(handle, "msg-level", "all=v");
 #endif
+
 #ifdef __SWITCH__
     mpv_set_option_string(handle, "vd-lavc-threads", "4");
     // TODO: test this
@@ -44,6 +45,10 @@ Mpv::Mpv(const std::string &configPath, bool initRender) {
     mpv_set_option_string(handle, "untimed", "yes");
 #endif
     mpv_set_option_string(handle, "audio-channels", "stereo");
+#ifdef __PS4__
+    mpv_set_option_string(handle, "ignore-path-in-watch-later-config", "yes");
+#endif
+
 #ifdef FULL_TEXTURE_TEST
     mpv_set_option_string(handle, "video-unscaled", "yes");
 #endif
@@ -132,7 +137,7 @@ int Mpv::stop() {
 }
 
 int Mpv::seek(double position) {
-    std::string cmd = "seek " + std::to_string(position) + " absolute";
+    std::string cmd = "no-osd seek " + std::to_string(position);
     return mpv_command_string(handle, cmd.c_str());
 }
 
@@ -148,19 +153,19 @@ double Mpv::getSpeed() {
 }
 
 int Mpv::setVid(int id) {
-    std::string cmd = "set vid ";
+    std::string cmd = "no-osd set vid ";
     cmd += id < 0 ? "no" : std::to_string(id);
     return mpv_command_string(handle, cmd.c_str());
 }
 
 int Mpv::setAid(int id) {
-    std::string cmd = "set aid ";
+    std::string cmd = "no-osd set aid ";
     cmd += id < 0 ? "no" : std::to_string(id);
     return mpv_command_string(handle, cmd.c_str());
 }
 
 int Mpv::setSid(int id) {
-    std::string cmd = "set sid ";
+    std::string cmd = "no-osd set sid ";
     cmd += id < 0 ? "no" : std::to_string(id);
     return mpv_command_string(handle, cmd.c_str());
 }

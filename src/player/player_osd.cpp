@@ -98,7 +98,8 @@ PlayerOSD::PlayerOSD(Main *m) : Rectangle({64, 64}) {
     title->setFillColor(COLOR_RED);
     title->setOrigin(Origin::Left);
     title->setPosition((64 * 3 + 50) * main->getScaling().x, PlayerOSD::getSize().y / 2);
-    title->setSizeMax(buttons.at((int) ButtonID::SeekForward1)->getPosition().x - title->getPosition().x - 32, 0);
+    title->setSizeMax(buttons.at((int) ButtonID::SeekForward1)->getPosition().x - title->getPosition().x -
+                      (48 * main->getScaling().x), 0);
     PlayerOSD::add(title);
 
     PlayerOSD::add(new TweenPosition({PlayerOSD::getPosition().x, PlayerOSD::getPosition().y},
@@ -191,13 +192,13 @@ bool PlayerOSD::onInput(c2d::Input::Player *players) {
                 main->getPlayer()->resume();
             }
         } else if (index == (int) ButtonID::SeekForward1) {
-            main->getPlayer()->getMpv()->seek(position + 60.0);
+            main->getPlayer()->getMpv()->seek(60.0);
         } else if (index == (int) ButtonID::SeekForward10) {
-            main->getPlayer()->getMpv()->seek(position + (60.0 * 10.0));
+            main->getPlayer()->getMpv()->seek(60.0 * 10.0);
         } else if (index == (int) ButtonID::SeekBackward1) {
-            main->getPlayer()->getMpv()->seek(position - 60.0);
+            main->getPlayer()->getMpv()->seek(60.0);
         } else if (index == (int) ButtonID::SeekBackward10) {
-            main->getPlayer()->getMpv()->seek(position - (60.0 * 10.0));
+            main->getPlayer()->getMpv()->seek(60.0 * 10.0);
         } else if (index == (int) ButtonID::Stop) {
             setVisibility(Visibility::Hidden);
             main->getStatus()->show("Info...", "Stopping playback...");

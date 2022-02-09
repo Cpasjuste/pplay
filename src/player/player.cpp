@@ -233,6 +233,15 @@ bool Player::onInput(c2d::Input::Player *players) {
             setSpeed(new_speed);
         }
     }
+#ifdef __PS4__
+    else if (keys & c2d::Input::Key::Select) {
+        osd->setVisibility(c2d::Visibility::Visible);
+        getMpv()->seek(-60.0);
+    } else if (keys & c2d::Input::Key::Start) {
+        osd->setVisibility(c2d::Visibility::Visible);
+        getMpv()->seek(60.0);
+    }
+#endif
 
     if (osd->isVisible()) {
         return C2DObject::onInput(players);
