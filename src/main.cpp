@@ -50,7 +50,7 @@ using namespace pplay;
 Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
 
 #ifndef NDEBUG
-    //Renderer::setPrintStats(true);
+    Renderer::setPrintStats(true);
 #endif
 
     // custom io

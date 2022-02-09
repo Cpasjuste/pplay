@@ -257,26 +257,17 @@ bool Player::onInput(c2d::Input::Player *players) {
 
 void Player::setVideoStream(int streamId) {
     printf("Player::setVideoStream: %i\n", streamId);
-    //if (streamId > -2) {
     mpv->setVid(streamId);
-    //file.mediaInfo.playbackInfo.vid_id = streamId;
-    //}
 }
 
 void Player::setAudioStream(int streamId) {
     printf("Player::setAudioStream: %i\n", streamId);
-    //if (streamId > -2) {
     mpv->setAid(streamId);
-    //file.mediaInfo.playbackInfo.aud_id = streamId;
-    //}
 }
 
 void Player::setSubtitleStream(int streamId) {
     printf("Player::setSubtitleStream: %i\n", streamId);
-    //if (streamId > -2) {
     mpv->setSid(streamId);
-    //file.mediaInfo.playbackInfo.sub_id = streamId;
-    //}
 }
 
 int Player::getVideoStream() {

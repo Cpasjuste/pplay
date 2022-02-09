@@ -31,21 +31,23 @@ Mpv::Mpv(const std::string &configPath, bool initRender) {
     mpv_set_option_string(handle, "osd-level", "0");
 #ifndef NDEBUG
     mpv_set_option_string(handle, "terminal", "yes");
-    mpv_set_option_string(handle, "msg-level", "all=info");
+    mpv_set_option_string(handle, "msg-level", "all=v");
 #endif
 #ifdef __SWITCH__
     mpv_set_option_string(handle, "vd-lavc-threads", "4");
     // TODO: test this
+    mpv_set_option_string(handle, "fbo-format", "rgba8");
     mpv_set_option_string(handle, "opengl-pbo", "yes");
 #else
     mpv_set_option_string(handle, "vd-lavc-threads", "6");
+    mpv_set_option_string(handle, "video-sync", "audio");
+    mpv_set_option_string(handle, "untimed", "yes");
 #endif
     mpv_set_option_string(handle, "audio-channels", "stereo");
 #ifdef FULL_TEXTURE_TEST
     mpv_set_option_string(handle, "video-unscaled", "yes");
 #endif
-    mpv_set_option_string(handle, "fbo-format", "rgba8");
-    //TODO: should add this as option
+    //TODO: should add this as option (big quality loss)
     //mpv_set_option_string(handle, "vd-lavc-skiploopfilter", "all");
     //mpv_set_option_string(handle, "vd-lavc-fast", "yes");
 
