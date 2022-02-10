@@ -42,7 +42,6 @@ Mpv::Mpv(const std::string &configPath, bool initRender) {
 #else
     mpv_set_option_string(handle, "vd-lavc-threads", "6");
     mpv_set_option_string(handle, "video-sync", "audio");
-    mpv_set_option_string(handle, "untimed", "yes");
 #endif
     mpv_set_option_string(handle, "audio-channels", "stereo");
 #ifdef __PS4__
@@ -106,6 +105,7 @@ Mpv::~Mpv() {
 int Mpv::load(const std::string &file, LoadType loadType, const std::string &options) {
     printf("Mpv::load(%s)\n", file.c_str());
     if (handle) {
+        stop();
         std::string type = "replace";
         if (loadType == LoadType::Append) {
             type = "append";

@@ -28,8 +28,8 @@ private:
     void onOptionSelection(MenuItem *item) override;
 
     MenuMainOptions *menuMainOptions;
-    MenuMainOptionsSubmenu *menuMainOptionsCpu;
 #ifdef __SWITCH__
+    MenuMainOptionsSubmenu *menuMainOptionsCpu;
     MenuMainOptionsSubmenu *menuMainOptionsUsb;
 #endif
 };
