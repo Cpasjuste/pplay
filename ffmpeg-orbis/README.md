@@ -74,6 +74,17 @@ finds it, creates `hwdec.disabled` and uses software decoding. Delete
 Needs GoldHEN/HEN able to load `/system/common/lib/libSceVideodec2.sprx`. If a
 plain module load fails, a GoldHEN jailbreak (syscall 500) is tried once.
 
+## Subtitles: text and image formats
+
+* Text subtitles (srt, ass/ssa, vtt, smi/sami, mpl...) are drawn by the GPU with libass.
+* Image subtitles (PGS `hdmv_pgs_subtitle`, VobSub `dvd_subtitle`, `dvb_subtitle`, `xsub`,
+  and external `.sup` / `.idx+.sub`) are drawn by the **CPU**: while one of them is the
+  active track pplay puts mpv's `sub` video filter in the chain (`format=yuv420p,sub`).
+  Reason: the PS4 libmpv only knows 5 precompiled shaders and image subtitles need a
+  different one. When mpv has to compile a shader it does not have, it paints the whole
+  screen solid blue (its own "broken frame" indicator): that was the blue screen seen when
+  turning on a PGS track. The filter is removed again when the track is turned off.
+
 ## Software decoding speed (Hi10, HEVC, anything the hardware refuses)
 
 `pplay.cfg`: `SW_DECODE_SPEED="quality"` (default) | `"balanced"` (skip the loop filter on

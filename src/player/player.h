@@ -71,7 +71,12 @@ private:
 
     void onLoadEvent();
 
+    // image subtitles (PGS, VobSub...) are drawn by the CPU, see Mpv::setBitmapSubtitleRendering
+    void updateBitmapSubtitles();
+
     void onStopEvent(int reason);
+
+    int bitmapSubTicks = 0;
 
     // hardware decoding (see ffmpeg-orbis/): config + crash guard
     std::string resolveHwdec();

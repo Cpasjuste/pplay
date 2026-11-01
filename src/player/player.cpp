@@ -19,6 +19,12 @@ static std::string trackTitle(const MediaInfo::Track &track, const char *kind) {
     return track.title;
 }
 
+// subtitles that are pictures (not text): mpv would need a GPU shader that is not available
+static bool isBitmapSubtitle(const std::string &codec) {
+    return codec == "hdmv_pgs_subtitle" || codec == "dvd_subtitle"
+           || codec == "dvb_subtitle" || codec == "xsub";
+}
+
 Player::Player(Main *_main) : Rectangle(_main->getSize()) {
 
     main = _main;
@@ -192,7 +198,29 @@ void Player::updateHwdecGuard() {
     }
 }
 
+// Keep the "CPU renders the subtitles" mode in line with the subtitle track mpv is showing
+// (selected from the menu, by mpv.conf or by pplay itself while loading the file).
+void Player::updateBitmapSubtitles() {
+    if (!mpv->isAvailable() || mpv->isStopped()) {
+        return;
+    }
+
+    bool bitmap = isBitmapSubtitle(mpv->getSubtitleCodec());
+    if (bitmap == mpv->isBitmapSubtitleRendering()) {
+        return;
+    }
+
+    if (mpv->setBitmapSubtitleRendering(bitmap) < 0 && bitmap) {
+        // can not draw this subtitle safely: better no subtitle than a blue screen
+        printf("Player: image subtitles can not be drawn, turning subtitles off\n");
+        mpv->setSid(-1);
+        main->getStatus()->show("Subtitles", "This subtitle format can not be displayed");
+    }
+}
+
 void Player::onLoadEvent() {
+    updateBitmapSubtitles();
+
     // add external subtitles first so they show up in the track list below
     for (auto &sub: externalSubs) {
         int r = mpv->addSubtitle(sub.path, sub.title, sub.lang);
@@ -277,6 +305,7 @@ void Player::onLoadEvent() {
 void Player::onStopEvent(int reason) {
     // the decoder was closed cleanly (or never got going): nothing to guard
     releaseHwdecGuard();
+    mpv->setBitmapSubtitleRendering(false);
     main->getStatus()->hide();
     main->getMenuVideo()->reset();
     osd->reset();
@@ -323,6 +352,11 @@ void Player::onUpdate() {
                                 "Delete hwdec.disabled to try again.");
     }
     updateHwdecGuard();
+    if (++bitmapSubTicks >= 15) {
+        // a few times per second is plenty
+        bitmapSubTicks = 0;
+        updateBitmapSubtitles();
+    }
     if (mpv->isAvailable()) {
         mpv_event *event = mpv->getEvent();
         if (event != nullptr) {
@@ -415,6 +449,21 @@ void Player::setAudioStream(int streamId) {
 
 void Player::setSubtitleStream(int streamId) {
     printf("Player::setSubtitleStream: %i\n", streamId);
+
+    // switch the way subtitles are drawn BEFORE mpv starts showing the new track
+    bool bitmap = false;
+    for (auto &stream: file.mediaInfo.subtitles) {
+        if (stream.id == streamId) {
+            bitmap = isBitmapSubtitle(stream.codec);
+            break;
+        }
+    }
+    if (mpv->setBitmapSubtitleRendering(bitmap) < 0 && bitmap) {
+        main->getStatus()->show("Subtitles", "This subtitle format can not be displayed");
+        mpv->setSid(-1);
+        return;
+    }
+
     mpv->setSid(streamId);
 }
 

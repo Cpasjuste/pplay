@@ -272,6 +272,57 @@ int Mpv::getSid() {
     return (int) sid;
 }
 
+std::string Mpv::getSubtitleCodec() {
+    if (handle == nullptr) {
+        return "";
+    }
+    // unavailable (NULL) when no subtitle track is selected
+    char *codec = mpv_get_property_string(handle, "current-tracks/sub/codec");
+    std::string str = codec ? codec : "";
+    if (codec) {
+        mpv_free(codec);
+    }
+    return str;
+}
+
+int Mpv::setBitmapSubtitleRendering(bool enable) {
+    if (handle == nullptr) {
+        return MPV_ERROR_UNINITIALIZED;
+    }
+    if (enable == bitmapSubFilter) {
+        return 0;
+    }
+
+    // The "sub" video filter makes mpv blend all the subtitles into the frames with the CPU,
+    // so the GPU does not draw any subtitle while it is in the filter chain. It is given
+    // 8 bit planar frames ("format"): what the PS4 shaders use anyway (10 bit videos are
+    // converted for them) and the best supported by the CPU blending code.
+    int res = 0;
+    if (enable) {
+        res = mpv_command_string(handle, "vf add @pplayfmt:format=yuv420p");
+        if (res >= 0) {
+            res = mpv_command_string(handle, "vf add @pplaysub:sub");
+            if (res < 0) {
+                mpv_command_string(handle, "vf remove @pplayfmt");
+            }
+        }
+    } else {
+        // (an error here only means the filter was not there)
+        mpv_command_string(handle, "vf remove @pplaysub");
+        mpv_command_string(handle, "vf remove @pplayfmt");
+    }
+    printf("Mpv::setBitmapSubtitleRendering(%i): %s\n", enable, mpv_error_string(res));
+    if (res >= 0) {
+        bitmapSubFilter = enable;
+    }
+
+    return res;
+}
+
+bool Mpv::isBitmapSubtitleRendering() const {
+    return bitmapSubFilter;
+}
+
 int Mpv::getVideoBitrate() {
     double bitrate = 0;
     mpv_get_property(handle, "video-bitrate", MPV_FORMAT_DOUBLE, &bitrate);

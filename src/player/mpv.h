@@ -58,6 +58,17 @@ public:
 
     int getSid();
 
+    // codec of the subtitle track in use ("subrip", "ass", "hdmv_pgs_subtitle", ...), "" if none
+    std::string getSubtitleCodec();
+
+    // Image subtitles (PGS, VobSub, DVB) are drawn by the CPU on the video frames instead of
+    // by the GPU: the PS4 libmpv only has a few precompiled shaders and the one needed for
+    // image subtitles is not among them (mpv then paints the whole screen blue).
+    // Returns a negative mpv error when the filter could not be added/removed.
+    int setBitmapSubtitleRendering(bool enable);
+
+    bool isBitmapSubtitleRendering() const;
+
     int getVideoBitrate();
 
     int getAudioBitrate();
@@ -84,6 +95,7 @@ private:
 
     mpv_handle *handle = nullptr;
     mpv_render_context *context = nullptr;
+    bool bitmapSubFilter = false;
 };
 
 #endif //PPLAY_MPV_H
