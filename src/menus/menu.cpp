@@ -6,6 +6,7 @@
 #include "main.h"
 #include "menu.h"
 #include "utility.h"
+#include "menu_scroll.h"
 
 using namespace c2d;
 
@@ -58,6 +59,14 @@ Menu::Menu(Main *m, const c2d::FloatRect &rect, const std::string &_title,
     title->setFillColor(COLOR_FONT);
     Menu::add(title);
 
+    // position indicator ("n/total"), only shown when the list scrolls
+    counter = new Text("", main->getFontSize(Main::FontSize::Small), main->getFont());
+    counter->setOrigin(Origin::Right);
+    counter->setPosition(Menu::getSize().x - 24 * main->getScaling().x, 136 * main->getScaling().y);
+    counter->setFillColor(COLOR_FONT);
+    counter->setVisibility(Visibility::Hidden);
+    Menu::add(counter);
+
     // options
     FloatRect top = {0, 200 * main->getScaling().y,
                      Menu::getSize().x, BUTTON_HEIGHT * main->getScaling().y};
@@ -109,21 +118,10 @@ void Menu::updateScroll() {
     }
 
     // number of "top" buttons that fit between the title and the "bottom" buttons
-    float avail = Menu::getSize().y - top0 - ((float) bottomCount * step) - (32 * sy);
-    int maxVisible = std::max(1, (int) (avail / step));
+    const int maxVisible = pplay::menuMaxVisible(Menu::getSize().y, top0, bottomCount, step, 32 * sy);
 
-    if (topCount <= maxVisible) {
-        scrollIndex = 0;
-    } else {
-        if (selectedRank >= 0) {
-            if (selectedRank < scrollIndex) {
-                scrollIndex = selectedRank;
-            } else if (selectedRank >= scrollIndex + maxVisible) {
-                scrollIndex = selectedRank - maxVisible + 1;
-            }
-        }
-        scrollIndex = std::max(0, std::min(scrollIndex, topCount - maxVisible));
-    }
+    // long list: the button under the cursor stays in the middle slot and the list moves under it
+    scrollIndex = pplay::menuScrollIndex(topCount, maxVisible, selectedRank, scrollIndex);
 
     int rank = 0;
     for (auto &button: buttons) {
@@ -136,7 +134,28 @@ void Menu::updateScroll() {
         rank++;
     }
 
+    // "12/48" position indicator, only for lists that do not fit on screen
+    if (counter != nullptr) {
+        if (topCount > maxVisible && selectedRank >= 0) {
+            counter->setString(std::to_string(selectedRank + 1) + "/" + std::to_string(topCount));
+            counter->setVisibility(Visibility::Visible);
+        } else if (topCount <= maxVisible) {
+            counter->setVisibility(Visibility::Hidden);
+        }
+    }
+
     onScroll();
+}
+
+void Menu::setIndex(int i) {
+    if (buttons.empty()) {
+        return;
+    }
+
+    index = std::max(0, std::min(i, (int) buttons.size() - 1));
+    updateScroll();
+    // no animation: the menu is (about to be) opened on that entry
+    highlight->snapTo({0, buttons[index]->getPosition().y});
 }
 
 bool Menu::onInput(c2d::Input::Player *players) {
@@ -175,7 +194,7 @@ bool Menu::onInput(c2d::Input::Player *players) {
         }
     }
 
-    // keep the selected button visible when the list is taller than the menu
+    // long lists: keep the selected button in the middle of the menu
     updateScroll();
     highlight->tweenTo({0, buttons[index]->getPosition().y});
 
@@ -183,6 +202,10 @@ bool Menu::onInput(c2d::Input::Player *players) {
 }
 
 void Menu::setVisibility(c2d::Visibility visibility, bool tweenPlay) {
+    if (visibility == Visibility::Visible) {
+        // (re)layout: long lists must not draw out of the menu before the first input
+        updateScroll();
+    }
     C2DObject::setVisibility(visibility, true);
 }
 
@@ -191,8 +214,9 @@ MenuItem *Menu::getSelection() {
 }
 
 void Menu::reset() {
-    index = 0;
+    if (buttons.empty()) {
+        return;
+    }
     scrollIndex = 0;
-    updateScroll();
-    highlight->tweenTo({0, buttons[index]->getPosition().y});
+    setIndex(0);
 }

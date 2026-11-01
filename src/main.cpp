@@ -112,11 +112,7 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     items.emplace_back("Usb", "usb.png", MenuItem::Position::Top);
 #endif
     items.emplace_back("Network", "network.png", MenuItem::Position::Top);
-#ifdef __SWITCH__
-    // "Options" only has entries on switch (cpu boost / usb): on other platforms
-    // the submenu is empty and the button would do nothing
     items.emplace_back("Options", "options.png", MenuItem::Position::Top);
-#endif
     items.emplace_back("Exit", "exit.png", MenuItem::Position::Bottom);
     menu_main = new MenuMain(this, {-250 * scaling.x, 0, 250 * scaling.x, Main::getSize().y}, items);
     menu_main->setVisibility(Visibility::Hidden, false);

@@ -7,42 +7,92 @@
 
 using namespace c2d;
 
+namespace {
+
+    // an entry of the "Options" menu and the submenu it opens
+    struct OptionEntry {
+        MenuItem entry;            // line shown in the "Options" menu
+        std::string title;         // title of the submenu
+        std::string optionName;    // option of pplay.cfg edited by the submenu
+        std::vector<MenuItem> values;
+    };
+
+    // a selectable value: shown as "label", stored in pplay.cfg as "value"
+    MenuItem choice(const std::string &label, const std::string &value) {
+        return {label, "", MenuItem::Position::Top, 0, value};
+    }
+}
+
 MenuMain::MenuMain(Main *main, const c2d::FloatRect &rect, const std::vector<MenuItem> &items)
         : Menu(main, rect, "PPLAY", items, true) {
-    std::vector<MenuItem> it;
+
+    std::vector<OptionEntry> entries;
+    const MenuItem::Position top = MenuItem::Position::Top;
 
 #ifdef __SWITCH__
-    it.emplace_back(OPT_CPU_BOOST, "cpu.png", MenuItem::Position::Top);
-    it.emplace_back(OPT_UMS_DEVICE, "usb.png", MenuItem::Position::Top);
+    entries.push_back({{OPT_CPU_BOOST, "cpu.png", top}, OPT_CPU_BOOST, OPT_CPU_BOOST,
+                       {choice("Disabled", "Disabled"), choice("Enabled", "Enabled")}});
+
+    std::vector<MenuItem> ums;
+    for (int i = 0; i <= 9; i++) {
+        std::string umsPath = "ums" + std::to_string(i) + ":/";
+        ums.push_back(choice(umsPath, umsPath));
+    }
+    entries.push_back({{OPT_UMS_DEVICE, "usb.png", top}, OPT_UMS_DEVICE, OPT_UMS_DEVICE, ums});
 #endif
+
+#ifdef __PS4__
+    // applied the next time pplay starts (the player is created at startup)
+    entries.push_back({{"HW decoding", "video.png", top}, "HW DECODING", OPT_HWDEC,
+                       {choice("Auto", "auto"),
+                        choice("Off", "no"),
+                        choice("Force (retry)", "force")}});
+#endif
+
+    // software decoding (Hi10, HEVC, ...): picture quality versus speed
+    entries.push_back({{"SW speed", "cpu.png", top}, "SW SPEED", OPT_SW_SPEED,
+                       {choice("Quality", "quality"),
+                        choice("Balanced", "balanced"),
+                        choice("Fast (less CPU)", "fast")}});
+
+    // language of the scrapper (movie/tv show information)
+    entries.push_back({{"TMDB language", "network.png", top}, "TMDB LANG", OPT_TMDB_LANGUAGE,
+                       {choice("English (en-US)", "en-US"),
+                        choice("Spanish (es-ES)", "es-ES"),
+                        choice("Spanish Latam (es-MX)", "es-MX"),
+                        choice("French (fr-FR)", "fr-FR"),
+                        choice("German (de-DE)", "de-DE"),
+                        choice("Italian (it-IT)", "it-IT"),
+                        choice("Portuguese (pt-BR)", "pt-BR"),
+                        choice("Portuguese (pt-PT)", "pt-PT"),
+                        choice("Dutch (nl-NL)", "nl-NL"),
+                        choice("Polish (pl-PL)", "pl-PL"),
+                        choice("Russian (ru-RU)", "ru-RU"),
+                        choice("Turkish (tr-TR)", "tr-TR"),
+                        choice("Japanese (ja-JP)", "ja-JP"),
+                        choice("Korean (ko-KR)", "ko-KR"),
+                        choice("Chinese (zh-CN)", "zh-CN")}});
+
+    std::vector<MenuItem> it;
+    for (auto &e: entries) {
+        it.push_back(e.entry);
+    }
     menuMainOptions = new MenuMainOptions(main, rect, it);
     menuMainOptions->setLayer(2);
     menuMainOptions->setVisibility(Visibility::Hidden, false);
     main->add(menuMainOptions);
 
-#ifdef __SWITCH__
-    // Cpu Speed
-    it.clear();
-    it.emplace_back("Disabled", "", MenuItem::Position::Top);
-    it.emplace_back("Enabled", "", MenuItem::Position::Top);
-    menuMainOptionsCpu = new MenuMainOptionsSubmenu(main, rect, OPT_CPU_BOOST, it, OPT_CPU_BOOST);
-    menuMainOptionsCpu->setLayer(2);
-    menuMainOptionsCpu->setVisibility(Visibility::Hidden, false);
-    menuMainOptionsCpu->setSelection(main->getConfig()->getOption(OPT_CPU_BOOST)->getString());
-    main->add(menuMainOptionsCpu);
-
-    std::string umsPath;
-    it.clear();
-    for (int i = 0; i <= 9; i++) {
-        umsPath = "ums" + std::to_string(i) + ":/";
-        it.emplace_back(umsPath, "", MenuItem::Position::Top);
+    for (auto &e: entries) {
+        auto *submenu = new MenuMainOptionsSubmenu(main, rect, e.title, e.values, e.optionName);
+        submenu->setLayer(2);
+        submenu->setVisibility(Visibility::Hidden, false);
+        auto *option = main->getConfig()->getOption(e.optionName);
+        if (option != nullptr) {
+            submenu->setSelection(option->getString());
+        }
+        main->add(submenu);
+        optionsSubmenus.emplace_back(e.entry.name, submenu);
     }
-    menuMainOptionsUsb = new MenuMainOptionsSubmenu(main, rect, OPT_UMS_DEVICE, it, OPT_UMS_DEVICE);
-    menuMainOptionsUsb->setLayer(2);
-    menuMainOptionsUsb->setVisibility(Visibility::Hidden, false);
-    menuMainOptionsUsb->setSelection(main->getConfig()->getOption(OPT_UMS_DEVICE)->getString());
-    main->add(menuMainOptionsUsb);
-#endif
 }
 
 void MenuMain::onOptionSelection(MenuItem *item) {
@@ -83,13 +133,15 @@ bool MenuMain::onInput(c2d::Input::Player *players) {
 }
 
 bool MenuMain::isMenuVisible() {
-    return isVisible()
-           || menuMainOptions->isVisible()
-#ifdef __SWITCH__
-        || menuMainOptionsCpu->isVisible()
-        || menuMainOptionsUsb->isVisible()
-#endif
-            ;
+    if (isVisible() || menuMainOptions->isVisible()) {
+        return true;
+    }
+    for (auto &submenu: optionsSubmenus) {
+        if (submenu.second->isVisible()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 MenuMainOptions *MenuMain::getMenuMainOptions() {
@@ -97,13 +149,10 @@ MenuMainOptions *MenuMain::getMenuMainOptions() {
 }
 
 MenuMainOptionsSubmenu *MenuMain::getMenuMainOptionsSubmenu(const std::string &name) {
-#ifdef __SWITCH__
-    if (name == OPT_CPU_BOOST) {
-        return menuMainOptionsCpu;
+    for (auto &submenu: optionsSubmenus) {
+        if (submenu.first == name) {
+            return submenu.second;
+        }
     }
-    if (name == OPT_UMS_DEVICE) {
-        return menuMainOptionsUsb;
-    }
-#endif
     return nullptr;
 }

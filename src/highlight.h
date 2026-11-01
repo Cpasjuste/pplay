@@ -24,6 +24,9 @@ public:
 
     void tweenTo(const c2d::Vector2f &position);
 
+    // jump to a position, cancelling any animation in progress
+    void snapTo(const c2d::Vector2f &position);
+
 private:
 
     c2d::GradientRectangle *gradientRectangle;

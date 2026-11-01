@@ -2,6 +2,7 @@
 // Created by cpasjuste on 02/04/19.
 //
 
+#include <cstring>
 #include <SDL_video.h>
 #include "mpv.h"
 
@@ -13,6 +14,36 @@ extern "C" int ps4_mpv_dump_shaders;
 static void *get_proc_address_mpv(void *unused, const char *name) {
     return SDL_GL_GetProcAddress(name);
 }
+
+#ifdef __PS4__
+// true if "mpv.conf" sets this option (options given to libmpv before it starts win over the
+// configuration file, so the defaults below are only applied when the user did not choose)
+static bool confSets(const std::string &configPath, const std::string &key) {
+    FILE *f = fopen((configPath + "/mpv.conf").c_str(), "r");
+    if (f == nullptr) {
+        return false;
+    }
+
+    bool found = false;
+    char line[512];
+    while (!found && fgets(line, sizeof(line), f) != nullptr) {
+        const char *p = line;
+        while (*p == ' ' || *p == '\t') {
+            p++;
+        }
+        if (strncmp(p, key.c_str(), key.size()) == 0) {
+            p += key.size();
+            while (*p == ' ' || *p == '\t') {
+                p++;
+            }
+            found = (*p == '=' || *p == '\0' || *p == '\n' || *p == '\r');
+        }
+    }
+    fclose(f);
+
+    return found;
+}
+#endif
 
 Mpv::Mpv(const std::string &configPath, bool initRender, const std::string &hwdec,
          const std::string &swSpeed) {
@@ -45,6 +76,24 @@ Mpv::Mpv(const std::string &configPath, bool initRender, const std::string &hwde
     mpv_set_option_string(handle, "video-sync", "audio");
 #endif
     mpv_set_option_string(handle, "audio-channels", "stereo");
+#ifdef __PS4__
+    // libmpv defaults (150 MiB of packets ahead + 150 MiB kept behind) are far too much for the
+    // memory a homebrew gets on the console: a big 1080p file could run it out of memory
+    if (!confSets(configPath, "demuxer-max-bytes")) {
+        mpv_set_option_string(handle, "demuxer-max-bytes", "64MiB");
+    }
+    if (!confSets(configPath, "demuxer-max-back-bytes")) {
+        mpv_set_option_string(handle, "demuxer-max-back-bytes", "16MiB");
+    }
+    // mkv: do not read ahead looking for the duration/first timestamps of huge files
+    if (!confSets(configPath, "demuxer-mkv-probe-video-duration")) {
+        mpv_set_option_string(handle, "demuxer-mkv-probe-video-duration", "no");
+    }
+    // ASS fonts attached to the mkv are slow to load and heavy on the console memory
+    if (!confSets(configPath, "embeddedfonts")) {
+        mpv_set_option_string(handle, "embeddedfonts", "no");
+    }
+#endif
     // external subtitles are found (and converted to UTF-8, the PS4 libmpv has no
     // iconv) by pplay itself, see subtitles.h: do not let mpv add them a second time
     mpv_set_option_string(handle, "sub-auto", "no");

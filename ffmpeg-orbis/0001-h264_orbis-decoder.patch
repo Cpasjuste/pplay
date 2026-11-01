@@ -36,10 +36,10 @@ index d1e1019..6331cc9 100644
  extern const AVCodec ff_hevc_decoder;
 diff --git a/libavcodec/orbisvdec.c b/libavcodec/orbisvdec.c
 new file mode 100644
-index 0000000..e99b4e0
+index 0000000..217db2c
 --- /dev/null
 +++ b/libavcodec/orbisvdec.c
-@@ -0,0 +1,1292 @@
+@@ -0,0 +1,1305 @@
 +/*
 + * PS4 (Orbis) hardware H.264 decoder using libSceVideodec2
 + *
@@ -1072,7 +1072,20 @@ index 0000000..e99b4e0
 +        const uint8_t *s = src_uv + (size_t)y * pitch;
 +        uint8_t *u = frame->data[1] + (size_t)y * frame->linesize[1];
 +        uint8_t *v = frame->data[2] + (size_t)y * frame->linesize[2];
-+        for (x = 0; x < w / 2; x++) {
++        x = 0;
++#if ARCH_X86_64
++        /* 16 chroma pairs (32 source bytes) per step: split U/V with SSE2 */
++        for (; x + 16 <= w / 2; x += 16) {
++            const __m128i mask = _mm_set1_epi16(0x00ff);
++            __m128i a = _mm_loadu_si128((const __m128i *)(s + 2 * x));
++            __m128i b = _mm_loadu_si128((const __m128i *)(s + 2 * x + 16));
++            _mm_storeu_si128((__m128i *)(u + x),
++                             _mm_packus_epi16(_mm_and_si128(a, mask), _mm_and_si128(b, mask)));
++            _mm_storeu_si128((__m128i *)(v + x),
++                             _mm_packus_epi16(_mm_srli_epi16(a, 8), _mm_srli_epi16(b, 8)));
++        }
++#endif
++        for (; x < w / 2; x++) {
 +            u[x] = s[2 * x];
 +            v[x] = s[2 * x + 1];
 +        }

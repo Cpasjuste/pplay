@@ -46,7 +46,18 @@ mpv (libmpv)  --hwdec=orbis-copy
 
 ## Using it
 
-`/data/pplay/pplay.cfg`:
+**Options menu** (main menu → Options, or LEFT on it): `HW decoding` (auto / off / force),
+`SW speed` (quality / balanced / fast) and `TMDB language` are saved to `pplay.cfg` right away.
+`HW decoding` and `SW speed` apply the next time pplay is started. Long lists (subtitles,
+languages) keep the entry under the cursor in the middle of the menu, with its position
+(`12/48`) at the top; a menu opens with the cursor on the entry in use.
+
+Without a `mpv.conf` entry for them, pplay limits the demuxer cache to 64 MiB ahead / 16 MiB
+behind (libmpv's default is 150 MiB each way) and does not load fonts embedded in the
+file, to keep the console from running out of memory on big 1080p files. Put
+`demuxer-max-bytes=...` etc. in `/data/pplay/mpv/mpv.conf` to choose your own values.
+
+Or edit `/data/pplay/pplay.cfg` by hand:
 
 | HWDEC     | meaning |
 |-----------|---------|

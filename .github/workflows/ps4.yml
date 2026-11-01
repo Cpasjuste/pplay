@@ -20,6 +20,7 @@ jobs:
           sudo apt-get -yq install ffmpeg libx264-dev build-essential zlib1g-dev libbz2-dev xz-utils curl
           ./ffmpeg-orbis/test/run.sh
           ./tests/subtitles/run.sh
+          ./tests/menu/run.sh
 
   ps4:
     runs-on: ubuntu-24.04

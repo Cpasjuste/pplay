@@ -11,6 +11,14 @@
 
 using namespace c2d;
 
+// tracks without a title come with "Unknown": tell them apart by number instead
+static std::string trackTitle(const MediaInfo::Track &track, const char *kind) {
+    if (track.title.empty() || track.title == "Unknown") {
+        return std::string(kind) + " " + std::to_string(track.id);
+    }
+    return track.title;
+}
+
 Player::Player(Main *_main) : Rectangle(_main->getSize()) {
 
     main = _main;
@@ -206,7 +214,7 @@ void Player::onLoadEvent() {
         // videos menu options
         std::vector<MenuItem> items;
         for (auto &stream: file.mediaInfo.videos) {
-            items.emplace_back(stream.title + "\n" + stream.language + " " + stream.codec + " "
+            items.emplace_back(trackTitle(stream, "Video") + "\n" + stream.language + " " + stream.codec + " "
                                + std::to_string(stream.width) + "x" + std::to_string(stream.height),
                                "", MenuItem::Position::Top, stream.id);
         }
@@ -222,7 +230,7 @@ void Player::onLoadEvent() {
         // audios menu options
         std::vector<MenuItem> items;
         for (auto &stream: file.mediaInfo.audios) {
-            items.emplace_back(stream.title + "\n" + stream.language + " "
+            items.emplace_back(trackTitle(stream, "Audio") + "\n" + stream.language + " "
                                + stream.codec + " " + std::to_string(stream.channels) + "ch "
                                + std::to_string(stream.sample_rate / 1000) + " Khz",
                                "", MenuItem::Position::Top, stream.id);
@@ -240,7 +248,11 @@ void Player::onLoadEvent() {
         std::vector<MenuItem> items;
         items.emplace_back("None", "", MenuItem::Position::Top, -1);
         for (auto &stream: file.mediaInfo.subtitles) {
-            items.emplace_back(stream.title + "\nLang: " + stream.language, "", MenuItem::Position::Top, stream.id);
+            // many files have untitled tracks: show the language and the format (srt, ass, pgs...)
+            items.emplace_back(trackTitle(stream, "Subtitle") + "\n"
+                               + (stream.language.empty() || stream.language == "N/A" ? "und" : stream.language)
+                               + (stream.codec.empty() ? "" : " [" + stream.codec + "]"),
+                               "", MenuItem::Position::Top, stream.id);
         }
         menuSubtitlesStreams = new MenuVideoSubmenu(
                 main, main->getMenuVideo()->getGlobalBounds(), "SUBTITLES", items, MENU_VIDEO_TYPE_SUB);
