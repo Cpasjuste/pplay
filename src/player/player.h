@@ -74,6 +74,9 @@ private:
     // image subtitles (PGS, VobSub...) are drawn by the CPU, see Mpv::setBitmapSubtitleRendering
     void updateBitmapSubtitles();
 
+    // show the subtitles of the preferred language (SUB_LANGS) when the file is loaded
+    void autoSelectSubtitle();
+
     void onStopEvent(int reason);
 
     int bitmapSubTicks = 0;

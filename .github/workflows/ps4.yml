@@ -21,6 +21,7 @@ jobs:
           ./ffmpeg-orbis/test/run.sh
           ./tests/subtitles/run.sh
           ./tests/menu/run.sh
+          ./tests/subpref/run.sh
 
   ps4:
     runs-on: ubuntu-24.04

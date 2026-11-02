@@ -24,6 +24,9 @@ PPLAYConfig::PPLAYConfig(Main *main, int version)
     addOption({OPT_TMDB_LANGUAGE, "en-US"});
     addOption({OPT_HWDEC, "auto"});
     addOption({OPT_SW_SPEED, "quality"});
+    // subtitles picked automatically: Latin American Spanish, Spanish, English, English (UK)
+    addOption({OPT_SUB_AUTO, "on"});
+    addOption({OPT_SUB_LANGS, "es-419,es,en,en-GB"});
 
     // load the configuration from file, overwriting default values
     load();
@@ -49,6 +52,14 @@ PPLAYConfig::PPLAYConfig(Main *main, int version)
         if (speed != "quality" && speed != "balanced" && speed != "fast") {
             getOption(OPT_SW_SPEED)->setString("quality");
         }
+    }
+
+    if (getOption(OPT_SUB_AUTO)->getString() != "off") {
+        getOption(OPT_SUB_AUTO)->setString("on");
+    }
+
+    if (getOption(OPT_SUB_LANGS)->getString().empty()) {
+        getOption(OPT_SUB_LANGS)->setString("es-419,es,en,en-GB");
     }
 
     // save configuration, in case new options needs to be added

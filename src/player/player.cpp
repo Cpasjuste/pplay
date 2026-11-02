@@ -8,6 +8,7 @@
 #include "player_osd.h"
 #include "video_texture.h"
 #include "utility.h"
+#include "subtitle_pref.h"
 
 using namespace c2d;
 
@@ -218,6 +219,34 @@ void Player::updateBitmapSubtitles() {
     }
 }
 
+void Player::autoSelectSubtitle() {
+    if (main->getConfig()->getOption(OPT_SUB_AUTO)->getString() == "off"
+        || file.mediaInfo.subtitles.empty()) {
+        return;
+    }
+    if (mpv->getSid() >= 0) {
+        // a track is already selected (mpv.conf "slang", position saved by "watch later")
+        return;
+    }
+
+    std::vector<pplay::SubtitlePref::Track> tracks;
+    for (auto &stream: file.mediaInfo.subtitles) {
+        pplay::SubtitlePref::Track track;
+        track.id = stream.id;
+        track.lang = stream.language;
+        track.title = stream.title;
+        track.codec = stream.codec;
+        tracks.push_back(track);
+    }
+
+    std::string langs = main->getConfig()->getOption(OPT_SUB_LANGS)->getString();
+    int id = pplay::SubtitlePref::choose(tracks, pplay::SubtitlePref::parse(langs));
+    printf("Player::autoSelectSubtitle: SUB_LANGS=%s: track %i\n", langs.c_str(), id);
+    if (id >= 0) {
+        setSubtitleStream(id);
+    }
+}
+
 void Player::onLoadEvent() {
     updateBitmapSubtitles();
 
@@ -288,6 +317,9 @@ void Player::onLoadEvent() {
         menuSubtitlesStreams->setLayer(3);
         add(menuSubtitlesStreams);
     }
+
+    // subtitles of the preferred language (the menu above is built from the same list)
+    autoSelectSubtitle();
 
 #ifdef FULL_TEXTURE_TEST
     texture->resize({file.mediaInfo.videos.at(0).width,

@@ -85,6 +85,23 @@ plain module load fails, a GoldHEN jailbreak (syscall 500) is tried once.
   screen solid blue (its own "broken frame" indicator): that was the blue screen seen when
   turning on a PGS track. The filter is removed again when the track is turned off.
 
+### Automatic subtitles
+
+When a video starts pplay shows the first subtitle track that matches `SUB_LANGS` in
+`pplay.cfg` (default `"es-419,es,en,en-GB"`: Latin American Spanish, Spanish, English,
+English UK). Turn it off in Options → Auto subtitles (or `SUB_AUTO="off"`). Notes:
+
+* Latin American Spanish is told from Spanish by the language tag (`es-419`, `es-MX`...) or
+  the title (`Latino`, `Latinoamérica`, `LATAM`, `es-419`, `lat`...). `Castellano`/`Spain` is plain Spanish.
+* A language written in a track title wins over the language tag: mpv reports `eng` for
+  MKV tracks that have no language.
+* Full tracks are tried first; "forced" and "signs & songs" tracks are only used when no
+  full track of any preferred language exists. Commentary tracks are never chosen.
+* Among equals: text before picture subtitles, normal before SDH/CC.
+* Nothing is chosen when a track is already selected (`slang` in mpv.conf, position saved
+  by "watch later") or when no track matches.
+* Other languages: `SUB_LANGS="ja,en"`, regions as `pt-BR`, 3 letter codes (`fra`) work too.
+
 ## Software decoding speed (Hi10, HEVC, anything the hardware refuses)
 
 `pplay.cfg`: `SW_DECODE_SPEED="quality"` (default) | `"balanced"` (skip the loop filter on
