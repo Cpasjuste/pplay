@@ -440,11 +440,13 @@ bool Player::onInput(c2d::Input::Player *players) {
     }
 #ifdef __PS4__
     else if (keys & c2d::Input::Key::Select) {
+        // L1: rewind 10 seconds (the OSD buttons do 1 and 10 minutes)
         osd->setVisibility(c2d::Visibility::Visible);
-        getMpv()->seek(-60.0);
+        getMpv()->seek(-10.0);
     } else if (keys & c2d::Input::Key::Start) {
+        // R1: forward 10 seconds
         osd->setVisibility(c2d::Visibility::Visible);
-        getMpv()->seek(60.0);
+        getMpv()->seek(10.0);
     }
 #endif
 
