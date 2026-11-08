@@ -59,6 +59,10 @@ MenuMain::MenuMain(Main *main, const c2d::FloatRect &rect, const std::vector<Men
     entries.push_back({{"Auto subtitles", "subtitles.png", top}, "AUTO SUBS", OPT_SUB_AUTO,
                        {choice("On", "on"), choice("Off", "off")}});
 
+    // phone remote control (web page): applied as soon as it is changed
+    entries.push_back({{"Phone remote", "network.png", top}, "PHONE REMOTE", OPT_REMOTE,
+                       {choice("On", "on"), choice("Off", "off")}});
+
     // language of the scrapper (movie/tv show information)
     entries.push_back({{"TMDB language", "network.png", top}, "TMDB LANG", OPT_TMDB_LANGUAGE,
                        {choice("English (en-US)", "en-US"),

@@ -7,6 +7,7 @@
 #include "menu_main.h"
 #include "menu_video.h"
 #include "scrapper.h"
+#include "player_osd.h"
 
 #ifdef __SWITCH__
 
@@ -197,6 +198,117 @@ void Main::onUpdate() {
     }
 
     C2DRenderer::onUpdate();
+
+    updateRemote();
+}
+
+void Main::updateRemote() {
+    auto now = std::chrono::steady_clock::now();
+
+    // follow the option (changed from the Options menu) once a second
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(now - remoteCheckTime).count() >= 1000) {
+        remoteCheckTime = now;
+        const bool wanted = config->getOption(OPT_REMOTE)->getString() != "off";
+        if (wanted && !remote.isRunning() && !remoteWanted) {
+            remoteWanted = true;
+            const int port = config->getOption(OPT_REMOTE_PORT)->getInteger();
+            if (remote.start(port)) {
+                std::string ip = pplay::RemoteServer::localAddress();
+                statusBox->show("Phone remote", "http://" + (ip.empty() ? std::string("<console ip>") : ip)
+                                                + ":" + std::to_string(port));
+            } else {
+                statusBox->show("Phone remote", "Cannot listen on port " + std::to_string(port));
+            }
+        } else if (!wanted && (remote.isRunning() || remoteWanted)) {
+            remoteWanted = false;
+            remote.stop();
+            statusBox->show("Phone remote", "Disabled");
+        }
+    }
+
+    if (!remote.isRunning()) {
+        return;
+    }
+
+    // what the phone shows (title, position...): twice a second is enough
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(now - remoteStateTime).count() >= 500) {
+        remoteStateTime = now;
+        const bool playing = !player->getMpv()->isStopped();
+        remoteState = pplay::RemoteProtocol::stateJson(
+                playing ? player->getTitle() : "",
+                playing ? (double) player->getMpv()->getPosition() : 0,
+                playing ? (double) player->getMpv()->getDuration() : 0,
+                playing && player->getMpv()->isPaused(), playing);
+    }
+
+    std::vector<pplay::RemoteCommand> commands;
+    remote.service(remoteState, commands);
+    for (auto &cmd: commands) {
+        onRemoteCommand(cmd);
+    }
+}
+
+void Main::onRemoteCommand(const pplay::RemoteCommand &cmd) {
+    using Type = pplay::RemoteCommand::Type;
+
+    if (cmd.type == Type::Key) {
+        // the buttons of the phone are pressed like the ones of the controller
+        static const struct {
+            const char *name;
+            unsigned int key;
+        } keys[] = {
+                {"up",     Input::Key::Up},
+                {"down",   Input::Key::Down},
+                {"left",   Input::Key::Left},
+                {"right",  Input::Key::Right},
+                {"ok",     Input::Key::Fire1},
+                {"back",   Input::Key::Fire2},
+                {"fire3",  Input::Key::Fire3},
+                {"fire4",  Input::Key::Fire4},
+                {"select", Input::Key::Select},
+                {"start",  Input::Key::Start},
+                {"l1",     Input::Key::Select}, // L1/R1 are Select/Start on the PS4 (see Player::onInput)
+                {"r1",     Input::Key::Start},
+                {"l2",     Input::Key::Fire5},
+                {"r2",     Input::Key::Fire6},
+        };
+        for (auto &k: keys) {
+            if (cmd.key == k.name) {
+                Input::Player *players = getInput()->getPlayers();
+                players[0].keys = k.key;
+                onInput(players);
+                break;
+            }
+        }
+        return;
+    }
+
+    // the other commands only make sense while a video is playing
+    if (player->getMpv()->isStopped()) {
+        return;
+    }
+
+    switch (cmd.type) {
+        case Type::PlayPause:
+            player->getOSD()->togglePause();
+            break;
+        case Type::Stop:
+            player->getOSD()->setVisibility(Visibility::Hidden);
+            statusBox->show("Info...", "Stopping playback...");
+            player->stop();
+            break;
+        case Type::Seek:
+            if (player->isFullscreen()) {
+                player->getOSD()->setVisibility(Visibility::Visible);
+            }
+            player->getMpv()->seek(cmd.value);
+            break;
+        case Type::Speed:
+            player->setSpeed(cmd.value);
+            break;
+        default:
+            break;
+    }
 }
 
 void Main::show(MenuType type) {

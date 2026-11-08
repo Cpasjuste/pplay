@@ -18,6 +18,8 @@
 #define OPT_SW_SPEED            "SW_DECODE_SPEED" // quality, balanced, fast (software decoding: Hi10, HEVC...)
 #define OPT_HWDEC               "HWDEC" // auto, no, force, or any mpv hwdec name
 #define OPT_SUB_AUTO            "SUB_AUTO" // on, off: choose the subtitles when a video is loaded
+#define OPT_REMOTE              "REMOTE" // on, off: phone remote control (web page served on the LAN)
+#define OPT_REMOTE_PORT         "REMOTE_PORT" // TCP port of the remote control page
 #define OPT_SUB_LANGS           "SUB_LANGS" // order of preference, see subtitle_pref.h
 
 class Main;

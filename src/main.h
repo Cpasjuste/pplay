@@ -17,6 +17,7 @@
 #include "scrapper.h"
 #include "io.h"
 #include "usbfs.h"
+#include "remote_server.h"
 
 //#define FULL_TEXTURE_TEST 1
 
@@ -118,6 +119,11 @@ private:
 
     void onUpdate() override;
 
+    // phone remote control (web page): start/stop following the REMOTE option, answer requests
+    void updateRemote();
+
+    void onRemoteCommand(const pplay::RemoteCommand &cmd);
+
     pplay::Io *pplayIo;
     c2d::Font *font;
     c2d::Clock *timer;
@@ -130,6 +136,11 @@ private:
     MenuMain *menu_main;
     MenuVideo *menu_video;
     pplay::Scrapper *scrapper;
+    pplay::RemoteServer remote;
+    std::chrono::steady_clock::time_point remoteStateTime;
+    std::chrono::steady_clock::time_point remoteCheckTime;
+    std::string remoteState = "{}";
+    bool remoteWanted = false;
     unsigned int oldKeys = 0;
     c2d::Vector2f scaling = {1, 1};
 

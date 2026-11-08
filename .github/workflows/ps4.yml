@@ -22,6 +22,7 @@ jobs:
           ./tests/subtitles/run.sh
           ./tests/menu/run.sh
           ./tests/subpref/run.sh
+          ./tests/remote/run.sh
 
   ps4:
     runs-on: ubuntu-24.04

@@ -149,3 +149,24 @@ The decoder logic is tested on the PC against the mock. The real
 `libSceVideodec2` could not be exercised from the build environment, so behaviour on
 a console is based on the working code of Moonlight-ps4 and PS4 Cast (structure
 layouts, memory types, call sequence). Treat the first runs as experimental.
+
+## Phone remote control
+
+When the controller turns itself off (battery saving), the phone can be the controller:
+pplay serves a small web page on the console. Nothing to install on the phone.
+
+1. Phone and PS4 on the same WiFi/LAN.
+2. Start pplay: a message shows `http://<console ip>:8080` (also shown when you turn
+   Options → Phone remote on).
+3. Open that address in the phone browser. You get a D-pad, OK, Back, Start, play/pause,
+   ±10 s, ±1 min, ±10 min, stop, speed 1×/2×/4× and the title/progress of the video.
+
+* Options → Phone remote: On/Off (`REMOTE="on"|"off"` in pplay.cfg, applied at once).
+  The port is `REMOTE_PORT` (default 8080, 1024-65535, applied when pplay starts).
+* The buttons are pressed exactly like the controller ones (menus, file browser and player
+  all work), so everything the controller does in pplay can be done from the phone.
+* There is no password: anyone on your LAN who knows the address can press those buttons
+  (and nothing else: no files, no settings). Turn it off in Options if the network is shared.
+* Implementation: `src/remote_protocol.*` (requests, commands, page, JSON), `src/remote_server.*`
+  (HTTP server polled once per frame, no threads), `Main::updateRemote`. Host test:
+  `tests/remote/run.sh`.

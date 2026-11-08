@@ -28,6 +28,9 @@ public:
 
     void setVisibility(c2d::Visibility visibility, bool tweenPlay = true) override;
 
+    // pause/resume the video and update the play/pause button (OSD button, phone remote)
+    void togglePause();
+
 private:
 
     void onDraw(c2d::Transform &transform, bool draw = true) override;
