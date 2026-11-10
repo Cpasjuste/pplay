@@ -61,6 +61,11 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     // create pplay data directory
     pplayIo->create(pplayIo->getDataPath() + "mpv");
 
+    // our input (phone remote keys, analog stick, controller turned on later). The default one is
+    // not deleted on purpose: that would close the pads (SDL quits its joystick subsystem) before
+    // the new one opens them again. It is only a few bytes, alive until the process ends.
+    m_input = new PplayInput();
+
     // configure input
     Main::getInput()->setRepeatDelay(INPUT_DELAY);
 
@@ -202,27 +207,43 @@ void Main::onUpdate() {
     updateRemote();
 }
 
-void Main::updateRemote() {
-    auto now = std::chrono::steady_clock::now();
+void Main::applyRemoteOption() {
+    const bool wanted = config->getOption(OPT_REMOTE)->getString() != "off";
 
-    // follow the option (changed from the Options menu) once a second
-    if (std::chrono::duration_cast<std::chrono::milliseconds>(now - remoteCheckTime).count() >= 1000) {
-        remoteCheckTime = now;
+    if (wanted && !remote.isRunning()) {
+        remoteWanted = true;
+        remote.setLogFile(pplayIo->getDataPath() + "remote.log");
+        const int port = config->getOption(OPT_REMOTE_PORT)->getInteger();
+        if (remote.start(port)) {
+            std::string ip = pplay::RemoteServer::localAddress();
+            remoteInfo = "http://" + (ip.empty() ? std::string("<console ip>") : ip)
+                         + ":" + std::to_string(remote.getPort());
+            statusBox->show("Phone remote", remoteInfo);
+        } else {
+            remoteInfo = "Cannot start: " + remote.getError();
+            statusBox->show("Phone remote", remoteInfo);
+        }
+    } else if (!wanted && (remote.isRunning() || remoteWanted)) {
+        remoteWanted = false;
+        remote.stop();
+        remoteInfo = "Off";
+        statusBox->show("Phone remote", "Disabled");
+    }
+}
+
+std::string Main::getRemoteInfo() {
+    return remoteInfo;
+}
+
+void Main::updateRemote() {
+    // follow the option (also changed by hand in pplay.cfg) once a second; a start that failed
+    // is not retried every second (turn the option off and on, or restart pplay)
+    const long long now = pplay::RemoteServer::nowMs();
+    if (now - remoteCheckMs >= 1000 || now < remoteCheckMs) {
+        remoteCheckMs = now;
         const bool wanted = config->getOption(OPT_REMOTE)->getString() != "off";
-        if (wanted && !remote.isRunning() && !remoteWanted) {
-            remoteWanted = true;
-            const int port = config->getOption(OPT_REMOTE_PORT)->getInteger();
-            if (remote.start(port)) {
-                std::string ip = pplay::RemoteServer::localAddress();
-                statusBox->show("Phone remote", "http://" + (ip.empty() ? std::string("<console ip>") : ip)
-                                                + ":" + std::to_string(port));
-            } else {
-                statusBox->show("Phone remote", "Cannot listen on port " + std::to_string(port));
-            }
-        } else if (!wanted && (remote.isRunning() || remoteWanted)) {
-            remoteWanted = false;
-            remote.stop();
-            statusBox->show("Phone remote", "Disabled");
+        if ((wanted && !remote.isRunning() && !remoteWanted) || (!wanted && (remote.isRunning() || remoteWanted))) {
+            applyRemoteOption();
         }
     }
 
@@ -230,19 +251,16 @@ void Main::updateRemote() {
         return;
     }
 
-    // what the phone shows (title, position...): twice a second is enough
-    if (std::chrono::duration_cast<std::chrono::milliseconds>(now - remoteStateTime).count() >= 500) {
-        remoteStateTime = now;
+    std::vector<pplay::RemoteCommand> commands;
+    remote.service([this]() {
+        // what the phone shows (title, position...): only built when the phone asks for it
         const bool playing = !player->getMpv()->isStopped();
-        remoteState = pplay::RemoteProtocol::stateJson(
+        return pplay::RemoteProtocol::stateJson(
                 playing ? player->getTitle() : "",
                 playing ? (double) player->getMpv()->getPosition() : 0,
                 playing ? (double) player->getMpv()->getDuration() : 0,
                 playing && player->getMpv()->isPaused(), playing);
-    }
-
-    std::vector<pplay::RemoteCommand> commands;
-    remote.service(remoteState, commands);
+    }, commands);
     for (auto &cmd: commands) {
         onRemoteCommand(cmd);
     }
@@ -274,9 +292,7 @@ void Main::onRemoteCommand(const pplay::RemoteCommand &cmd) {
         };
         for (auto &k: keys) {
             if (cmd.key == k.name) {
-                Input::Player *players = getInput()->getPlayers();
-                players[0].keys = k.key;
-                onInput(players);
+                static_cast<PplayInput *>(getInput())->press(k.key);
                 break;
             }
         }

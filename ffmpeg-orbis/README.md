@@ -161,6 +161,11 @@ pplay serves a small web page on the console. Nothing to install on the phone.
 3. Open that address in the phone browser. You get a D-pad, OK, Back, Start, play/pause,
    ±10 s, ±1 min, ±10 min, stop, speed 1×/2×/4× and the title/progress of the video.
 
+* If the default port is taken the next ones are tried (8080 → 8089); the address shown is the
+  one really used. While Options → Phone remote is open the address stays on screen, and
+  `/data/pplay/remote.log` records what the server does (start, errors, each request): read it
+  by FTP if the phone cannot connect. The phone must be on the same WiFi, and some routers
+  isolate WiFi clients from each other ("AP/client isolation"), which blocks it.
 * Options → Phone remote: On/Off (`REMOTE="on"|"off"` in pplay.cfg, applied at once).
   The port is `REMOTE_PORT` (default 8080, 1024-65535, applied when pplay starts).
 * The buttons are pressed exactly like the controller ones (menus, file browser and player
@@ -170,3 +175,11 @@ pplay serves a small web page on the console. Nothing to install on the phone.
 * Implementation: `src/remote_protocol.*` (requests, commands, page, JSON), `src/remote_server.*`
   (HTTP server polled once per frame, no threads), `Main::updateRemote`. Host test:
   `tests/remote/run.sh`.
+
+## Analog stick
+
+The left stick moves in menus and lists like the D-pad (both can be used, also at the same
+time). One direction at a time (strongest axis, no diagonals), it starts at about a quarter of
+its travel and releases a bit earlier (hysteresis). The right stick does nothing. A controller
+turned on after pplay started is detected within a couple of seconds. `src/pplay_input.*`,
+`src/stick_direction.h`, test: `tests/stick/run.sh`.

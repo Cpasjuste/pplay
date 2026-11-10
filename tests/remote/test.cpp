@@ -88,7 +88,7 @@ static std::string request(RemoteServer &s, const std::string &req, std::vector<
 
     std::string out;
     for (int i = 0; i < 200; i++) {
-        s.service(state, cmds);
+        s.service([&]() { return state; }, cmds);
         char buf[4096];
         ssize_t n = recv(fd, buf, sizeof(buf), MSG_DONTWAIT);
         if (n > 0) {
@@ -149,10 +149,64 @@ static void server() {
     s.stop();
     CHECK(!s.isRunning());
 
-    // port already in use
+    // port already in use: the next one is used
     RemoteServer a, b;
     CHECK(a.start(0));
-    CHECK(!b.start(a.getPort()));
+    int busy = a.getPort();
+    CHECK(b.start(busy, 5));
+    CHECK(b.getPort() == busy + 1);
+    RemoteServer c;
+    CHECK(c.start(busy, 1) == false);
+    CHECK(!c.getError().empty());
+    printf("expected error: %s\n", c.getError().c_str());
+
+    // the answer survives a request whose body arrives after the headers (no connection reset)
+    {
+        RemoteServer s2;
+        CHECK(s2.start(0));
+        int fd = socket(AF_INET, SOCK_STREAM, 0);
+        struct sockaddr_in addr;
+        memset(&addr, 0, sizeof(addr));
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons((unsigned short) s2.getPort());
+        addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+        CHECK(connect(fd, (struct sockaddr *) &addr, sizeof(addr)) == 0);
+        std::string head = "POST /cmd/key/ok HTTP/1.1\r\nContent-Length: 5\r\n\r\n";
+        send(fd, head.data(), head.size(), 0);
+        std::vector<RemoteCommand> got;
+        for (int i = 0; i < 20; i++) { s2.service([]() { return std::string("{}"); }, got); usleep(2000); }
+        send(fd, "hello", 5, 0);
+        std::string out;
+        for (int i = 0; i < 100; i++) {
+            s2.service([]() { return std::string("{}"); }, got);
+            char buf[512];
+            ssize_t n = recv(fd, buf, sizeof(buf), MSG_DONTWAIT);
+            if (n > 0) out.append(buf, (size_t) n);
+            else if (n == 0) break;
+            usleep(2000);
+        }
+        close(fd);
+        CHECK(out.find("200 OK") != std::string::npos);
+        CHECK(got.size() == 1 && got[0].key == "ok");
+    }
+
+    // log file
+    {
+        std::string path = "remote_test.log";
+        RemoteServer l;
+        l.setLogFile(path);
+        CHECK(l.start(0));
+        std::vector<RemoteCommand> cmds2;
+        request(l, "GET / HTTP/1.1\r\n\r\n", cmds2);
+        FILE *f = fopen(path.c_str(), "r");
+        CHECK(f != nullptr);
+        char line[256];
+        std::string all;
+        while (f && fgets(line, sizeof(line), f)) all += line;
+        if (f) fclose(f);
+        CHECK(all.find("listening on port") != std::string::npos);
+        CHECK(all.find("GET / -> 200") != std::string::npos);
+    }
 
     printf("local address: '%s'\n", RemoteServer::localAddress().c_str());
 }

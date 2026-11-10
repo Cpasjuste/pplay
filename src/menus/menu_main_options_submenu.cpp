@@ -60,6 +60,14 @@ void MenuMainOptionsSubmenu::setVisibility(c2d::Visibility visibility, bool twee
             }
         }
     }
+    if (option_name == OPT_REMOTE) {
+        // the address to open on the phone stays on screen while this list is open
+        if (visibility == Visibility::Visible) {
+            main->getStatus()->show("Phone remote", main->getRemoteInfo(), true);
+        } else {
+            main->getStatus()->hide();
+        }
+    }
     Menu::setVisibility(visibility, tweenPlay);
 }
 
@@ -83,6 +91,12 @@ void MenuMainOptionsSubmenu::onOptionSelection(MenuItem *item) {
     option->setString(value);
     main->getConfig()->save();
     setSelection(value);
+
+    if (option_name == OPT_REMOTE) {
+        // start/stop the server now and show where to connect
+        main->applyRemoteOption();
+        main->getStatus()->show("Phone remote", main->getRemoteInfo(), true);
+    }
 
     if (option_name == OPT_HWDEC || option_name == OPT_SW_SPEED) {
         // the player (and libmpv) is configured once, when pplay starts
