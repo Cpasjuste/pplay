@@ -173,7 +173,7 @@ pplay serves a small web page on the console. Nothing to install on the phone.
 * There is no password: anyone on your LAN who knows the address can press those buttons
   (and nothing else: no files, no settings). Turn it off in Options if the network is shared.
 * Implementation: `src/remote_protocol.*` (requests, commands, page, JSON), `src/remote_server.*`
-  (HTTP server), `Main::updateRemote`. Host test:
+  (HTTP server in its own thread: nothing it does can freeze the application), `Main::updateRemote`. Host test:
   `tests/remote/run.sh`.
 
 ## Analog stick
