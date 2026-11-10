@@ -88,7 +88,7 @@ static std::string request(RemoteServer &s, const std::string &req, std::vector<
 
     std::string out;
     for (int i = 0; i < 200; i++) {
-        s.service([&]() { return state; }, cmds);
+        if (i == 0) s.setState(state);
         char buf[4096];
         ssize_t n = recv(fd, buf, sizeof(buf), MSG_DONTWAIT);
         if (n > 0) {
@@ -99,6 +99,7 @@ static std::string request(RemoteServer &s, const std::string &req, std::vector<
         usleep(2000);
     }
     close(fd);
+    s.poll(cmds);
     return out;
 }
 
@@ -174,11 +175,10 @@ static void server() {
         std::string head = "POST /cmd/key/ok HTTP/1.1\r\nContent-Length: 5\r\n\r\n";
         send(fd, head.data(), head.size(), 0);
         std::vector<RemoteCommand> got;
-        for (int i = 0; i < 20; i++) { s2.service([]() { return std::string("{}"); }, got); usleep(2000); }
+        usleep(100000);
         send(fd, "hello", 5, 0);
         std::string out;
         for (int i = 0; i < 100; i++) {
-            s2.service([]() { return std::string("{}"); }, got);
             char buf[512];
             ssize_t n = recv(fd, buf, sizeof(buf), MSG_DONTWAIT);
             if (n > 0) out.append(buf, (size_t) n);
@@ -186,8 +186,42 @@ static void server() {
             usleep(2000);
         }
         close(fd);
+        s2.poll(got);
         CHECK(out.find("200 OK") != std::string::npos);
         CHECK(got.size() == 1 && got[0].key == "ok");
+    }
+
+    // idle connections (browsers open spare ones) do not delay the real request, and /state
+    // is only built while a phone asks for it
+    {
+        RemoteServer s3;
+        CHECK(s3.start(0));
+        CHECK(!s3.wantsState());
+        std::vector<int> idle;
+        for (int i = 0; i < 3; i++) {
+            int fd = socket(AF_INET, SOCK_STREAM, 0);
+            struct sockaddr_in addr;
+            memset(&addr, 0, sizeof(addr));
+            addr.sin_family = AF_INET;
+            addr.sin_port = htons((unsigned short) s3.getPort());
+            addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+            CHECK(connect(fd, (struct sockaddr *) &addr, sizeof(addr)) == 0);
+            idle.push_back(fd);
+        }
+        std::vector<RemoteCommand> c3;
+        long long t0 = RemoteServer::nowMs();
+        std::string r3 = request(s3, "GET /state HTTP/1.1\r\n\r\n", c3, "{\"x\":1}");
+        // request() waits for the close of the connection: the answer must have come well before 400 ms
+        CHECK(r3.find("{\"x\":1}") != std::string::npos);
+        CHECK(RemoteServer::nowMs() - t0 < 1000);
+        CHECK(s3.wantsState());
+        for (int fd: idle) close(fd);
+        s3.stop();
+        CHECK(!s3.isRunning());
+        CHECK(!s3.wantsState());
+        std::vector<RemoteCommand> none;
+        s3.poll(none);
+        CHECK(none.empty());
     }
 
     // log file

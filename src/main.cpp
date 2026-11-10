@@ -251,18 +251,22 @@ void Main::updateRemote() {
         return;
     }
 
+    // commands received by the server thread
     std::vector<pplay::RemoteCommand> commands;
-    remote.service([this]() {
-        // what the phone shows (title, position...): only built when the phone asks for it
+    remote.poll(commands);
+    for (auto &cmd: commands) {
+        onRemoteCommand(cmd);
+    }
+
+    // what the phone shows (title, position...): only built while a phone is asking for it
+    if (remote.wantsState() && (now - remoteStateMs >= 500 || now < remoteStateMs)) {
+        remoteStateMs = now;
         const bool playing = !player->getMpv()->isStopped();
-        return pplay::RemoteProtocol::stateJson(
+        remote.setState(pplay::RemoteProtocol::stateJson(
                 playing ? player->getTitle() : "",
                 playing ? (double) player->getMpv()->getPosition() : 0,
                 playing ? (double) player->getMpv()->getDuration() : 0,
-                playing && player->getMpv()->isPaused(), playing);
-    }, commands);
-    for (auto &cmd: commands) {
-        onRemoteCommand(cmd);
+                playing && player->getMpv()->isPaused(), playing));
     }
 }
 

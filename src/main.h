@@ -145,6 +145,7 @@ private:
     pplay::Scrapper *scrapper;
     pplay::RemoteServer remote;
     long long remoteCheckMs = 0;
+    long long remoteStateMs = 0;
     bool remoteWanted = false;
     std::string remoteInfo = "Off";
     unsigned int oldKeys = 0;
