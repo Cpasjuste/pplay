@@ -35,19 +35,35 @@ namespace {
     const long long LINGER_MS = 1000;
     const long long STATE_WANTED_MS = 3000;
     const long long MIN_LOOP_MS = 20;        // never spin, whatever select() does
-    const int MAX_LOG_LINES = 300;
+    const int MAX_LOG_LINES = 400;
 
-#ifdef MSG_DONTWAIT
-    const int DONTWAIT = MSG_DONTWAIT;
+    // No MSG_* flags on the console: the headers may carry Linux values (MSG_DONTWAIT = 0x40) that the
+    // console kernel reads as other flags (0x40 is MSG_WAITALL there). Not needed anyway: reads are
+    // gated by select() and the thread may block without harm.
+#ifdef __PPLAY__
+    const int SEND_FLAGS = 0;
+#elif defined(MSG_NOSIGNAL)
+    const int SEND_FLAGS = MSG_NOSIGNAL;
 #else
-    const int DONTWAIT = 0;
+    const int SEND_FLAGS = 0;
 #endif
-#ifdef MSG_NOSIGNAL
-    const int SEND_FLAGS = DONTWAIT | MSG_NOSIGNAL;
-#else
-    const int SEND_FLAGS = DONTWAIT;
-#endif
-    const int RECV_FLAGS = DONTWAIT;
+    const int RECV_FLAGS = 0;
+
+    // printable preview of the start of a request for the log ("GET / HTTP/1.1.." / hex for binary)
+    std::string preview(const std::string &data, size_t max = 48) {
+        std::string out;
+        char buf[8];
+        for (size_t i = 0; i < data.size() && i < max; i++) {
+            unsigned char c = (unsigned char) data[i];
+            if (c >= 32 && c < 127) {
+                out += (char) c;
+            } else {
+                snprintf(buf, sizeof(buf), "\\x%02x", c);
+                out += buf;
+            }
+        }
+        return out;
+    }
 
     bool wouldBlock() {
         return errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR;
@@ -101,6 +117,11 @@ struct RemoteServer::Shared {
         bool shut = false;          // answer sent, our side closed, waiting for the peer to finish
         long long start = 0;
         long long shutTime = 0;
+        size_t received = 0;
+        bool polled = false;        // read attempted although select() did not flag the socket
+        bool canTimeout = false;
+        long long lastPoll = 0;
+        std::string peer;
     };
 
     // shared with the main loop
@@ -141,7 +162,9 @@ struct RemoteServer::Shared {
 
     void drop(size_t index, const char *why) {
         if (why != nullptr) {
-            log("client %i dropped: %s", clients[index].fd, why);
+            log("client %i (%s) dropped: %s, %i bytes received%s%s", clients[index].fd,
+                clients[index].peer.c_str(), why, (int) clients[index].received,
+                clients[index].in.empty() ? "" : ": ", preview(clients[index].in).c_str());
         }
         close(clients[index].fd);
         clients.erase(clients.begin() + (long) index);
@@ -191,7 +214,13 @@ struct RemoteServer::Shared {
 
         // /state is asked every second: do not fill the log with it
         if (path != "/state") {
-            log("%s %s -> %i", method.c_str(), path.c_str(), status);
+            if (status == 400 && path.empty()) {
+                log("client %i (%s): unreadable request (%i bytes): %s", client.fd, client.peer.c_str(),
+                    (int) client.in.size(), preview(client.in).c_str());
+            } else {
+                log("%s %s -> %i (client %i, %s)", method.c_str(), path.c_str(), status, client.fd,
+                    client.peer.c_str());
+            }
         }
     }
 
@@ -217,7 +246,10 @@ struct RemoteServer::Shared {
         if (ready > 0) {
             // new connections (select says accept() will not block)
             if (FD_ISSET(listenFd, &rfds)) {
-                int fd = accept(listenFd, nullptr, nullptr);
+                struct sockaddr_in from;
+                socklen_t fromLen = sizeof(from);
+                memset(&from, 0, sizeof(from));
+                int fd = accept(listenFd, (struct sockaddr *) &from, &fromLen);
                 if (fd >= 0) {
                     if (fd >= FD_SETSIZE || clients.size() >= MAX_CLIENTS) {
                         log("connection refused (%i clients, socket %i)", (int) clients.size(), fd);
@@ -230,44 +262,76 @@ struct RemoteServer::Shared {
                         Client c;
                         c.fd = fd;
                         c.start = RemoteServer::nowMs();
+                        {
+                            const unsigned char *b = (const unsigned char *) &from.sin_addr.s_addr;
+                            char buf[48];
+                            snprintf(buf, sizeof(buf), "%u.%u.%u.%u:%u", b[0], b[1], b[2], b[3],
+                                     (unsigned) ntohs(from.sin_port));
+                            c.peer = buf;
+                        }
+                        // short receive timeout: lets run() try a read even if select() never flags
+                        // the socket (see serviceOnce) without ever blocking for long
+                        struct timeval rt;
+                        rt.tv_sec = 0;
+                        rt.tv_usec = 20000;
+                        c.canTimeout = setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (void *) &rt, sizeof(rt)) == 0;
+                        if (logLines < 40) {
+                            log("client %i connected from %s (rcvtimeo %s)", fd, c.peer.c_str(),
+                                c.canTimeout ? "ok" : "unsupported");
+                        }
                         clients.push_back(c);
                     }
                 } else if (!wouldBlock()) {
                     log("accept() failed, errno %i", errno);
                 }
             }
+        }
 
-            // requests (and the end of the connections we already answered)
-            for (size_t i = 0; i < clients.size();) {
-                Client &c = clients[i];
-                if ((c.answered && !c.shut) || !FD_ISSET(c.fd, &rfds)) {
-                    i++;
-                    continue;
-                }
-                char buf[2048];
-                ssize_t n = recv(c.fd, buf, sizeof(buf), RECV_FLAGS);
-                if (n > 0) {
-                    if (c.shut) {
-                        i++; // the phone sent more (a body): read it and ignore it
-                        continue;
-                    }
-                    c.in.append(buf, (size_t) n);
-                    if (c.in.find("\r\n\r\n") != std::string::npos || c.in.find("\n\n") != std::string::npos) {
-                        answer(c);
-                    } else if (c.in.size() > MAX_REQUEST) {
-                        drop(i, "request too big");
-                        continue;
-                    }
-                } else if (n == 0) {
-                    // the phone closed its side: nothing more to say (or to read)
-                    drop(i, c.answered ? nullptr : "closed before sending a request");
-                    continue;
-                } else if (!wouldBlock()) {
-                    drop(i, "recv error");
-                    continue;
-                }
-                i++;
+        // requests (and the end of the connections we already answered). A client select() did not
+        // flag is read anyway after a while (the receive timeout keeps that short): if the console
+        // never reports a socket as readable, the server still works and the log says so.
+        const long long nowRead = RemoteServer::nowMs();
+        for (size_t i = 0; i < clients.size();) {
+            Client &c = clients[i];
+            const bool flagged = ready > 0 && FD_ISSET(c.fd, &rfds);
+            bool tryRead = flagged;
+            if (!flagged && !c.answered && c.canTimeout && nowRead - c.start >= 300
+                && nowRead - c.lastPoll >= 400) {
+                tryRead = true;
+                c.lastPoll = nowRead;
             }
+            if ((c.answered && !c.shut) || !tryRead) {
+                i++;
+                continue;
+            }
+            char buf[2048];
+            ssize_t n = recv(c.fd, buf, sizeof(buf), RECV_FLAGS);
+            if (n > 0 && !flagged && !c.polled) {
+                c.polled = true;
+                log("client %i: data arrived but select() had not flagged it", c.fd);
+            }
+            if (n > 0) {
+                c.received += (size_t) n;
+                if (c.shut) {
+                    i++; // the phone sent more (a body): read it and ignore it
+                    continue;
+                }
+                c.in.append(buf, (size_t) n);
+                if (c.in.find("\r\n\r\n") != std::string::npos || c.in.find("\n\n") != std::string::npos) {
+                    answer(c);
+                } else if (c.in.size() > MAX_REQUEST) {
+                    drop(i, "request too big");
+                    continue;
+                }
+            } else if (n == 0) {
+                // the phone closed its side: nothing more to say (or to read)
+                drop(i, c.answered ? nullptr : "closed before sending a request");
+                continue;
+            } else if (!wouldBlock() && errno != ETIMEDOUT) {
+                drop(i, "recv error");
+                continue;
+            }
+            i++;
         }
 
         // answers and timeouts

@@ -54,6 +54,14 @@ jobs:
             exit $rc
           fi
 
+      - name: Show the socket constants of the PS4 libc headers (diagnostics)
+        continue-on-error: true
+        run: |
+          f=$(find /opt/pacbrew/ps4/openorbis -path '*sys/socket.h' | head -3)
+          echo "$f"
+          for h in $f; do grep -nE "define[[:space:]]+(MSG_[A-Z]+|SO_(RCVTIMEO|NOSIGPIPE|REUSEADDR)|SHUT_WR|SOMAXCONN)" "$h" | head -40; done
+          grep -rnE "define[[:space:]]+FD_SETSIZE" /opt/pacbrew/ps4/openorbis --include=*.h | head -3
+
       - name: Rebuild FFmpeg with the PS4 hardware H.264 decoder (h264_orbis)
         run: |
           set +e
