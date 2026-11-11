@@ -49,6 +49,18 @@ namespace {
 #endif
     const int RECV_FLAGS = 0;
 
+    // Same problem with the socket options: the headers have the Linux numbers (SOL_SOCKET = 1,
+    // SO_REUSEADDR = 2, SO_RCVTIMEO = 20) and the console kernel is FreeBSD (0xffff, 4, 0x1006).
+#ifdef __PS4__
+    const int OPT_LEVEL_SOCKET = 0xffff;
+    const int OPT_REUSEADDR = 0x0004;
+    const int OPT_RCVTIMEO = 0x1006;
+#else
+    const int OPT_LEVEL_SOCKET = SOL_SOCKET;
+    const int OPT_REUSEADDR = SO_REUSEADDR;
+    const int OPT_RCVTIMEO = SO_RCVTIMEO;
+#endif
+
     // printable preview of the start of a request for the log ("GET / HTTP/1.1.." / hex for binary)
     std::string preview(const std::string &data, size_t max = 48) {
         std::string out;
@@ -255,10 +267,6 @@ struct RemoteServer::Shared {
                         log("connection refused (%i clients, socket %i)", (int) clients.size(), fd);
                         close(fd);
                     } else {
-#ifdef SO_NOSIGPIPE
-                        int yes = 1;
-                        setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, (void *) &yes, sizeof(yes));
-#endif
                         Client c;
                         c.fd = fd;
                         c.start = RemoteServer::nowMs();
@@ -274,7 +282,7 @@ struct RemoteServer::Shared {
                         struct timeval rt;
                         rt.tv_sec = 0;
                         rt.tv_usec = 20000;
-                        c.canTimeout = setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (void *) &rt, sizeof(rt)) == 0;
+                        c.canTimeout = setsockopt(fd, OPT_LEVEL_SOCKET, OPT_RCVTIMEO, (void *) &rt, sizeof(rt)) == 0;
                         if (logLines < 40) {
                             log("client %i connected from %s (rcvtimeo %s)", fd, c.peer.c_str(),
                                 c.canTimeout ? "ok" : "unsupported");
@@ -437,7 +445,7 @@ bool RemoteServer::start(int p, int tries) {
         }
 
         int yes = 1;
-        setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void *) &yes, sizeof(yes));
+        setsockopt(fd, OPT_LEVEL_SOCKET, OPT_REUSEADDR, (void *) &yes, sizeof(yes));
 
         struct sockaddr_in addr;
         memset(&addr, 0, sizeof(addr));
