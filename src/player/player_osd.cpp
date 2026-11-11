@@ -152,6 +152,19 @@ void PlayerOSD::onDraw(c2d::Transform &transform, bool draw) {
     Rectangle::onDraw(transform, draw);
 }
 
+void PlayerOSD::togglePause() {
+    bool pause = !main->getPlayer()->getMpv()->isPaused();
+    btn_play->setVisibility(pause ? Visibility::Visible : Visibility::Hidden);
+    buttons.at((int) ButtonID::Pause)->setVisibility(pause ? Visibility::Hidden : Visibility::Visible);
+    if (pause) {
+        main->getStatus()->show("Info...", "Pausing playback...");
+        main->getPlayer()->pause();
+    } else {
+        main->getStatus()->show("Info...", "Resuming playback...");
+        main->getPlayer()->resume();
+    }
+}
+
 bool PlayerOSD::onInput(c2d::Input::Player *players) {
 
     if (main->getPlayer()->getMpv()->isStopped() || !main->getPlayer()->isFullscreen()) {
@@ -181,24 +194,15 @@ bool PlayerOSD::onInput(c2d::Input::Player *players) {
         clock.restart();
     } else if (keys & Input::Key::Fire1) {
         if (index == (int) ButtonID::Pause) {
-            bool pause = !main->getPlayer()->getMpv()->isPaused();
-            btn_play->setVisibility(pause ? Visibility::Visible : Visibility::Hidden);
-            buttons.at((int) ButtonID::Pause)->setVisibility(pause ? Visibility::Hidden : Visibility::Visible);
-            if (pause) {
-                main->getStatus()->show("Info...", "Pausing playback...");
-                main->getPlayer()->pause();
-            } else {
-                main->getStatus()->show("Info...", "Resuming playback...");
-                main->getPlayer()->resume();
-            }
+            togglePause();
         } else if (index == (int) ButtonID::SeekForward1) {
             main->getPlayer()->getMpv()->seek(60.0);
         } else if (index == (int) ButtonID::SeekForward10) {
             main->getPlayer()->getMpv()->seek(60.0 * 10.0);
         } else if (index == (int) ButtonID::SeekBackward1) {
-            main->getPlayer()->getMpv()->seek(60.0);
+            main->getPlayer()->getMpv()->seek(-60.0);
         } else if (index == (int) ButtonID::SeekBackward10) {
-            main->getPlayer()->getMpv()->seek(60.0 * 10.0);
+            main->getPlayer()->getMpv()->seek(-60.0 * 10.0);
         } else if (index == (int) ButtonID::Stop) {
             setVisibility(Visibility::Hidden);
             main->getStatus()->show("Info...", "Stopping playback...");

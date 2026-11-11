@@ -36,7 +36,7 @@ public:
 
     virtual void clearHistory();
 
-    virtual std::string getError() { return ""; };
+    virtual std::string getError() { return error; };
 
     bool onInput(c2d::Input::Player *players) override;
 
@@ -50,6 +50,7 @@ private:
 
     Main *main;
     std::string path;
+    std::string error;
     std::vector<FilerItem *> items;
     std::vector<MediaFile> files;
     Highlight *highlight;

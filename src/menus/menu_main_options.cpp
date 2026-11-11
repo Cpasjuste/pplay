@@ -12,8 +12,12 @@ MenuMainOptions::MenuMainOptions(Main *main, const c2d::FloatRect &rect, const s
 }
 
 void MenuMainOptions::onOptionSelection(MenuItem *item) {
+    MenuMainOptionsSubmenu *submenu = main->getMenuMain()->getMenuMainOptionsSubmenu(item->name);
+    if (submenu == nullptr) {
+        return;
+    }
     setVisibility(Visibility::Hidden);
-    main->getMenuMain()->getMenuMainOptionsSubmenu(item->name)->setVisibility(Visibility::Visible);
+    submenu->setVisibility(Visibility::Visible);
 }
 
 bool MenuMainOptions::onInput(c2d::Input::Player *players) {

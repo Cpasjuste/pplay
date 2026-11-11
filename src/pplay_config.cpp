@@ -22,6 +22,14 @@ PPLAYConfig::PPLAYConfig(Main *main, int version)
     addOption({OPT_CPU_BOOST, "Disabled"}); // Disabled, Enabled
 #endif
     addOption({OPT_TMDB_LANGUAGE, "en-US"});
+    addOption({OPT_HWDEC, "auto"});
+    addOption({OPT_SW_SPEED, "quality"});
+    // subtitles picked automatically: Latin American Spanish, Spanish, English, English (UK)
+    addOption({OPT_SUB_AUTO, "on"});
+    addOption({OPT_SUB_LANGS, "es-419,es,en,en-GB"});
+    // phone remote control: open http://<console ip>:<port> on the phone
+    addOption({OPT_REMOTE, "on"});
+    addOption({OPT_REMOTE_PORT, (int) 8080});
 
     // load the configuration from file, overwriting default values
     load();
@@ -36,6 +44,36 @@ PPLAYConfig::PPLAYConfig(Main *main, int version)
 
     if (getOption(OPT_TMDB_LANGUAGE)->getString().empty()) {
         getOption(OPT_TMDB_LANGUAGE)->setString("en-US");
+    }
+
+    if (getOption(OPT_HWDEC)->getString().empty()) {
+        getOption(OPT_HWDEC)->setString("auto");
+    }
+
+    {
+        const std::string speed = getOption(OPT_SW_SPEED)->getString();
+        if (speed != "quality" && speed != "balanced" && speed != "fast") {
+            getOption(OPT_SW_SPEED)->setString("quality");
+        }
+    }
+
+    if (getOption(OPT_SUB_AUTO)->getString() != "off") {
+        getOption(OPT_SUB_AUTO)->setString("on");
+    }
+
+    if (getOption(OPT_SUB_LANGS)->getString().empty()) {
+        getOption(OPT_SUB_LANGS)->setString("es-419,es,en,en-GB");
+    }
+
+    if (getOption(OPT_REMOTE)->getString() != "off") {
+        getOption(OPT_REMOTE)->setString("on");
+    }
+
+    {
+        const int port = getOption(OPT_REMOTE_PORT)->getInteger();
+        if (port < 1024 || port > 65535) {
+            getOption(OPT_REMOTE_PORT)->setInteger(8080);
+        }
     }
 
     // save configuration, in case new options needs to be added

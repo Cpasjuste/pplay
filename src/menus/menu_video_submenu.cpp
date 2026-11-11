@@ -27,13 +27,27 @@ MenuVideoSubmenu::MenuVideoSubmenu(
 }
 
 void MenuVideoSubmenu::setSelection(int streamId) {
+    selectedId = streamId;
     for (auto &button: buttons) {
         if (button->item.id == streamId) {
-            if (isVisible()) {
-                highlight_selection->tweenTo(button->getPosition());
-            } else {
-                highlight_selection->setPosition(button->getPosition());
-            }
+            highlight_selection->snapTo(button->getPosition());
+            // the active stream may be scrolled out of the menu
+            highlight_selection->setVisibility(button->isVisible() ? c2d::Visibility::Visible
+                                                                   : c2d::Visibility::Hidden);
+            break;
+        }
+    }
+}
+
+void MenuVideoSubmenu::onScroll() {
+    if (highlight_selection == nullptr) {
+        return;
+    }
+    for (auto &button: buttons) {
+        if (button->item.id == selectedId) {
+            highlight_selection->snapTo(button->getPosition());
+            highlight_selection->setVisibility(button->isVisible() ? c2d::Visibility::Visible
+                                                                   : c2d::Visibility::Hidden);
             break;
         }
     }
@@ -63,13 +77,26 @@ void MenuVideoSubmenu::onOptionSelection(MenuItem *item) {
 }
 
 void MenuVideoSubmenu::setVisibility(c2d::Visibility visibility, bool tweenPlay) {
+    int activeId = -2;
     if (type == MENU_VIDEO_TYPE_VID) {
-        setSelection(main->getPlayer()->getVideoStream());
+        activeId = main->getPlayer()->getVideoStream();
     } else if (type == MENU_VIDEO_TYPE_AUD) {
-        setSelection(main->getPlayer()->getAudioStream());
+        activeId = main->getPlayer()->getAudioStream();
     } else if (type == MENU_VIDEO_TYPE_SUB) {
-        setSelection(main->getPlayer()->getSubtitleStream());
+        activeId = main->getPlayer()->getSubtitleStream();
     }
+
+    if (visibility == Visibility::Visible) {
+        // open the list with the cursor on the stream in use, in the middle of the menu
+        for (size_t i = 0; i < buttons.size(); i++) {
+            if (buttons[i]->item.position == MenuItem::Position::Top && buttons[i]->item.id == activeId) {
+                setIndex((int) i);
+                break;
+            }
+        }
+    }
+
+    setSelection(activeId);
     Menu::setVisibility(visibility, tweenPlay);
 }
 

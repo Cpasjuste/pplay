@@ -45,6 +45,13 @@ void Highlight::setCursorColor(const c2d::Color &color) {
     cursor->setFillColor(color);
 }
 
+void Highlight::snapTo(const c2d::Vector2f &position) {
+    if (tween != nullptr) {
+        tween->setState(TweenState::Stopped);
+    }
+    Transformable::setPosition(position);
+}
+
 void Highlight::tweenTo(const c2d::Vector2f &position) {
     if (tween != nullptr) {
         float seconds = (float) c2d_renderer->getInput()->getRepeatDelay() * 0.001f / 5;

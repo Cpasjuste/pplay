@@ -17,14 +17,21 @@ public:
 
     bool onInput(c2d::Input::Player *players) override;
 
-    void setSelection(const std::string &name);
+    // mark the entry holding this value (as stored in pplay.cfg) as the active one
+    void setSelection(const std::string &value);
+
+    // the list opens with the cursor on the active entry
+    void setVisibility(c2d::Visibility visibility, bool tweenPlay = true) override;
 
 private:
 
     void onOptionSelection(MenuItem *item) override;
 
-    Highlight *highlight_selection;
+    void onScroll() override;
+
+    Highlight *highlight_selection = nullptr;
     std::string option_name;
+    std::string selected;
 };
 
 #endif //PPLAY_MENU_MAIN_OPTIONS_SUBMENU_H

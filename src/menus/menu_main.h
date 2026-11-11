@@ -28,10 +28,8 @@ private:
     void onOptionSelection(MenuItem *item) override;
 
     MenuMainOptions *menuMainOptions;
-#ifdef __SWITCH__
-    MenuMainOptionsSubmenu *menuMainOptionsCpu;
-    MenuMainOptionsSubmenu *menuMainOptionsUsb;
-#endif
+    // one submenu per entry of the "Options" menu, found by the entry name
+    std::vector<std::pair<std::string, MenuMainOptionsSubmenu *>> optionsSubmenus;
 };
 
 

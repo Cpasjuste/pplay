@@ -16,38 +16,92 @@ MenuMainOptionsSubmenu::MenuMainOptionsSubmenu(
     option_name = optionName;
 
     // highlight
-    highlight_selection = new Highlight({MenuMainOptionsSubmenu::getSize().x, BUTTON_HEIGHT * main->getScaling().x},
+    highlight_selection = new Highlight({MenuMainOptionsSubmenu::getSize().x, BUTTON_HEIGHT * main->getScaling().y},
                                         Highlight::CursorPosition::Left);
     highlight_selection->setFillColor(COLOR_BLUE);
     highlight_selection->setAlpha(60);
     highlight_selection->setCursorColor(COLOR_RED);
     highlight_selection->setOrigin(Origin::Left);
-    highlight_selection->setPosition(0, 200);
+    highlight_selection->setPosition(0, 200 * main->getScaling().y);
     highlight_selection->setLayer(-1);
     MenuMainOptionsSubmenu::add(highlight_selection);
 }
 
-void MenuMainOptionsSubmenu::setSelection(const std::string &name) {
-    for (auto btn: buttons) {
-        if (Utility::toLower(btn->item.name) == Utility::toLower(name)) {
-            highlight_selection->tweenTo(btn->getPosition());
+void MenuMainOptionsSubmenu::setSelection(const std::string &value) {
+    selected = value;
+    onScroll();
+}
+
+// puts the "active entry" marker on its button (or hides it when it is scrolled out of the menu)
+void MenuMainOptionsSubmenu::onScroll() {
+    if (highlight_selection == nullptr) {
+        return;
+    }
+
+    highlight_selection->setVisibility(Visibility::Hidden);
+    const std::string wanted = Utility::toLower(selected);
+    for (auto &button: buttons) {
+        if (Utility::toLower(button->item.getValue()) == wanted) {
+            highlight_selection->snapTo(button->getPosition());
+            highlight_selection->setVisibility(button->isVisible() ? Visibility::Visible : Visibility::Hidden);
+            break;
         }
     }
 }
 
+void MenuMainOptionsSubmenu::setVisibility(c2d::Visibility visibility, bool tweenPlay) {
+    if (visibility == Visibility::Visible) {
+        // open on the active entry, in the middle of the menu when the list is long
+        const std::string wanted = Utility::toLower(selected);
+        for (size_t i = 0; i < buttons.size(); i++) {
+            if (Utility::toLower(buttons[i]->item.getValue()) == wanted) {
+                setIndex((int) i);
+                break;
+            }
+        }
+    }
+    if (option_name == OPT_REMOTE) {
+        // the address to open on the phone stays on screen while this list is open
+        if (visibility == Visibility::Visible) {
+            main->getStatus()->show("Phone remote", main->getRemoteInfo(), true);
+        } else {
+            main->getStatus()->hide();
+        }
+    }
+    Menu::setVisibility(visibility, tweenPlay);
+}
+
 void MenuMainOptionsSubmenu::onOptionSelection(MenuItem *item) {
+    const std::string value = item->getValue();
+
 #ifdef __SWITCH__
     if (option_name == OPT_CPU_BOOST) {
-        if (item->name == "Enabled") {
+        if (value == "Enabled") {
             pplay::Utility::setCpuClock(pplay::Utility::CpuClock::Max);
         } else {
             pplay::Utility::setCpuClock(pplay::Utility::CpuClock::Min);
         }
     }
 #endif
-    main->getConfig()->getOption(option_name)->setString(item->name);
+
+    auto *option = main->getConfig()->getOption(option_name);
+    if (option == nullptr) {
+        return;
+    }
+    option->setString(value);
     main->getConfig()->save();
-    setSelection(item->name);
+    setSelection(value);
+
+    if (option_name == OPT_REMOTE) {
+        // start/stop the server now and show where to connect
+        main->applyRemoteOption();
+        main->getStatus()->show("Phone remote", main->getRemoteInfo(), true);
+    }
+
+    if (option_name == OPT_HWDEC || option_name == OPT_SW_SPEED) {
+        // the player (and libmpv) is configured once, when pplay starts
+        main->getStatus()->show("Information...", "Restart pplay to apply this setting");
+    }
 }
 
 bool MenuMainOptionsSubmenu::onInput(c2d::Input::Player *players) {

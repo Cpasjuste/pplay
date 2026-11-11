@@ -17,6 +17,8 @@
 #include "scrapper.h"
 #include "io.h"
 #include "usbfs.h"
+#include "remote_server.h"
+#include "pplay_input.h"
 
 //#define FULL_TEXTURE_TEST 1
 
@@ -112,11 +114,22 @@ public:
 
     void quit();
 
+    // phone remote control: start/stop following the REMOTE option right now (Options menu)
+    void applyRemoteOption();
+
+    // what the phone must open ("http://192.168.1.20:8080") or why it is not available
+    std::string getRemoteInfo();
+
 private:
 
     bool onInput(c2d::Input::Player *players) override;
 
     void onUpdate() override;
+
+    // phone remote control (web page): answer requests, follow the option
+    void updateRemote();
+
+    void onRemoteCommand(const pplay::RemoteCommand &cmd);
 
     pplay::Io *pplayIo;
     c2d::Font *font;
@@ -130,6 +143,11 @@ private:
     MenuMain *menu_main;
     MenuVideo *menu_video;
     pplay::Scrapper *scrapper;
+    pplay::RemoteServer remote;
+    long long remoteCheckMs = 0;
+    long long remoteStateMs = 0;
+    bool remoteWanted = false;
+    std::string remoteInfo = "Off";
     unsigned int oldKeys = 0;
     c2d::Vector2f scaling = {1, 1};
 

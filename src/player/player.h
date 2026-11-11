@@ -8,8 +8,10 @@
 #include "menus/menu_video_submenu.h"
 #include "media_file.h"
 #include "mpv.h"
+#include "subtitles.h"
 
 class Main;
+
 
 class PlayerOSD;
 
@@ -69,7 +71,24 @@ private:
 
     void onLoadEvent();
 
+    // image subtitles (PGS, VobSub...) are drawn by the CPU, see Mpv::setBitmapSubtitleRendering
+    void updateBitmapSubtitles();
+
+    // show the subtitles of the preferred language (SUB_LANGS) when the file is loaded
+    void autoSelectSubtitle();
+
     void onStopEvent(int reason);
+
+    int bitmapSubTicks = 0;
+
+    // hardware decoding (see ffmpeg-orbis/): config + crash guard
+    std::string resolveHwdec();
+
+    void armHwdecGuard();
+
+    void releaseHwdecGuard();
+
+    void updateHwdecGuard();
 
     // ui
     Main *main = nullptr;
@@ -80,12 +99,19 @@ private:
     MenuVideoSubmenu *menuAudioStreams = nullptr;
     MenuVideoSubmenu *menuSubtitlesStreams = nullptr;
     MediaFile file;
+    std::vector<pplay::Subtitles::Item> externalSubs;
 
     // player
     VideoTexture *texture = nullptr;
     Mpv *mpv;
 
     bool fullscreen = false;
+
+    // hardware decoding state
+    std::string hwdecMethod;          // method given to mpv ("" = mpv default)
+    std::string hwdecGuardFile;       // exists while hw decoding has not proven itself
+    bool hwdecGuardArmed = false;
+    bool hwdecNotice = false;         // show "disabled after crash" once
 };
 
 #endif //PPLAY_PLAYER_H

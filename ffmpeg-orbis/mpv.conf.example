@@ -1,0 +1,25 @@
+# /data/pplay/mpv/mpv.conf  (PS4)
+# Hardware decoding is NOT configured here: pplay sets it from HWDEC in
+# /data/pplay/pplay.cfg (auto | no | force) and that setting wins over this file.
+# Remove any "hwdec=" line you had in here.
+
+framedrop=vo
+scale=bilinear
+cscale=bilinear
+dscale=bilinear
+deband=no
+dither-depth=no
+
+# MKV: do not probe for long, keep subtitles that start before a seek point
+demuxer-mkv-probe-video-duration=no
+demuxer-mkv-probe-start-time=no
+demuxer-mkv-subtitle-preroll=yes
+
+# no embedded fonts (ASS font loading is slow and heavy on the console)
+embeddedfonts=no
+# external subtitles: handled by pplay (sub-auto is forced to "no", see README)
+
+network-timeout=15
+cache=yes
+demuxer-max-bytes=64MiB
+demuxer-max-back-bytes=16MiB

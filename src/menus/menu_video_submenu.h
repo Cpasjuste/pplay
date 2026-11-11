@@ -25,11 +25,15 @@ public:
     void setVisibility(c2d::Visibility visibility, bool tweenPlay = true) override;
 
     int type;
-    Highlight *highlight_selection;
+    Highlight *highlight_selection = nullptr;
 
 private:
 
     void onOptionSelection(MenuItem *item) override;
+
+    void onScroll() override;
+
+    int selectedId = -2; // -1 is the "None" subtitle entry
 };
 
 #endif //PPLAY_MENU_VIDEO_SUBMENU_H

@@ -7,6 +7,7 @@
 #include "menu_main.h"
 #include "menu_video.h"
 #include "scrapper.h"
+#include "player_osd.h"
 
 #ifdef __SWITCH__
 
@@ -60,6 +61,11 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     // create pplay data directory
     pplayIo->create(pplayIo->getDataPath() + "mpv");
 
+    // our input (phone remote keys, analog stick, controller turned on later). The default one is
+    // not deleted on purpose: that would close the pads (SDL quits its joystick subsystem) before
+    // the new one opens them again. It is only a few bytes, alive until the process ends.
+    m_input = new PplayInput();
+
     // configure input
     Main::getInput()->setRepeatDelay(INPUT_DELAY);
 
@@ -91,7 +97,9 @@ Main::Main(const c2d::Vector2f &size) : C2DRenderer(size) {
     filer = new Filer(this, "/", filerRect);
     filer->setLayer(1);
     Main::add(filer);
-    filer->getDir(config->getOption(OPT_LAST_PATH)->getString());
+    if (!filer->getDir(config->getOption(OPT_LAST_PATH)->getString())) {
+        filer->getDir(config->getOption(OPT_HOME_PATH)->getString());
+    }
 
     // status bar
     statusBar = new StatusBar(this);
@@ -195,6 +203,132 @@ void Main::onUpdate() {
     }
 
     C2DRenderer::onUpdate();
+
+    updateRemote();
+}
+
+void Main::applyRemoteOption() {
+    const bool wanted = config->getOption(OPT_REMOTE)->getString() != "off";
+
+    if (wanted && !remote.isRunning()) {
+        remoteWanted = true;
+        remote.setLogFile(pplayIo->getDataPath() + "remote.log");
+        const int port = config->getOption(OPT_REMOTE_PORT)->getInteger();
+        if (remote.start(port)) {
+            std::string ip = pplay::RemoteServer::localAddress();
+            remoteInfo = "http://" + (ip.empty() ? std::string("<console ip>") : ip)
+                         + ":" + std::to_string(remote.getPort());
+            statusBox->show("Phone remote", remoteInfo);
+        } else {
+            remoteInfo = "Cannot start: " + remote.getError();
+            statusBox->show("Phone remote", remoteInfo);
+        }
+    } else if (!wanted && (remote.isRunning() || remoteWanted)) {
+        remoteWanted = false;
+        remote.stop();
+        remoteInfo = "Off";
+        statusBox->show("Phone remote", "Disabled");
+    }
+}
+
+std::string Main::getRemoteInfo() {
+    return remoteInfo;
+}
+
+void Main::updateRemote() {
+    // follow the option (also changed by hand in pplay.cfg) once a second; a start that failed
+    // is not retried every second (turn the option off and on, or restart pplay)
+    const long long now = pplay::RemoteServer::nowMs();
+    if (now - remoteCheckMs >= 1000 || now < remoteCheckMs) {
+        remoteCheckMs = now;
+        const bool wanted = config->getOption(OPT_REMOTE)->getString() != "off";
+        if ((wanted && !remote.isRunning() && !remoteWanted) || (!wanted && (remote.isRunning() || remoteWanted))) {
+            applyRemoteOption();
+        }
+    }
+
+    if (!remote.isRunning()) {
+        return;
+    }
+
+    // commands received by the server thread
+    std::vector<pplay::RemoteCommand> commands;
+    remote.poll(commands);
+    for (auto &cmd: commands) {
+        onRemoteCommand(cmd);
+    }
+
+    // what the phone shows (title, position...): only built while a phone is asking for it
+    if (remote.wantsState() && (now - remoteStateMs >= 500 || now < remoteStateMs)) {
+        remoteStateMs = now;
+        const bool playing = !player->getMpv()->isStopped();
+        remote.setState(pplay::RemoteProtocol::stateJson(
+                playing ? player->getTitle() : "",
+                playing ? (double) player->getMpv()->getPosition() : 0,
+                playing ? (double) player->getMpv()->getDuration() : 0,
+                playing && player->getMpv()->isPaused(), playing));
+    }
+}
+
+void Main::onRemoteCommand(const pplay::RemoteCommand &cmd) {
+    using Type = pplay::RemoteCommand::Type;
+
+    if (cmd.type == Type::Key) {
+        // the buttons of the phone are pressed like the ones of the controller
+        static const struct {
+            const char *name;
+            unsigned int key;
+        } keys[] = {
+                {"up",     Input::Key::Up},
+                {"down",   Input::Key::Down},
+                {"left",   Input::Key::Left},
+                {"right",  Input::Key::Right},
+                {"ok",     Input::Key::Fire1},
+                {"back",   Input::Key::Fire2},
+                {"fire3",  Input::Key::Fire3},
+                {"fire4",  Input::Key::Fire4},
+                {"select", Input::Key::Select},
+                {"start",  Input::Key::Start},
+                {"l1",     Input::Key::Select}, // L1/R1 are Select/Start on the PS4 (see Player::onInput)
+                {"r1",     Input::Key::Start},
+                {"l2",     Input::Key::Fire5},
+                {"r2",     Input::Key::Fire6},
+        };
+        for (auto &k: keys) {
+            if (cmd.key == k.name) {
+                static_cast<PplayInput *>(getInput())->press(k.key);
+                break;
+            }
+        }
+        return;
+    }
+
+    // the other commands only make sense while a video is playing
+    if (player->getMpv()->isStopped()) {
+        return;
+    }
+
+    switch (cmd.type) {
+        case Type::PlayPause:
+            player->getOSD()->togglePause();
+            break;
+        case Type::Stop:
+            player->getOSD()->setVisibility(Visibility::Hidden);
+            statusBox->show("Info...", "Stopping playback...");
+            player->stop();
+            break;
+        case Type::Seek:
+            if (player->isFullscreen()) {
+                player->getOSD()->setVisibility(Visibility::Visible);
+            }
+            player->getMpv()->seek(cmd.value);
+            break;
+        case Type::Speed:
+            player->setSpeed(cmd.value);
+            break;
+        default:
+            break;
+    }
 }
 
 void Main::show(MenuType type) {

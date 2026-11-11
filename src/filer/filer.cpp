@@ -6,10 +6,80 @@
 #include "filer.h"
 #include "utility.h"
 #include "p_search.h"
+#include <atomic>
 
 #define ITEM_HEIGHT 50
+// max time (seconds) to wait for a remote (http/ftp/smb) directory listing
+#define REMOTE_LIST_TIMEOUT 25
 
 using namespace c2d;
+
+// remote listings can block for a long time (dns/connect without timeout on ps4),
+// so they are done in a thread while the ui keeps drawing (and can cancel)
+struct RemoteListCtx {
+    Main *main = nullptr;
+    pplay::Io::DeviceType type = pplay::Io::DeviceType::Local;
+    std::vector<std::string> ext;
+    std::string path;
+    std::vector<Io::File> files;
+    std::atomic<int> state{0}; // 0: running, 1: done, 2: abandoned by the ui
+};
+
+static int remote_list_thread(void *data) {
+    auto *ctx = (RemoteListCtx *) data;
+    ctx->files = ((pplay::Io *) ctx->main->getIo())->getDirList(ctx->type, ctx->ext, ctx->path, false);
+    if (ctx->state.exchange(1) == 2) {
+        // ui gave up waiting, nobody will read the result
+        delete ctx;
+    }
+    return 0;
+}
+
+static bool list_remote(Main *main, pplay::Io::DeviceType type, const std::vector<std::string> &ext,
+                        const std::string &path, std::vector<Io::File> &out, std::string &error) {
+    auto *ctx = new RemoteListCtx();
+    ctx->main = main;
+    ctx->type = type;
+    ctx->ext = ext;
+    ctx->path = path;
+
+    main->getStatus()->show("Please Wait...", "Loading " + path + "\n\nPress O to cancel", true);
+    auto *thread = new C2DThread(remote_list_thread, ctx);
+    C2DClock clock;
+    bool aborted = false;
+
+    while (ctx->state.load() != 1) {
+        if (main->getInput()->update()->keys & Input::Key::Fire2) {
+            error = "Loading cancelled.";
+            aborted = true;
+        } else if (clock.getElapsedTime().asSeconds() > REMOTE_LIST_TIMEOUT) {
+            error = "Timeout while loading \"" + path + "\"";
+            aborted = true;
+        }
+        if (aborted) {
+            break;
+        }
+        main->flip(true, false);
+    }
+    main->getStatus()->hide();
+
+    if (aborted) {
+        if (ctx->state.exchange(2) == 1) {
+            // finished just now, clean up here
+            thread->join();
+            delete thread;
+            delete ctx;
+        }
+        // else: thread still blocked in network code, leaked on purpose (cleans up if it ever returns)
+        return false;
+    }
+
+    thread->join();
+    delete thread;
+    out = ctx->files;
+    delete ctx;
+    return true;
+}
 
 Filer::Filer(Main *m, const std::string &path, const c2d::FloatRect &rect) :
         Rectangle(m->getScaled(rect)) {
@@ -199,18 +269,35 @@ static bool compare(const MediaFile &a, const MediaFile &b) {
 
 bool Filer::getDir(const std::string &p) {
     printf("getDir(%s)\n", p.c_str());
+    error.clear();
+
+    std::string newPath = p;
+    if (newPath.size() > 1 && Utility::endsWith(newPath, "/")) {
+        newPath = Utility::removeLastSlash(newPath);
+    }
+
+    // do the (possibly slow) listing before touching the current state/mutex
+    std::vector<std::string> ext = pplay::Utility::getMediaExtensions();
+    pplay::Io::DeviceType type = ((pplay::Io *) main->getIo())->getDeviceType(p);
+    std::vector<Io::File> _files;
+    if (type == pplay::Io::DeviceType::Local) {
+        _files = ((pplay::Io *) main->getIo())->getDirList(type, ext, newPath, false);
+    } else if (!list_remote(main, type, ext, newPath, _files, error)) {
+        return false;
+    }
+
+    // remote listing failed (no network, bad url, server down...): keep the
+    // current directory and report the error instead of showing an empty list
+    if (type != pplay::Io::DeviceType::Local && _files.empty()) {
+        error = "Could not list \"" + p + "\"\n\n"
+                + "Check the NETWORK entry in pplay.cfg and the console network connection.";
+        printf("getDir: %s\n", error.c_str());
+        return false;
+    }
 
     mutex->lock();
     files.clear();
-    path = p;
-    if (path.size() > 1 && Utility::endsWith(path, "/")) {
-        path = Utility::removeLastSlash(path);
-    }
-
-    std::vector<std::string> ext = pplay::Utility::getMediaExtensions();
-    pplay::Io::DeviceType type = ((pplay::Io *) main->getIo())->getDeviceType(p);
-    std::vector<Io::File> _files =
-            ((pplay::Io *) main->getIo())->getDirList(type, ext, path, false);
+    path = newPath;
 
     for (auto &file: _files) {
         MediaFile mf(file, MediaInfo(file));
@@ -258,6 +345,8 @@ void Filer::enter(int index) {
     if (success) {
         item_index_prev.push_back(index);
         setSelection(item_index);
+    } else if (!error.empty()) {
+        main->getStatus()->show("OOPS", error);
     }
 }
 

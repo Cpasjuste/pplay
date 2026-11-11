@@ -2,6 +2,7 @@
 // Created by cpasjuste on 02/04/19.
 //
 
+#include <cstring>
 #include <SDL_video.h>
 #include "mpv.h"
 
@@ -14,7 +15,38 @@ static void *get_proc_address_mpv(void *unused, const char *name) {
     return SDL_GL_GetProcAddress(name);
 }
 
-Mpv::Mpv(const std::string &configPath, bool initRender) {
+#ifdef __PS4__
+// true if "mpv.conf" sets this option (options given to libmpv before it starts win over the
+// configuration file, so the defaults below are only applied when the user did not choose)
+static bool confSets(const std::string &configPath, const std::string &key) {
+    FILE *f = fopen((configPath + "/mpv.conf").c_str(), "r");
+    if (f == nullptr) {
+        return false;
+    }
+
+    bool found = false;
+    char line[512];
+    while (!found && fgets(line, sizeof(line), f) != nullptr) {
+        const char *p = line;
+        while (*p == ' ' || *p == '\t') {
+            p++;
+        }
+        if (strncmp(p, key.c_str(), key.size()) == 0) {
+            p += key.size();
+            while (*p == ' ' || *p == '\t') {
+                p++;
+            }
+            found = (*p == '=' || *p == '\0' || *p == '\n' || *p == '\r');
+        }
+    }
+    fclose(f);
+
+    return found;
+}
+#endif
+
+Mpv::Mpv(const std::string &configPath, bool initRender, const std::string &hwdec,
+         const std::string &swSpeed) {
 #ifdef __PS4__
     ps4_mpv_use_precompiled_shaders = 1;
     ps4_mpv_dump_shaders = 0;
@@ -45,6 +77,27 @@ Mpv::Mpv(const std::string &configPath, bool initRender) {
 #endif
     mpv_set_option_string(handle, "audio-channels", "stereo");
 #ifdef __PS4__
+    // libmpv defaults (150 MiB of packets ahead + 150 MiB kept behind) are far too much for the
+    // memory a homebrew gets on the console: a big 1080p file could run it out of memory
+    if (!confSets(configPath, "demuxer-max-bytes")) {
+        mpv_set_option_string(handle, "demuxer-max-bytes", "64MiB");
+    }
+    if (!confSets(configPath, "demuxer-max-back-bytes")) {
+        mpv_set_option_string(handle, "demuxer-max-back-bytes", "16MiB");
+    }
+    // mkv: do not read ahead looking for the duration/first timestamps of huge files
+    if (!confSets(configPath, "demuxer-mkv-probe-video-duration")) {
+        mpv_set_option_string(handle, "demuxer-mkv-probe-video-duration", "no");
+    }
+    // ASS fonts attached to the mkv are slow to load and heavy on the console memory
+    if (!confSets(configPath, "embeddedfonts")) {
+        mpv_set_option_string(handle, "embeddedfonts", "no");
+    }
+#endif
+    // external subtitles are found (and converted to UTF-8, the PS4 libmpv has no
+    // iconv) by pplay itself, see subtitles.h: do not let mpv add them a second time
+    mpv_set_option_string(handle, "sub-auto", "no");
+#ifdef __PS4__
     mpv_set_option_string(handle, "ignore-path-in-watch-later-config", "yes");
 #endif
 
@@ -58,6 +111,28 @@ Mpv::Mpv(const std::string &configPath, bool initRender) {
 #if defined(__LINUX__) && defined(NDEBUG)
     mpv_set_option_string(handle, "hwdec", "auto-safe");
 #endif
+
+    // hardware decoding (PS4: "orbis-copy" is the libSceVideodec2 wrapper added
+    // to ffmpeg, see ffmpeg-orbis/). If mpv does not know the method (ffmpeg built
+    // without it) the option is refused and mpv keeps decoding in software.
+    if (initRender && !hwdec.empty()) {
+        int hres = mpv_set_option_string(handle, "hwdec", hwdec.c_str());
+        printf("Mpv::Mpv: hwdec=%s: %s\n", hwdec.c_str(), mpv_error_string(hres));
+        if (hres < 0) {
+            mpv_set_option_string(handle, "hwdec", "no");
+        }
+    }
+
+    // software decoding speed/quality trade-off (what is not handled by the
+    // hardware decoder runs on the console CPU: Hi10 H.264, HEVC...)
+    if (swSpeed == "balanced") {
+        mpv_set_option_string(handle, "vd-lavc-skiploopfilter", "nonref");
+        mpv_set_option_string(handle, "vd-lavc-fast", "yes");
+    } else if (swSpeed == "fast") {
+        mpv_set_option_string(handle, "vd-lavc-skiploopfilter", "all");
+        mpv_set_option_string(handle, "vd-lavc-fast", "yes");
+        mpv_set_option_string(handle, "framedrop", "decoder+vo");
+    }
 
     if (!initRender) {
         mpv_set_option_string(handle, "vid", "no");
@@ -123,6 +198,15 @@ int Mpv::save() {
     return mpv_command_string(handle, "write-watch-later-config");
 }
 
+int Mpv::addSubtitle(const std::string &path, const std::string &title, const std::string &lang) {
+    if (!isAvailable()) {
+        return -1;
+    }
+    // sub-add <url> [<flags> [<title> [<lang>]]]
+    const char *cmd[] = {"sub-add", path.c_str(), "auto", title.c_str(), lang.c_str(), nullptr};
+    return mpv_command(handle, cmd);
+}
+
 int Mpv::pause() {
     return mpv_command_string(handle, "set pause yes");
 }
@@ -186,6 +270,57 @@ int Mpv::getSid() {
     int64_t sid = -1;
     mpv_get_property(handle, "sid", MPV_FORMAT_INT64, &sid);
     return (int) sid;
+}
+
+std::string Mpv::getSubtitleCodec() {
+    if (handle == nullptr) {
+        return "";
+    }
+    // unavailable (NULL) when no subtitle track is selected
+    char *codec = mpv_get_property_string(handle, "current-tracks/sub/codec");
+    std::string str = codec ? codec : "";
+    if (codec) {
+        mpv_free(codec);
+    }
+    return str;
+}
+
+int Mpv::setBitmapSubtitleRendering(bool enable) {
+    if (handle == nullptr) {
+        return MPV_ERROR_UNINITIALIZED;
+    }
+    if (enable == bitmapSubFilter) {
+        return 0;
+    }
+
+    // The "sub" video filter makes mpv blend all the subtitles into the frames with the CPU,
+    // so the GPU does not draw any subtitle while it is in the filter chain. It is given
+    // 8 bit planar frames ("format"): what the PS4 shaders use anyway (10 bit videos are
+    // converted for them) and the best supported by the CPU blending code.
+    int res = 0;
+    if (enable) {
+        res = mpv_command_string(handle, "vf add @pplayfmt:format=yuv420p");
+        if (res >= 0) {
+            res = mpv_command_string(handle, "vf add @pplaysub:sub");
+            if (res < 0) {
+                mpv_command_string(handle, "vf remove @pplayfmt");
+            }
+        }
+    } else {
+        // (an error here only means the filter was not there)
+        mpv_command_string(handle, "vf remove @pplaysub");
+        mpv_command_string(handle, "vf remove @pplayfmt");
+    }
+    printf("Mpv::setBitmapSubtitleRendering(%i): %s\n", enable, mpv_error_string(res));
+    if (res >= 0) {
+        bitmapSubFilter = enable;
+    }
+
+    return res;
+}
+
+bool Mpv::isBitmapSubtitleRendering() const {
+    return bitmapSubFilter;
 }
 
 int Mpv::getVideoBitrate() {

@@ -1,0 +1,1777 @@
+diff --git a/configure b/configure
+index 6b5ef63..4b77a71 100755
+--- a/configure
++++ b/configure
+@@ -3161,6 +3161,7 @@ h264_amf_encoder_deps="amf"
+ h264_crystalhd_decoder_select="crystalhd h264_mp4toannexb_bsf h264_parser"
+ h264_cuvid_decoder_deps="cuvid"
+ h264_cuvid_decoder_select="h264_mp4toannexb_bsf"
++h264_orbis_decoder_select="h264_mp4toannexb_bsf"
+ h264_mediacodec_decoder_deps="mediacodec"
+ h264_mediacodec_decoder_select="h264_mp4toannexb_bsf h264_parser"
+ h264_mf_encoder_deps="mediafoundation"
+diff --git a/libavcodec/Makefile b/libavcodec/Makefile
+index 3adf153..639bc32 100644
+--- a/libavcodec/Makefile
++++ b/libavcodec/Makefile
+@@ -386,6 +386,7 @@ OBJS-$(CONFIG_H264_OMX_ENCODER)        += omx.o
+ OBJS-$(CONFIG_H264_QSV_DECODER)        += qsvdec.o
+ OBJS-$(CONFIG_H264_QSV_ENCODER)        += qsvenc_h264.o
+ OBJS-$(CONFIG_H264_RKMPP_DECODER)      += rkmppdec.o
++OBJS-$(CONFIG_H264_ORBIS_DECODER)      += orbisvdec.o orbisvdec_sys.o
+ OBJS-$(CONFIG_H264_VAAPI_ENCODER)      += vaapi_encode_h264.o h264_levels.o
+ OBJS-$(CONFIG_H264_VIDEOTOOLBOX_ENCODER) += videotoolboxenc.o
+ OBJS-$(CONFIG_H264_V4L2M2M_DECODER)    += v4l2_m2m_dec.o
+diff --git a/libavcodec/allcodecs.c b/libavcodec/allcodecs.c
+index d1e1019..6331cc9 100644
+--- a/libavcodec/allcodecs.c
++++ b/libavcodec/allcodecs.c
+@@ -153,6 +153,7 @@ extern const AVCodec ff_h264_mediacodec_decoder;
+ extern const AVCodec ff_h264_mmal_decoder;
+ extern const AVCodec ff_h264_qsv_decoder;
+ extern const AVCodec ff_h264_rkmpp_decoder;
++extern const AVCodec ff_h264_orbis_decoder;
+ extern const AVCodec ff_hap_encoder;
+ extern const AVCodec ff_hap_decoder;
+ extern const AVCodec ff_hevc_decoder;
+diff --git a/libavcodec/orbisvdec.c b/libavcodec/orbisvdec.c
+new file mode 100644
+index 0000000..217db2c
+--- /dev/null
++++ b/libavcodec/orbisvdec.c
+@@ -0,0 +1,1305 @@
++/*
++ * PS4 (Orbis) hardware H.264 decoder using libSceVideodec2
++ *
++ * This file is part of FFmpeg.
++ *
++ * FFmpeg is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * FFmpeg is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with FFmpeg; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++ */
++
++/*
++ * Design notes
++ *
++ *  - One process wide "session" owns the compute queue, the decoder and ALL
++ *    direct memory. It is created when a video is opened and torn down when it
++ *    is closed (decoder, then compute queue, then memory: the order Moonlight-ps4
++ *    and PS4 Cast use). Nothing stays allocated while no video is playing,
++ *    because a live compute queue makes the system fault on suspend/exit. After a
++ *    close the next open waits 250 ms.
++ *  - sceVideodec2Decode is synchronous and needs a very large stack, so every
++ *    call into the library runs on a dedicated worker thread (16 MiB stack).
++ *    A call that does not return in time marks the session broken; every
++ *    later open fails and mpv falls back to software decoding.
++ *  - The decoder returns pictures in display order but without usable
++ *    timestamps, so input timestamps are kept in a small sorted queue and the
++ *    smallest one is attached to every picture that comes out.
++ *  - Output is NV12 with a macroblock padded height. It is cropped and
++ *    converted to planar yuv420p so that frames are ordinary system memory:
++ *    nothing here is shared with the renderer or with libass.
++ *  - Only what the hardware handles correctly is accepted (8 bit 4:2:0
++ *    progressive Baseline/Main/High, level <= 5.1, <= 1920x1088). Everything
++ *    else is refused at open time (or on the first SPS) so that the caller
++ *    uses its software decoder.
++ */
++
++#include "config.h"
++
++#include <errno.h>
++#include <inttypes.h>
++#include <limits.h>
++#include <pthread.h>
++#include <stdio.h>
++#include <string.h>
++#include <time.h>
++
++#if ARCH_X86
++#include <emmintrin.h>
++#endif
++
++#include "libavutil/avassert.h"
++#include "libavutil/imgutils.h"
++#include "libavutil/intreadwrite.h"
++#include "libavutil/log.h"
++#include "libavutil/mem.h"
++#include "libavutil/opt.h"
++#include "libavutil/time.h"
++
++#include "avcodec.h"
++#include "decode.h"
++#include "get_bits.h"
++#include "internal.h"
++#include "orbisvdec.h"
++
++#define SESSION_MAX_W       1920
++#define SESSION_MAX_H       1088
++#define MAX_FB              20
++#define NUM_AU              3
++#define AU_CAPACITY         (4 * 1024 * 1024)
++#define WORKER_STACK        (16 * 1024 * 1024)
++#define CALL_TIMEOUT_SEC    10
++#define PTS_QUEUE_SIZE      32
++#define ERR_FRAMES_RESET    30
++#define ERR_PACKETS_GIVEUP  5
++
++/* ------------------------------------------------------------------------ */
++/* Process wide session                                                      */
++/* ------------------------------------------------------------------------ */
++
++enum { J_NONE, J_INIT, J_RESET, J_DECODE, J_FLUSH, J_TEARDOWN };
++
++typedef struct OrbisSession {
++    pthread_mutex_t mtx;
++    pthread_cond_t  job_cv, done_cv;
++    pthread_t       thr;
++    int             thr_started;
++    int             job_pending, job_done, op;
++
++    int             in_use;     /* a codec context currently owns the session */
++    int             ready;      /* decoder created */
++    int64_t         last_close; /* av_gettime_relative() of the last teardown */
++    int             broken;     /* unrecoverable: never use again */
++
++    OVDApi          api;
++    void           *queue;
++    void           *dec;
++    int             dpb, w, h;  /* decoder configuration of this session */
++    int             num_fb;
++    int             fb_idx, au_idx;
++
++    OVDMem          compute, cpu, gpu, cgpu;
++    OVDMem          fbpool[MAX_FB];
++    OVDMem          au[NUM_AU];
++    size_t          fb_size;
++    OVDDecoderConfig cfg;
++    OVDDecoderMemInfo mi;
++
++    /* job in/out */
++    OVDInput        in;
++    OVDFrameBuffer  fb;
++    OVDOutput       out;
++    int             rc;
++} OrbisSession;
++
++static OrbisSession S = {
++    .mtx     = PTHREAD_MUTEX_INITIALIZER,
++    .job_cv  = PTHREAD_COND_INITIALIZER,
++    .done_cv = PTHREAD_COND_INITIALIZER,
++};
++
++static void fill_config(OrbisSession *s)
++{
++    memset(&s->cfg, 0, sizeof(s->cfg));
++    s->cfg.thisSize            = sizeof(s->cfg);
++    s->cfg.resourceType        = OVD_RESOURCE_EMBEDDED;
++    s->cfg.codecType           = OVD_CODEC_AVC;
++    s->cfg.profile             = OVD_PROFILE_HIGH;
++    s->cfg.maxLevel            = OVD_LEVEL_51;
++    s->cfg.maxFrameWidth       = s->w;
++    s->cfg.maxFrameHeight      = s->h;
++    s->cfg.maxDpbFrameCount    = s->dpb;
++    s->cfg.decodePipelineDepth = 1;
++    s->cfg.computeQueue        = s->queue;
++    s->cfg.cpuAffinityMask     = OVD_AFFINITY_ALL;
++    s->cfg.cpuThreadPriority   = OVD_THREAD_PRIO;
++    s->cfg.optimizeProgressiveVideo = 1;
++    s->cfg.checkMemoryType     = 0;
++}
++
++static int create_decoder(OrbisSession *s)
++{
++    int rc;
++    fill_config(s);
++    s->dec = NULL;
++    rc = s->api.CreateDecoder(&s->cfg, &s->mi, &s->dec);
++    if (rc < 0 || !s->dec) {
++        av_log(NULL, AV_LOG_ERROR, "orbis: CreateDecoder failed 0x%08x\n", (unsigned)rc);
++        s->dec = NULL;
++        return AVERROR_EXTERNAL;
++    }
++    return 0;
++}
++
++
++#ifdef __ORBIS__
++/* Opt-in diagnostics: create /data/pplay/hwdec_probe, start a hardware decoded
++ * video, and the result of asking the library about other codec types (HEVC...)
++ * is written to /data/pplay/hwdec_probe.txt. Only QueryDecoderMemoryInfo is
++ * called: nothing is decoded and no memory is reserved. */
++static void probe_codecs(OrbisSession *s)
++{
++    static const char trigger[] = "/data/pplay/hwdec_probe";
++    static const char report[]  = "/data/pplay/hwdec_probe.txt";
++    static const unsigned codecs[]   = { 0, 2, 3, 4, 5 };
++    static const unsigned profiles[] = { 1, 2, 100 };
++    static const unsigned levels[]   = { 51, 123, 153 };
++    FILE *t = fopen(trigger, "rb"), *f;
++    int a, b, c;
++
++    if (!t)
++        return;
++    fclose(t);
++    remove(trigger);
++    f = fopen(report, "w");
++    if (!f)
++        return;
++    fprintf(f, "sceVideodec2QueryDecoderMemoryInfo, resourceType 1, %dx%d\n",
++            s->w, s->h);
++    for (a = 0; a < (int)FF_ARRAY_ELEMS(codecs); a++)
++        for (b = 0; b < (int)FF_ARRAY_ELEMS(profiles); b++)
++            for (c = 0; c < (int)FF_ARRAY_ELEMS(levels); c++) {
++                OVDDecoderConfig cfg = s->cfg;
++                OVDDecoderMemInfo mi;
++                int rc;
++                cfg.codecType = codecs[a];
++                cfg.profile   = profiles[b];
++                cfg.maxLevel  = levels[c];
++                memset(&mi, 0, sizeof(mi));
++                mi.thisSize = sizeof(mi);
++                rc = s->api.QueryDecoderMemoryInfo(&cfg, &mi);
++                fprintf(f, "codec %u profile %3u level %3u -> 0x%08x%s fb=%"PRIu64"\n",
++                        codecs[a], profiles[b], levels[c], (unsigned)rc,
++                        rc >= 0 ? "  ACCEPTED" : "", (uint64_t)mi.maxFrameBufferSize);
++                fflush(f);
++            }
++    fprintf(f, "done\n");
++    fclose(f);
++}
++#else
++static void probe_codecs(OrbisSession *s) { }
++#endif
++
++/* Runs on the worker thread. */
++static int do_init_inner(OrbisSession *s)
++{
++    static const struct { uint16_t pipe, queue; } tries[] = {
++        { 0, 0 }, { 0, 1 }, { 1, 0 }, { 1, 1 }, { 2, 0 }, { 3, 0 }, { 4, 0 },
++    };
++    OVDComputeMemInfo cmi;
++    size_t fb_align;
++    int i, rc;
++
++    rc = ovd_sys_bind(&s->api);
++    if (rc < 0)
++        return rc;
++
++    memset(&cmi, 0, sizeof(cmi));
++    cmi.thisSize = sizeof(cmi);
++    rc = s->api.QueryComputeMemoryInfo(&cmi);
++    if (rc < 0)
++        return AVERROR_EXTERNAL;
++    if ((rc = ovd_sys_dmem_alloc(&s->compute, cmi.cpuGpuMemorySize, OVD_MEM_ONION)) < 0)
++        return rc;
++    cmi.cpuGpuMemory = s->compute.va;
++
++    rc = -1;
++    for (i = 0; i < (int)FF_ARRAY_ELEMS(tries); i++) {
++        OVDComputeConfig cc;
++        void *q = NULL;
++        memset(&cc, 0, sizeof(cc));
++        cc.thisSize       = sizeof(cc);
++        cc.computePipeId  = tries[i].pipe;
++        cc.computeQueueId = tries[i].queue;
++        rc = s->api.AllocateComputeQueue(&cc, &cmi, &q);
++        av_log(NULL, AV_LOG_VERBOSE, "orbis: compute queue pipe %u/%u -> 0x%08x\n",
++               cc.computePipeId, cc.computeQueueId, (unsigned)rc);
++        if (rc == 0 && q) {
++            s->queue = q;
++            break;
++        }
++    }
++    if (!s->queue)
++        return AVERROR_EXTERNAL;
++
++    fill_config(s);
++    memset(&s->mi, 0, sizeof(s->mi));
++    s->mi.thisSize = sizeof(s->mi);
++    rc = s->api.QueryDecoderMemoryInfo(&s->cfg, &s->mi);
++    if (rc < 0)
++        return AVERROR_EXTERNAL;
++    probe_codecs(s);
++    av_log(NULL, AV_LOG_VERBOSE,
++           "orbis: decoder memory cpu=%"PRIu64" gpu=%"PRIu64" cpugpu=%"PRIu64" fb=%"PRIu64"\n",
++           s->mi.cpuMemorySize, s->mi.gpuMemorySize, s->mi.cpuGpuMemorySize,
++           s->mi.maxFrameBufferSize);
++
++    if (s->mi.cpuMemorySize) {
++        if ((rc = ovd_sys_dmem_alloc(&s->cpu, s->mi.cpuMemorySize, OVD_MEM_ONION)) < 0)
++            return rc;
++        s->mi.cpuMemory = s->cpu.va;
++    }
++    if (s->mi.gpuMemorySize) {      /* must be Garlic */
++        if ((rc = ovd_sys_dmem_alloc(&s->gpu, s->mi.gpuMemorySize, OVD_MEM_GARLIC)) < 0)
++            return rc;
++        s->mi.gpuMemory = s->gpu.va;
++    }
++    if (s->mi.cpuGpuMemorySize) {
++        if ((rc = ovd_sys_dmem_alloc(&s->cgpu, s->mi.cpuGpuMemorySize, OVD_MEM_ONION)) < 0)
++            return rc;
++        s->mi.cpuGpuMemory = s->cgpu.va;
++    }
++
++    s->fb_size = s->mi.maxFrameBufferSize ? s->mi.maxFrameBufferSize
++                                          : (SESSION_MAX_W * SESSION_MAX_H * 3 / 2);
++    fb_align = s->mi.frameBufferAlignment;
++    (void)fb_align;                 /* dmem blocks are 16 KiB aligned already */
++    s->num_fb = FFMIN(s->dpb + 2, MAX_FB);
++    for (i = 0; i < s->num_fb; i++)
++        if ((rc = ovd_sys_dmem_alloc(&s->fbpool[i], s->fb_size, OVD_MEM_ONION)) < 0)
++            return rc;
++    for (i = 0; i < NUM_AU; i++)
++        if ((rc = ovd_sys_dmem_alloc(&s->au[i], AU_CAPACITY, OVD_MEM_ONION)) < 0)
++            return rc;
++
++    rc = create_decoder(s);
++    if (rc < 0)
++        return rc;
++    s->ready = 1;
++    return 0;
++}
++
++/* Release everything, in the order the working homebrew decoders (Moonlight-ps4,
++ * PS4 Cast) use: decoder, compute queue (it lives in the compute memory), then
++ * the memory. Leaving a compute queue alive makes the system fault when the app
++ * is suspended or closed, so nothing stays allocated while no video is playing.
++ * Runs on the worker thread. */
++static void free_mem(OVDMem *m)
++{
++    if (m->va)
++        ovd_sys_dmem_free(m);
++    memset(m, 0, sizeof(*m));
++}
++
++static int do_teardown(OrbisSession *s)
++{
++    int i;
++
++    if (s->dec && s->api.DeleteDecoder)
++        s->api.DeleteDecoder(s->dec);
++    s->dec = NULL;
++    ovd_sys_usleep(20 * 1000);
++    if (s->queue && s->api.ReleaseComputeQueue)
++        s->api.ReleaseComputeQueue(s->queue);
++    s->queue = NULL;
++    ovd_sys_usleep(20 * 1000);
++    free_mem(&s->cgpu);
++    free_mem(&s->gpu);
++    free_mem(&s->cpu);
++    for (i = 0; i < MAX_FB; i++)
++        free_mem(&s->fbpool[i]);
++    for (i = 0; i < NUM_AU; i++)
++        free_mem(&s->au[i]);
++    free_mem(&s->compute);
++    s->num_fb = 0;
++    s->ready  = 0;
++    return 0;
++}
++
++static int do_init(OrbisSession *s)
++{
++    int rc = do_init_inner(s);
++    ovd_sys_priv_leave();       /* the (rarely needed) GoldHEN jailbreak lasts for the whole open */
++    return rc;
++}
++
++static int do_reset(OrbisSession *s)
++{
++    int rc = -1;
++    s->fb_idx = s->au_idx = 0;
++    if (s->api.Reset) {
++        rc = s->api.Reset(s->dec);
++        if (rc >= 0)
++            return 0;
++        av_log(NULL, AV_LOG_WARNING, "orbis: Reset failed 0x%08x, recreating\n", (unsigned)rc);
++    }
++    /* No (working) Reset: recreate the decoder on the same memory. */
++    if (s->dec && s->api.DeleteDecoder)
++        s->api.DeleteDecoder(s->dec);
++    s->dec = NULL;
++    rc = create_decoder(s);
++    if (rc < 0)
++        s->ready = 0;       /* no decoder any more: every later call fails cleanly */
++    return rc;
++}
++
++static void *worker_main(void *arg)
++{
++    OrbisSession *s = arg;
++
++    for (;;) {
++        int op, rc = 0;
++
++        pthread_mutex_lock(&s->mtx);
++        while (!s->job_pending)
++            pthread_cond_wait(&s->job_cv, &s->mtx);
++        op = s->op;
++        pthread_mutex_unlock(&s->mtx);
++
++        switch (op) {
++        case J_INIT:   rc = do_init(s);  break;
++        case J_TEARDOWN: rc = do_teardown(s); break;
++        case J_RESET:
++        case J_DECODE:
++        case J_FLUSH:
++            if (!s->dec || !s->ready) {         /* never hand a NULL decoder to the library */
++                rc = AVERROR_EXTERNAL;
++            } else if (op == J_RESET) {
++                rc = do_reset(s);
++            } else if (op == J_DECODE) {
++                rc = s->api.Decode(s->dec, &s->in, &s->fb, &s->out);
++            } else {
++                rc = s->api.Flush ? s->api.Flush(s->dec, &s->fb, &s->out) : AVERROR(ENOSYS);
++            }
++            break;
++        default:       rc = AVERROR(EINVAL);
++        }
++
++        pthread_mutex_lock(&s->mtx);
++        s->rc          = rc;
++        s->job_pending = 0;
++        s->job_done    = 1;
++        pthread_cond_signal(&s->done_cv);
++        pthread_mutex_unlock(&s->mtx);
++    }
++    return NULL;
++}
++
++/* Run one job on the worker and wait for it. Only the session owner calls
++ * this, so the job fields never race. */
++static int session_call(OrbisSession *s, int op, int timeout_sec)
++{
++    int64_t start = av_gettime_relative();
++    int rc = 0;
++
++    pthread_mutex_lock(&s->mtx);
++    s->op          = op;
++    s->job_done    = 0;
++    s->job_pending = 1;
++    pthread_cond_signal(&s->job_cv);
++
++    /* wait in short slices against a monotonic clock (a wall clock change must
++     * not look like a hang) */
++    while (!s->job_done && av_gettime_relative() - start < (int64_t)timeout_sec * 1000000) {
++        struct timespec ts;
++        clock_gettime(CLOCK_REALTIME, &ts);
++        ts.tv_nsec += 100 * 1000 * 1000;
++        if (ts.tv_nsec >= 1000000000L) {
++            ts.tv_sec++;
++            ts.tv_nsec -= 1000000000L;
++        }
++        pthread_cond_timedwait(&s->done_cv, &s->mtx, &ts);
++    }
++    if (s->job_done) {
++        rc = s->rc;
++    } else {
++        s->broken = 1;      /* the worker is stuck inside the library */
++        rc = AVERROR_EXTERNAL;
++    }
++    pthread_mutex_unlock(&s->mtx);
++    return rc;
++}
++
++static int session_acquire(OrbisSession *s, int dpb, int w, int h)
++{
++    int rc = 0;
++
++    pthread_mutex_lock(&s->mtx);
++    if (s->broken || s->in_use) {
++        pthread_mutex_unlock(&s->mtx);
++        return s->broken ? AVERROR_EXTERNAL : AVERROR(EBUSY);
++    }
++    s->in_use = 1;
++    s->dpb = dpb;
++    s->w   = w;
++    s->h   = h;
++    if (!s->thr_started) {
++        pthread_attr_t attr;
++        pthread_attr_init(&attr);
++        pthread_attr_setstacksize(&attr, WORKER_STACK);
++        if (pthread_create(&s->thr, &attr, worker_main, s) != 0)
++            rc = AVERROR(EAGAIN);
++        else
++            s->thr_started = 1;
++        pthread_attr_destroy(&attr);
++    }
++    pthread_mutex_unlock(&s->mtx);
++    if (rc < 0)
++        goto fail;
++
++    /* give the driver a moment after the previous decoder was closed */
++    if (s->last_close) {
++        int64_t wait = 250 * 1000 - (av_gettime_relative() - s->last_close);
++        if (wait > 0 && wait <= 250 * 1000)
++            ovd_sys_usleep((unsigned)wait);
++    }
++
++    rc = session_call(s, J_INIT, 30);
++    if (rc < 0) {
++        if (!s->broken)                 /* undo whatever was created */
++            session_call(s, J_TEARDOWN, 10);
++        s->last_close = av_gettime_relative();
++        goto fail;
++    }
++    return 0;
++fail:
++    pthread_mutex_lock(&s->mtx);
++    s->in_use = 0;
++    pthread_mutex_unlock(&s->mtx);
++    return rc < 0 ? rc : AVERROR_EXTERNAL;
++}
++
++static void session_release(OrbisSession *s)
++{
++    if (!s->broken)     /* a stuck call must not be raced: leave everything as is */
++        session_call(s, J_TEARDOWN, 10);
++    s->last_close = av_gettime_relative();
++    pthread_mutex_lock(&s->mtx);
++    s->in_use = 0;
++    pthread_mutex_unlock(&s->mtx);
++}
++
++/* ------------------------------------------------------------------------ */
++/* H.264 SPS parsing (only what is needed to decide eligibility)             */
++/* ------------------------------------------------------------------------ */
++
++typedef struct SPSInfo {
++    int profile, level, chroma_format, bit_depth;
++    int frame_mbs_only, num_ref_frames;
++    int coded_w, coded_h;                  /* in pixels, macroblock aligned */
++    int crop_l, crop_r, crop_t, crop_b;    /* in luma pixels */
++    int full_range, colour_valid, primaries, trc, matrix;
++    AVRational sar;
++} SPSInfo;
++
++typedef struct BR {
++    GetBitContext gb;
++    int err;
++} BR;
++
++static unsigned br_ue(BR *b)
++{
++    int zeros = 0;
++    while (!get_bits1(&b->gb)) {
++        if (++zeros > 31 || get_bits_left(&b->gb) <= 0) {
++            b->err = 1;
++            return 0;
++        }
++    }
++    return zeros ? (1u << zeros) - 1 + get_bits_long(&b->gb, zeros) : 0;
++}
++
++static int br_se(BR *b)
++{
++    unsigned v = br_ue(b);
++    return (v & 1) ? (int)((v + 1) >> 1) : -(int)(v >> 1);
++}
++
++static void skip_scaling_list(BR *b, int size)
++{
++    int last = 8, next = 8, i;
++    for (i = 0; i < size && !b->err; i++) {
++        if (next)
++            next = (last + br_se(b) + 256) & 255;
++        last = next ? next : last;
++    }
++}
++
++static const AVRational sar_table[17] = {
++    {0, 1}, {1, 1}, {12, 11}, {10, 11}, {16, 11}, {40, 33}, {24, 11}, {20, 11},
++    {32, 11}, {80, 33}, {18, 11}, {15, 11}, {64, 33}, {160, 99}, {4, 3}, {3, 2}, {2, 1},
++};
++
++/* nal points to the NAL header byte, len includes it. */
++static int parse_sps(const uint8_t *nal, int len, SPSInfo *o)
++{
++    uint8_t *rbsp;
++    int i, n = 0, ret = AVERROR_INVALIDDATA;
++    unsigned v;
++    BR b = { { 0 } };
++
++    if (len < 5 || (nal[0] & 0x1f) != 7)
++        return AVERROR_INVALIDDATA;
++    rbsp = av_mallocz(len + AV_INPUT_BUFFER_PADDING_SIZE);
++    if (!rbsp)
++        return AVERROR(ENOMEM);
++    for (i = 1; i < len; i++) {         /* strip emulation prevention bytes */
++        if (i >= 3 && nal[i] == 3 && !nal[i - 1] && !nal[i - 2] && i + 1 < len)
++            continue;
++        rbsp[n++] = nal[i];
++    }
++    memset(o, 0, sizeof(*o));
++    o->sar = (AVRational){ 0, 1 };
++    o->chroma_format = 1;
++    o->bit_depth = 8;
++    o->primaries = o->trc = o->matrix = 2;
++
++    if (init_get_bits8(&b.gb, rbsp, n) < 0)
++        goto end;
++    o->profile = get_bits(&b.gb, 8);
++    skip_bits(&b.gb, 8);
++    o->level = get_bits(&b.gb, 8);
++    br_ue(&b);                                           /* sps id */
++    if (o->profile == 100 || o->profile == 110 || o->profile == 122 ||
++        o->profile == 244 || o->profile == 44  || o->profile == 83  ||
++        o->profile == 86  || o->profile == 118 || o->profile == 128 ||
++        o->profile == 138 || o->profile == 139 || o->profile == 134 ||
++        o->profile == 135) {
++        o->chroma_format = br_ue(&b);
++        if (o->chroma_format == 3)
++            skip_bits1(&b.gb);
++        o->bit_depth = br_ue(&b) + 8;
++        if (br_ue(&b) + 8 != (unsigned)o->bit_depth)     /* chroma bit depth */
++            o->bit_depth = 99;
++        skip_bits1(&b.gb);
++        if (get_bits1(&b.gb)) {                          /* scaling matrix */
++            for (i = 0; i < (o->chroma_format != 3 ? 8 : 12) && !b.err; i++)
++                if (get_bits1(&b.gb))
++                    skip_scaling_list(&b, i < 6 ? 16 : 64);
++        }
++    }
++    br_ue(&b);                                           /* log2_max_frame_num */
++    v = br_ue(&b);                                       /* poc type */
++    if (v == 0) {
++        br_ue(&b);
++    } else if (v == 1) {
++        skip_bits1(&b.gb);
++        br_se(&b);
++        br_se(&b);
++        v = br_ue(&b);
++        if (v > 255)
++            goto end;
++        while (v-- && !b.err)
++            br_se(&b);
++    } else if (v != 2) {
++        goto end;
++    }
++    v = br_ue(&b);
++    if (v > 16)
++        goto end;
++    o->num_ref_frames = v;
++    skip_bits1(&b.gb);                                   /* gaps allowed */
++    v = br_ue(&b);
++    if (v > 1023)
++        goto end;
++    o->coded_w = (v + 1) * 16;
++    v = br_ue(&b);
++    if (v > 1023)
++        goto end;
++    o->coded_h = (v + 1) * 16;
++    o->frame_mbs_only = get_bits1(&b.gb);
++    if (!o->frame_mbs_only) {
++        o->coded_h *= 2;
++        skip_bits1(&b.gb);                               /* mbaff */
++    }
++    skip_bits1(&b.gb);                                   /* direct 8x8 */
++    if (get_bits1(&b.gb)) {                              /* cropping */
++        int cux = o->chroma_format == 0 || o->chroma_format == 3 ? 1 : 2;
++        int cuy = (o->chroma_format == 1 ? 2 : 1) * (2 - o->frame_mbs_only);
++        unsigned cl = br_ue(&b), cr = br_ue(&b), ct = br_ue(&b), cb = br_ue(&b);
++        if (cl > 16384 || cr > 16384 || ct > 16384 || cb > 16384)
++            goto end;
++        o->crop_l = cl * cux;
++        o->crop_r = cr * cux;
++        o->crop_t = ct * cuy;
++        o->crop_b = cb * cuy;
++    }
++    if (b.err)
++        goto end;
++
++    if (get_bits1(&b.gb)) {                              /* VUI */
++        if (get_bits1(&b.gb)) {                          /* aspect ratio */
++            int idc = get_bits(&b.gb, 8);
++            if (idc == 255) {
++                int w = get_bits(&b.gb, 16), h = get_bits(&b.gb, 16);
++                o->sar = (AVRational){ w, h };
++            } else if (idc < FF_ARRAY_ELEMS(sar_table)) {
++                o->sar = sar_table[idc];
++            }
++        }
++        if (get_bits1(&b.gb))                            /* overscan */
++            skip_bits1(&b.gb);
++        if (get_bits1(&b.gb)) {                          /* video signal type */
++            skip_bits(&b.gb, 3);
++            o->full_range = get_bits1(&b.gb);
++            if (get_bits1(&b.gb)) {
++                o->colour_valid = 1;
++                o->primaries = get_bits(&b.gb, 8);
++                o->trc       = get_bits(&b.gb, 8);
++                o->matrix    = get_bits(&b.gb, 8);
++            }
++        }
++    }
++    ret = 0;
++end:
++    av_free(rbsp);
++    return ret;
++}
++
++/* Find the first SPS NAL in an Annex B buffer. */
++static const uint8_t *find_annexb_sps(const uint8_t *p, int size, int *nal_len)
++{
++    int i = 0, start = -1;
++
++    while (i + 3 < size) {
++        if (p[i] == 0 && p[i + 1] == 0 && p[i + 2] == 1) {
++            if (start >= 0) {
++                int end = i;
++                while (end > start && p[end - 1] == 0)
++                    end--;
++                *nal_len = end - start;
++                return p + start;
++            }
++            if ((p[i + 3] & 0x1f) == 7)
++                start = i + 3;
++            i += 3;
++        } else {
++            i++;
++        }
++    }
++    if (start >= 0) {
++        *nal_len = size - start;
++        return p + start;
++    }
++    return NULL;
++}
++
++/* ------------------------------------------------------------------------ */
++/* Codec context                                                             */
++/* ------------------------------------------------------------------------ */
++
++typedef struct PtsEntry {
++    int64_t pts, dts, dur;
++} PtsEntry;
++
++typedef struct OrbisDecContext {
++    const AVClass *class;
++    int dpb;
++    int invalidate;
++    int drain;
++
++    AVPacket *pkt;
++    int acquired, verified, flushing, drained;
++    int refuse;         /* hardware decoding was given up: fail every packet */
++    int need_idr, idr_wait, pps_checked, pps_scans;
++    int err_pkts, err_frames;
++    int64_t frames_out;
++    SPSInfo sps;
++
++    PtsEntry q[PTS_QUEUE_SIZE + 1];
++    int nq;
++} OrbisDecContext;
++
++static void q_clear(OrbisDecContext *c)
++{
++    c->nq = 0;
++}
++
++/* Insert keeping ascending pts order (stable for equal timestamps). */
++static void q_push(OrbisDecContext *c, PtsEntry e)
++{
++    int i;
++    if (c->nq >= PTS_QUEUE_SIZE) {
++        memmove(&c->q[0], &c->q[1], (c->nq - 1) * sizeof(c->q[0]));
++        c->nq--;
++    }
++    for (i = c->nq; i > 0 && c->q[i - 1].pts > e.pts; i--)
++        c->q[i] = c->q[i - 1];
++    c->q[i] = e;
++    c->nq++;
++}
++
++static void q_remove(OrbisDecContext *c, PtsEntry e)
++{
++    int i;
++    for (i = c->nq - 1; i >= 0; i--) {
++        if (c->q[i].pts == e.pts && c->q[i].dts == e.dts) {
++            memmove(&c->q[i], &c->q[i + 1], (c->nq - i - 1) * sizeof(c->q[0]));
++            c->nq--;
++            return;
++        }
++    }
++}
++
++static int q_pop(OrbisDecContext *c, PtsEntry *e)
++{
++    if (!c->nq)
++        return 0;
++    *e = c->q[0];
++    memmove(&c->q[0], &c->q[1], (c->nq - 1) * sizeof(c->q[0]));
++    c->nq--;
++    return 1;
++}
++
++static int accept_sps(AVCodecContext *avctx, const SPSInfo *s, int dpb)
++{
++    int w = s->coded_w - s->crop_l - s->crop_r;
++    int h = s->coded_h - s->crop_t - s->crop_b;
++    const char *why = NULL;
++
++    if (s->profile != 66 && s->profile != 77 && s->profile != 100)   /* no Extended (FMO/ASO, data partitioning) */
++        why = "profile";
++    else if (s->chroma_format != 1 || s->bit_depth != 8)
++        why = "not 8 bit 4:2:0";
++    else if (!s->frame_mbs_only)
++        why = "interlaced";
++    else if (s->level > 51)
++        why = "level";
++    else if (s->num_ref_frames > dpb)
++        why = "too many reference frames";
++    else if (s->coded_w > SESSION_MAX_W || s->coded_h > SESSION_MAX_H ||
++             s->crop_l < 0 || s->crop_r < 0 || s->crop_t < 0 || s->crop_b < 0 ||
++             s->crop_l + s->crop_r >= s->coded_w || s->crop_t + s->crop_b >= s->coded_h ||
++             w <= 0 || h <= 0 || (w & 1) || (h & 1))
++        why = "frame size";
++    if (why) {
++        av_log(avctx, AV_LOG_INFO,
++               "orbis: stream not supported by the hardware decoder (%s: profile %d, level %d, "
++               "%dx%d, chroma %d, %d bit, %d refs)\n", why, s->profile, s->level, w, h,
++               s->chroma_format, s->bit_depth, s->num_ref_frames);
++        return AVERROR_PATCHWELCOME;
++    }
++    return 0;
++}
++
++static void apply_sps(AVCodecContext *avctx, OrbisDecContext *c)
++{
++    const SPSInfo *s = &c->sps;
++
++    ff_set_dimensions(avctx, s->coded_w - s->crop_l - s->crop_r,
++                             s->coded_h - s->crop_t - s->crop_b);
++    avctx->coded_width  = s->coded_w;
++    avctx->coded_height = s->coded_h;
++    avctx->profile      = s->profile;
++    avctx->level        = s->level;
++    avctx->has_b_frames = FFMIN(s->num_ref_frames, 16);
++    if (s->colour_valid) {
++        avctx->color_primaries = s->primaries;
++        avctx->color_trc       = s->trc;
++        avctx->colorspace      = s->matrix;
++    }
++    avctx->color_range = s->full_range ? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG;
++    if (s->sar.num > 0 && s->sar.den > 0)
++        avctx->sample_aspect_ratio = s->sar;
++    c->verified = 1;
++}
++
++/* Look for SPS in avcC or Annex B extradata. Returns 1 if one was found. */
++static int sps_from_extradata(AVCodecContext *avctx, OrbisDecContext *c, int *found)
++{
++    const uint8_t *e = avctx->extradata;
++    int size = avctx->extradata_size;
++
++    *found = 0;
++    if (size >= 7 && e[0] == 1) {                       /* avcC */
++        int n = e[5] & 0x1f, pos = 6;
++        while (n-- > 0 && pos + 2 <= size) {
++            int len = AV_RB16(e + pos);
++            pos += 2;
++            if (pos + len > size)
++                break;
++            if (len > 4 && (e[pos] & 0x1f) == 7 && parse_sps(e + pos, len, &c->sps) == 0) {
++                *found = 1;
++                return 0;
++            }
++            pos += len;
++        }
++    } else if (size > 4) {
++        int len;
++        const uint8_t *nal = find_annexb_sps(e, size, &len);
++        if (nal && parse_sps(nal, len, &c->sps) == 0)
++            *found = 1;
++    }
++    return 0;
++}
++
++/* IDR slice (NAL type 5) among the first bytes of an Annex B access unit */
++static int has_idr(const uint8_t *p, int size)
++{
++    int i, end = FFMIN(size, 8192) - 3;
++    for (i = 0; i < end; i++)
++        if (p[i] == 0 && p[i + 1] == 0 && p[i + 2] == 1 && (p[i + 3] & 0x1f) == 5)
++            return 1;
++    return 0;
++}
++
++/* Looks for a PPS in the first bytes of an access unit. Returns 0 when there is
++ * none, 1 when it is fine, -1 when it uses slice groups (FMO), which the
++ * hardware does not handle. */
++static int check_pps(const uint8_t *p, int size)
++{
++    int i, end = FFMIN(size, 8192) - 4;
++
++    for (i = 0; i < end; i++) {
++        if (p[i] == 0 && p[i + 1] == 0 && p[i + 2] == 1 && (p[i + 3] & 0x1f) == 8) {
++            uint8_t buf[32 + AV_INPUT_BUFFER_PADDING_SIZE] = { 0 };
++            int n = FFMIN(size - (i + 4), 32), k;
++            BR b = { { 0 } };
++            for (k = 0; k < n; k++)
++                buf[k] = p[i + 4 + k];
++            if (init_get_bits8(&b.gb, buf, n) < 0)
++                return 1;
++            br_ue(&b);                      /* pps id */
++            br_ue(&b);                      /* sps id */
++            skip_bits1(&b.gb);              /* entropy coding mode */
++            skip_bits1(&b.gb);              /* bottom field pic order */
++            return br_ue(&b) > 0 ? -1 : 1;  /* num_slice_groups_minus1 */
++        }
++    }
++    return 0;
++}
++
++static int ensure_session(AVCodecContext *avctx, OrbisDecContext *c)
++{
++    int ret;
++
++    if (c->acquired)
++        return 0;
++    ret = session_acquire(&S, c->dpb, c->sps.coded_w, c->sps.coded_h);
++    if (ret < 0) {
++        av_log(avctx, AV_LOG_INFO, "orbis: hardware decoder unavailable (%s)\n", av_err2str(ret));
++        return ret;
++    }
++    c->acquired = 1;
++    c->need_idr = 1;
++    av_log(avctx, AV_LOG_INFO, "orbis: using the PS4 hardware H.264 decoder (%dx%d)\n",
++           c->sps.coded_w, c->sps.coded_h);
++    return 0;
++}
++
++static av_cold int orbis_close(AVCodecContext *avctx)
++{
++    OrbisDecContext *c = avctx->priv_data;
++
++    if (c->acquired)
++        session_release(&S);
++    c->acquired = 0;
++    av_packet_free(&c->pkt);
++    return 0;
++}
++
++static av_cold int orbis_init(AVCodecContext *avctx)
++{
++    OrbisDecContext *c = avctx->priv_data;
++    int ret, found;
++
++    if (avctx->codec_id != AV_CODEC_ID_H264)
++        return AVERROR(ENOSYS);
++
++    c->pkt = av_packet_alloc();
++    if (!c->pkt)
++        return AVERROR(ENOMEM);
++
++    avctx->pix_fmt = AV_PIX_FMT_YUV420P;
++
++    sps_from_extradata(avctx, c, &found);
++    if (found) {
++        ret = accept_sps(avctx, &c->sps, c->dpb);
++        if (ret < 0)
++            goto fail;
++        apply_sps(avctx, c);
++        ret = ensure_session(avctx, c);
++        if (ret < 0)
++            goto fail;
++    } else if (avctx->width > SESSION_MAX_W || avctx->height > SESSION_MAX_H) {
++        ret = AVERROR_PATCHWELCOME;
++        goto fail;
++    }                          /* otherwise the first in-band SPS decides (and opens the session) */
++
++    return 0;
++fail:
++    orbis_close(avctx);
++    return ret;
++}
++
++static av_cold void orbis_flush(AVCodecContext *avctx)
++{
++    OrbisDecContext *c = avctx->priv_data;
++
++    q_clear(c);
++    c->flushing = c->drained = 0;
++    c->err_pkts = c->err_frames = 0;
++    c->need_idr = 1;
++    c->idr_wait = 0;
++    if (c->acquired && !S.broken && session_call(&S, J_RESET, 10) < 0) {
++        av_log(avctx, AV_LOG_WARNING, "orbis: reset failed, leaving hardware decoding\n");
++        c->refuse = 1;
++    }
++}
++
++/* Make the CPU re-read memory the GPU wrote. */
++static void invalidate_range(const void *p, size_t n)
++{
++#if ARCH_X86
++    uintptr_t a = (uintptr_t)p & ~(uintptr_t)63, end = (uintptr_t)p + n;
++    _mm_mfence();
++    for (; a < end; a += 64)
++        _mm_clflush((const void *)a);
++    _mm_mfence();
++#endif
++}
++
++static int out_in_pool(const OrbisSession *s, const void *p, size_t span)
++{
++    int i;
++    for (i = 0; i < s->num_fb; i++) {
++        const uint8_t *b = s->fbpool[i].va;
++        if (b && (const uint8_t *)p >= b && span <= s->fbpool[i].size &&
++            (size_t)((const uint8_t *)p - b) <= s->fbpool[i].size - span)
++            return 1;
++    }
++    return 0;
++}
++
++/* Convert the NV12 picture in S.out into a planar yuv420p AVFrame. */
++static int build_frame(AVCodecContext *avctx, OrbisDecContext *c, AVFrame *frame)
++{
++    const OVDOutput *o = &S.out;
++    const SPSInfo *sp = &c->sps;
++    int w = avctx->width, h = avctx->height, y, x, ret;
++    size_t pitch = o->framePitchInBytes ? o->framePitchInBytes : o->framePitch;
++    size_t padded_h = o->frameHeight;
++    const uint8_t *base = o->frameBuffer, *src_y, *src_uv;
++    PtsEntry e;
++
++    if (padded_h < (size_t)sp->coded_h || o->frameWidth < (uint32_t)sp->coded_w ||
++        pitch < (size_t)sp->coded_w ||
++        !out_in_pool(&S, base, pitch * padded_h * 3 / 2)) {
++        av_log(avctx, AV_LOG_ERROR,
++               "orbis: unexpected output geometry %ux%u pitch %zu (stream %dx%d)\n",
++               o->frameWidth, o->frameHeight, pitch, sp->coded_w, sp->coded_h);
++        return AVERROR_EXTERNAL;
++    }
++
++    if ((size_t)sp->crop_l + w > pitch || (size_t)sp->crop_t + h > padded_h || w <= 0 || h <= 0)
++        return AVERROR_EXTERNAL;
++
++    ret = ff_get_buffer(avctx, frame, 0);
++    if (ret < 0)
++        return ret;
++
++    if (c->invalidate)
++        invalidate_range(base, pitch * padded_h * 3 / 2);
++
++    src_y  = base + (size_t)sp->crop_t * pitch + sp->crop_l;
++    src_uv = base + pitch * padded_h + (size_t)(sp->crop_t / 2) * pitch + sp->crop_l;
++
++    for (y = 0; y < h; y++)
++        memcpy(frame->data[0] + (size_t)y * frame->linesize[0], src_y + (size_t)y * pitch, w);
++
++    for (y = 0; y < h / 2; y++) {
++        const uint8_t *s = src_uv + (size_t)y * pitch;
++        uint8_t *u = frame->data[1] + (size_t)y * frame->linesize[1];
++        uint8_t *v = frame->data[2] + (size_t)y * frame->linesize[2];
++        x = 0;
++#if ARCH_X86_64
++        /* 16 chroma pairs (32 source bytes) per step: split U/V with SSE2 */
++        for (; x + 16 <= w / 2; x += 16) {
++            const __m128i mask = _mm_set1_epi16(0x00ff);
++            __m128i a = _mm_loadu_si128((const __m128i *)(s + 2 * x));
++            __m128i b = _mm_loadu_si128((const __m128i *)(s + 2 * x + 16));
++            _mm_storeu_si128((__m128i *)(u + x),
++                             _mm_packus_epi16(_mm_and_si128(a, mask), _mm_and_si128(b, mask)));
++            _mm_storeu_si128((__m128i *)(v + x),
++                             _mm_packus_epi16(_mm_srli_epi16(a, 8), _mm_srli_epi16(b, 8)));
++        }
++#endif
++        for (; x < w / 2; x++) {
++            u[x] = s[2 * x];
++            v[x] = s[2 * x + 1];
++        }
++    }
++
++    frame->pts          = AV_NOPTS_VALUE;
++    frame->pkt_dts      = AV_NOPTS_VALUE;
++    frame->pkt_duration = 0;
++    if (q_pop(c, &e)) {
++        frame->pts          = e.pts;
++        frame->pkt_dts      = e.dts;
++        frame->pkt_duration = e.dur;
++    }
++    frame->sample_aspect_ratio = avctx->sample_aspect_ratio;
++    frame->color_range         = avctx->color_range;
++    frame->color_primaries     = avctx->color_primaries;
++    frame->color_trc           = avctx->color_trc;
++    frame->colorspace          = avctx->colorspace;
++    frame->pict_type           = AV_PICTURE_TYPE_NONE;
++    c->frames_out++;
++    return 0;
++}
++
++static void prepare_job(OrbisDecContext *c, uint64_t seq)
++{
++    memset(&S.out, 0, sizeof(S.out));
++    S.out.thisSize = sizeof(S.out);
++    memset(&S.fb, 0, sizeof(S.fb));
++    S.fb.thisSize        = sizeof(S.fb);
++    S.fb.frameBuffer     = S.fbpool[S.fb_idx].va;
++    S.fb.frameBufferSize = S.fb_size;
++    S.fb_idx = (S.fb_idx + 1) % S.num_fb;
++    (void)c;
++    (void)seq;
++}
++
++/* returns 1 when a frame was produced, 0 when not, <0 on error */
++static int submit_packet(AVCodecContext *avctx, OrbisDecContext *c, AVPacket *pkt, AVFrame *frame)
++{
++    PtsEntry e;
++    int rc, ret, len;
++    uint8_t *au;
++
++    if (c->refuse)
++        return AVERROR_EXTERNAL;
++    if (pkt->size <= 0)
++        return 0;
++
++    if (!c->verified) {
++        const uint8_t *nal = find_annexb_sps(pkt->data, FFMIN(pkt->size, 8192), &len);
++        if (!nal || parse_sps(nal, len, &c->sps) < 0)
++            return 0;               /* nothing decodable before the first SPS */
++        ret = accept_sps(avctx, &c->sps, c->dpb);
++        if (ret < 0) {
++            c->refuse = 1;
++            return ret;
++        }
++        apply_sps(avctx, c);
++    } else {
++        /* a new SPS in the middle of the stream (joined files, adaptive streams):
++         * the hardware was sized for the first one, so refuse anything different */
++        int nlen;
++        const uint8_t *nal = find_annexb_sps(pkt->data, FFMIN(pkt->size, 8192), &nlen);
++        SPSInfo n;
++        if (nal && parse_sps(nal, nlen, &n) == 0) {
++            if (n.coded_w != c->sps.coded_w || n.coded_h != c->sps.coded_h ||
++                n.crop_l != c->sps.crop_l || n.crop_r != c->sps.crop_r ||
++                n.crop_t != c->sps.crop_t || n.crop_b != c->sps.crop_b ||
++                n.chroma_format != c->sps.chroma_format || n.bit_depth != c->sps.bit_depth ||
++                n.frame_mbs_only != c->sps.frame_mbs_only ||
++                accept_sps(avctx, &n, c->dpb) < 0) {
++                av_log(avctx, AV_LOG_WARNING,
++                       "orbis: the stream changed format (%dx%d -> %dx%d), leaving hardware decoding\n",
++                       c->sps.coded_w, c->sps.coded_h, n.coded_w, n.coded_h);
++                c->refuse = 1;     /* the packets that follow belong to the new format */
++                return AVERROR_INPUT_CHANGED;
++            }
++        }
++    }
++
++    /* slice groups (FMO) cannot be decoded by the hardware */
++    if (!c->pps_checked) {
++        int pps = check_pps(pkt->data, pkt->size);
++        if (pps < 0) {
++            av_log(avctx, AV_LOG_INFO, "orbis: stream uses slice groups (FMO), not supported by the hardware\n");
++            c->refuse = 1;
++            return AVERROR_PATCHWELCOME;
++        }
++        if (pps > 0 || ++c->pps_scans > 200)
++            c->pps_checked = 1;
++    }
++
++    ret = ensure_session(avctx, c);        /* streams without extradata open the session here */
++    if (ret < 0) {
++        c->refuse = 1;
++        return ret;
++    }
++
++    /* never feed the hardware from the middle of a sequence: wait for an IDR (a stream
++     * that has none for a couple of seconds is decoded from where it is) */
++    if (c->need_idr) {
++        if (has_idr(pkt->data, pkt->size) || ++c->idr_wait > 48)
++            c->need_idr = 0;
++        else
++            return 0;
++    }
++
++    if (pkt->size > AU_CAPACITY) {
++        av_log(avctx, AV_LOG_ERROR, "orbis: access unit too large (%d bytes)\n", pkt->size);
++        c->refuse = 1;
++        return AVERROR_EXTERNAL;
++    }
++
++    e.pts = pkt->pts != AV_NOPTS_VALUE ? pkt->pts : pkt->dts;
++    e.dts = pkt->dts;
++    e.dur = pkt->duration;
++    if (e.pts == AV_NOPTS_VALUE)
++        e.pts = c->frames_out + c->nq;      /* keeps the order, better than nothing */
++    q_push(c, e);
++
++    S.au_idx = (S.au_idx + 1) % NUM_AU;
++    au = S.au[S.au_idx].va;
++    memcpy(au, pkt->data, pkt->size);
++
++    prepare_job(c, c->frames_out);
++    memset(&S.in, 0, sizeof(S.in));
++    S.in.thisSize = sizeof(S.in);
++    S.in.auData   = au;
++    S.in.auSize   = pkt->size;
++    S.in.ptsData  = S.in.dtsData = c->frames_out;
++
++    rc = session_call(&S, J_DECODE, CALL_TIMEOUT_SEC);
++    if (S.broken) {
++        av_log(avctx, AV_LOG_ERROR, "orbis: decoder stopped responding\n");
++        return AVERROR_EXTERNAL;
++    }
++    if (rc < 0) {
++        q_remove(c, e);
++        av_log(avctx, AV_LOG_WARNING, "orbis: Decode failed 0x%08x\n", (unsigned)rc);
++        if (++c->err_pkts >= ERR_PACKETS_GIVEUP && !c->frames_out)
++            return AVERROR_EXTERNAL;
++        if (c->err_pkts >= ERR_PACKETS_GIVEUP * 6)
++            return AVERROR_EXTERNAL;
++        return 0;
++    }
++    c->err_pkts = 0;
++
++    if (!S.out.isValid || !S.out.frameBuffer || !S.out.frameWidth)
++        return 0;                   /* picture still buffered inside the decoder */
++
++    if (S.out.isErrorFrame) {
++        PtsEntry drop;
++        q_pop(c, &drop);
++        if (++c->err_frames >= ERR_FRAMES_RESET) {
++            c->err_frames = 0;
++            session_call(&S, J_RESET, 10);
++            q_clear(c);
++        }
++        return 0;
++    }
++    c->err_frames = 0;
++
++    ret = build_frame(avctx, c, frame);
++    return ret < 0 ? ret : 1;
++}
++
++static int flush_step(AVCodecContext *avctx, OrbisDecContext *c, AVFrame *frame)
++{
++    int rc, ret;
++
++    if (c->drained || !c->drain || !c->nq || !S.api.Flush || S.broken) {
++        c->drained = 1;
++        return AVERROR_EOF;
++    }
++    prepare_job(c, c->frames_out);
++    rc = session_call(&S, J_FLUSH, CALL_TIMEOUT_SEC);
++    if (rc < 0 || !S.out.isValid || !S.out.frameBuffer || !S.out.frameWidth) {
++        c->drained = 1;
++        return AVERROR_EOF;
++    }
++    if (S.out.isErrorFrame) {
++        PtsEntry drop;
++        q_pop(c, &drop);
++        return AVERROR(EAGAIN);
++    }
++    ret = build_frame(avctx, c, frame);
++    return ret < 0 ? ret : 0;
++}
++
++static int orbis_receive_frame(AVCodecContext *avctx, AVFrame *frame)
++{
++    OrbisDecContext *c = avctx->priv_data;
++    int ret;
++
++    if (S.broken)
++        return AVERROR_EXTERNAL;
++
++    for (;;) {
++        if (c->flushing) {
++            ret = flush_step(avctx, c, frame);
++            if (ret == AVERROR(EAGAIN))
++                continue;
++            return ret;
++        }
++        ret = ff_decode_get_packet(avctx, c->pkt);
++        if (ret == AVERROR_EOF) {
++            c->flushing = 1;
++            continue;
++        }
++        if (ret < 0)
++            return ret;             /* includes EAGAIN: need more input */
++
++        ret = submit_packet(avctx, c, c->pkt, frame);
++        av_packet_unref(c->pkt);
++        if (ret > 0)
++            return 0;
++        if (ret < 0)
++            return ret;
++    }
++}
++
++#define OFFSET(x) offsetof(OrbisDecContext, x)
++#define VD AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_DECODING_PARAM
++static const AVOption options[] = {
++    { "dpb", "decoded picture buffer size given to the hardware decoder (the streams it "
++             "accepts must not use more reference frames)",
++      OFFSET(dpb), AV_OPT_TYPE_INT, { .i64 = 8 }, 1, 8, VD },
++    { "drain", "ask the hardware for the pictures it still holds at the end of the stream "
++               "(sceVideodec2Flush has not been verified on a console: off by default, "
++               "the last 1-3 frames are lost)",
++      OFFSET(drain), AV_OPT_TYPE_BOOL, { .i64 = 0 }, 0, 1, VD },
++    { "invalidate", "flush the CPU cache before reading decoded pictures",
++      OFFSET(invalidate), AV_OPT_TYPE_BOOL, { .i64 = 1 }, 0, 1, VD },
++    { NULL }
++};
++
++static const AVClass orbis_class = {
++    .class_name = "h264_orbis",
++    .item_name  = av_default_item_name,
++    .option     = options,
++    .version    = LIBAVUTIL_VERSION_INT,
++};
++
++const AVCodec ff_h264_orbis_decoder = {
++    .name           = "h264_orbis",
++    .long_name      = NULL_IF_CONFIG_SMALL("H.264 / AVC (PS4 libSceVideodec2 hardware decoder)"),
++    .type           = AVMEDIA_TYPE_VIDEO,
++    .id             = AV_CODEC_ID_H264,
++    .priv_data_size = sizeof(OrbisDecContext),
++    .priv_class     = &orbis_class,
++    .init           = orbis_init,
++    .close          = orbis_close,
++    .receive_frame  = orbis_receive_frame,
++    .flush          = orbis_flush,
++    .capabilities   = AV_CODEC_CAP_DELAY | AV_CODEC_CAP_AVOID_PROBING | AV_CODEC_CAP_HARDWARE,
++    .pix_fmts       = (const enum AVPixelFormat[]) { AV_PIX_FMT_YUV420P, AV_PIX_FMT_NONE },
++    .bsfs           = "h264_mp4toannexb",
++    .wrapper_name   = "orbis",
++};
+diff --git a/libavcodec/orbisvdec.h b/libavcodec/orbisvdec.h
+new file mode 100644
+index 0000000..5f4a073
+--- /dev/null
++++ b/libavcodec/orbisvdec.h
+@@ -0,0 +1,172 @@
++/*
++ * PS4 (Orbis) hardware H.264 decoder - libSceVideodec2 ABI and platform layer
++ *
++ * This file is part of FFmpeg.
++ *
++ * FFmpeg is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * FFmpeg is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with FFmpeg; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++ *
++ * The sceVideodec2 structure layouts below were reverse engineered by the
++ * shadPS4 project and validated on real consoles by the Moonlight-ps4 and
++ * PS4 Cast homebrew projects, from which the layouts and the memory type
++ * requirements were taken (used with permission of their authors).
++ */
++
++#ifndef AVCODEC_ORBISVDEC_H
++#define AVCODEC_ORBISVDEC_H
++
++#include <stddef.h>
++#include <stdint.h>
++
++/* ---- sceVideodec2 ABI (all structs start with their own size) ---------- */
++
++#define OVD_CODEC_AVC           1
++#define OVD_RESOURCE_EMBEDDED   1
++#define OVD_PROFILE_HIGH        100
++#define OVD_LEVEL_51            51
++#define OVD_THREAD_PRIO         700
++#define OVD_AFFINITY_ALL        0x3full
++
++typedef struct OVDComputeConfig {
++    uint64_t thisSize;
++    uint16_t computePipeId;
++    uint16_t computeQueueId;
++    uint8_t  checkMemoryType;
++    uint8_t  reserved0;
++    uint16_t reserved1;
++} OVDComputeConfig;
++
++typedef struct OVDComputeMemInfo {
++    uint64_t thisSize;
++    uint64_t cpuGpuMemorySize;
++    void    *cpuGpuMemory;
++} OVDComputeMemInfo;
++
++typedef struct OVDDecoderConfig {
++    uint64_t thisSize;
++    uint32_t resourceType;
++    uint32_t codecType;
++    uint32_t profile;
++    uint32_t maxLevel;
++    int32_t  maxFrameWidth;
++    int32_t  maxFrameHeight;
++    int32_t  maxDpbFrameCount;
++    uint32_t decodePipelineDepth;
++    void    *computeQueue;
++    uint64_t cpuAffinityMask;
++    int32_t  cpuThreadPriority;
++    uint8_t  optimizeProgressiveVideo;
++    uint8_t  checkMemoryType;
++    uint8_t  reserved0;
++    uint8_t  reserved1;
++    void    *extraConfigInfo;
++} OVDDecoderConfig;
++
++typedef struct OVDDecoderMemInfo {
++    uint64_t thisSize;
++    uint64_t cpuMemorySize;
++    void    *cpuMemory;
++    uint64_t gpuMemorySize;
++    void    *gpuMemory;
++    uint64_t cpuGpuMemorySize;
++    void    *cpuGpuMemory;
++    uint64_t maxFrameBufferSize;
++    uint32_t frameBufferAlignment;
++    uint32_t reserved0;
++} OVDDecoderMemInfo;
++
++typedef struct OVDInput {
++    uint64_t thisSize;
++    void    *auData;
++    uint64_t auSize;
++    uint64_t ptsData;
++    uint64_t dtsData;
++    uint64_t attachedData;
++} OVDInput;
++
++typedef struct OVDFrameBuffer {
++    uint64_t thisSize;
++    void    *frameBuffer;
++    uint64_t frameBufferSize;
++    uint8_t  isAccepted;
++    uint8_t  pad[7];
++} OVDFrameBuffer;
++
++typedef struct OVDOutput {
++    uint64_t thisSize;
++    uint8_t  isValid;
++    uint8_t  isErrorFrame;
++    uint8_t  pictureCount;
++    uint8_t  pad0;
++    uint32_t codecType;
++    uint32_t frameWidth;
++    uint32_t framePitch;
++    uint32_t frameHeight;
++    uint32_t pad1;
++    void    *frameBuffer;
++    uint64_t frameBufferSize;
++    uint32_t frameFormat;
++    uint32_t framePitchInBytes;
++} OVDOutput;
++
++/* These layouts are the ones the working homebrew decoders use: a wrong size would
++ * make the library read/write outside our structs, so refuse to compile. */
++typedef char ovd_chk_compute_cfg[sizeof(OVDComputeConfig)  == 16 ? 1 : -1];
++typedef char ovd_chk_compute_mem[sizeof(OVDComputeMemInfo) == 24 ? 1 : -1];
++typedef char ovd_chk_dec_cfg    [sizeof(OVDDecoderConfig)  == 72 ? 1 : -1];
++typedef char ovd_chk_dec_mem    [sizeof(OVDDecoderMemInfo) == 72 ? 1 : -1];
++typedef char ovd_chk_input      [sizeof(OVDInput)          == 48 ? 1 : -1];
++typedef char ovd_chk_fb         [sizeof(OVDFrameBuffer)    == 32 ? 1 : -1];
++typedef char ovd_chk_output     [sizeof(OVDOutput)         == 56 ? 1 : -1];
++
++/* Resolved libSceVideodec2 entry points. Flush and Reset are optional. */
++typedef struct OVDApi {
++    int (*QueryComputeMemoryInfo)(OVDComputeMemInfo *);
++    int (*AllocateComputeQueue)(const OVDComputeConfig *, const OVDComputeMemInfo *, void **);
++    int (*ReleaseComputeQueue)(void *);
++    int (*QueryDecoderMemoryInfo)(const OVDDecoderConfig *, OVDDecoderMemInfo *);
++    int (*CreateDecoder)(const OVDDecoderConfig *, const OVDDecoderMemInfo *, void **);
++    int (*DeleteDecoder)(void *);
++    int (*Decode)(void *, const OVDInput *, OVDFrameBuffer *, OVDOutput *);
++    int (*Flush)(void *, OVDFrameBuffer *, OVDOutput *);
++    int (*Reset)(void *);
++} OVDApi;
++
++/* ---- platform layer (orbisvdec_sys.c on the console, a mock in tests) --- */
++
++#define OVD_MEM_ONION   0   /* write-back cacheable, CPU+GPU coherent */
++#define OVD_MEM_GARLIC  3   /* write-combined, GPU side */
++
++typedef struct OVDMem {
++    void   *va;
++    size_t  size;
++    int64_t off;
++} OVDMem;
++
++/* Load libSceVideodec2 (and its dependencies) and resolve the API.
++ * Returns 0 on success, a negative AVERROR code otherwise. */
++int  ovd_sys_bind(OVDApi *api);
++
++/* Allocate and map direct memory of the given type. */
++int  ovd_sys_dmem_alloc(OVDMem *m, size_t size, int type);
++
++/* Give it back. Only once the decoder and the compute queue are gone. */
++void ovd_sys_dmem_free(OVDMem *m);
++
++/* End a GoldHEN jailbreak that ovd_sys_bind() had to start (no-op otherwise). */
++void ovd_sys_priv_leave(void);
++
++void ovd_sys_usleep(unsigned usec);
++
++#endif /* AVCODEC_ORBISVDEC_H */
+diff --git a/libavcodec/orbisvdec_sys.c b/libavcodec/orbisvdec_sys.c
+new file mode 100644
+index 0000000..23bed54
+--- /dev/null
++++ b/libavcodec/orbisvdec_sys.c
+@@ -0,0 +1,246 @@
++/*
++ * PS4 (Orbis) hardware H.264 decoder - platform layer (module loading, direct
++ * memory). On anything that is not an Orbis target every call fails cleanly so
++ * the decoder simply refuses to open and callers fall back to software.
++ *
++ * This file is part of FFmpeg.
++ *
++ * FFmpeg is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * FFmpeg is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with FFmpeg; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++ */
++
++#include "config.h"
++#include "libavutil/error.h"
++#include "libavutil/log.h"
++#include "orbisvdec.h"
++
++#ifdef __ORBIS__
++
++#include <errno.h>
++#include <signal.h>
++#include <string.h>
++#include <sys/types.h>
++
++#include <orbis/libkernel.h>
++
++#define DMEM_ALIGN  0x4000u
++#define DMEM_PROT   0x33          /* CPU read|write, GPU read|write */
++
++/* Retail apps cannot always load the system video decoder modules. GoldHEN
++ * exposes a "jailbreak" through syscall 500 (cmd 2) that lifts the sandbox of
++ * the calling process until it is undone (cmd 3). It is only used when a
++ * plain module load fails, and only on GoldHEN (HEN alone has no such
++ * syscall: the SIGSYS it would raise is ignored for the duration). */
++struct gh_backup {
++    uint32_t cr_uid, cr_ruid, cr_rgid, cr_groups;
++    uint64_t cr_paid, cr_caps[2];
++    void *cr_prison, *fd_cdir, *fd_jdir, *fd_rdir;
++};
++
++static long gh_syscall(long cmd, void *data)
++{
++#if defined(__x86_64__)
++    register long rax __asm__("rax") = 500;
++    register long rdi __asm__("rdi") = cmd;
++    register long rsi __asm__("rsi") = (long)data;
++    __asm__ volatile ("syscall" : "+a"(rax) : "D"(rdi), "S"(rsi) : "rcx", "rdx", "r11", "memory");
++    return rax;
++#else
++    return -1;
++#endif
++}
++
++static int load_module(const char *path)
++{
++    return (int32_t)sceKernelLoadStartModule(path, 0, NULL, 0, NULL, NULL);
++}
++
++static int32_t load_all_modules(void)
++{
++    static const char *deps[] = {
++        "/system/common/lib/libSceVdecCore.sprx",
++        "/system/common/lib/libSceVdecSavc.sprx",
++        "/system/common/lib/libSceVdecSavc2.sprx",
++        "/system/common/lib/libSceVdecwrap.sprx",
++    };
++    int32_t mod;
++    int i;
++
++    for (i = 0; i < (int)(sizeof(deps) / sizeof(deps[0])); i++)
++        load_module(deps[i]);           /* some are absent on some firmwares */
++
++    mod = load_module("/system/common/lib/libSceVideodec2.sprx");
++    if (mod < 0)
++        mod = load_module("libSceVideodec2.sprx");
++    return mod;
++}
++
++static int dlsym_req(int32_t mod, const char *name, void **out)
++{
++    *out = NULL;
++    if (sceKernelDlsym(mod, name, out) != 0 || !*out) {
++        av_log(NULL, AV_LOG_ERROR, "orbis: symbol %s not found\n", name);
++        return AVERROR(ENOSYS);
++    }
++    return 0;
++}
++
++/* GoldHEN jailbreak, only when the system modules cannot be loaded without it.
++ * It is kept until the decoder has been created (ovd_sys_priv_leave). */
++static struct gh_backup g_bk;
++static int g_jb_active, g_needs_jb;
++
++static int jb_enter(void)
++{
++    void (*old)(int);
++    long rc;
++
++    if (g_jb_active)
++        return 0;
++    memset(&g_bk, 0, sizeof(g_bk));
++    old = signal(SIGSYS, SIG_IGN);      /* no such syscall on plain HEN */
++    rc = gh_syscall(2, &g_bk);
++    signal(SIGSYS, old);
++    if (rc != 0)
++        return -1;
++    g_jb_active = 1;
++    return 0;
++}
++
++void ovd_sys_priv_leave(void)
++{
++    if (!g_jb_active)
++        return;
++    if (gh_syscall(3, &g_bk) != 0)
++        av_log(NULL, AV_LOG_WARNING, "orbis: could not undo the GoldHEN jailbreak\n");
++    g_jb_active = 0;
++}
++
++int ovd_sys_bind(OVDApi *api)
++{
++    static OVDApi cached;
++    static int    state; /* 0 untried, 1 ok, -1 failed */
++    int32_t mod;
++
++    if (state == 1) {
++        if (g_needs_jb)
++            jb_enter();                 /* CreateDecoder needed it the first time too */
++        *api = cached;
++        return 0;
++    }
++    if (state == -1)
++        return AVERROR(ENOSYS);
++
++    mod = load_all_modules();
++    if (mod < 0 && jb_enter() == 0) {
++        g_needs_jb = 1;
++        mod = load_all_modules();
++    }
++    if (mod < 0) {
++        ovd_sys_priv_leave();
++        av_log(NULL, AV_LOG_ERROR, "orbis: cannot load libSceVideodec2 (0x%08x)\n",
++               (unsigned)mod);
++        state = -1;
++        return AVERROR(ENOSYS);
++    }
++
++    memset(&cached, 0, sizeof(cached));
++#define REQ(f) if (dlsym_req(mod, "sceVideodec2" #f, (void **)&cached.f) < 0) goto fail
++    REQ(QueryComputeMemoryInfo);
++    REQ(AllocateComputeQueue);
++    REQ(ReleaseComputeQueue);
++    REQ(QueryDecoderMemoryInfo);
++    REQ(CreateDecoder);
++    REQ(DeleteDecoder);
++    REQ(Decode);
++#undef REQ
++    sceKernelDlsym(mod, "sceVideodec2Flush", (void **)&cached.Flush);
++    sceKernelDlsym(mod, "sceVideodec2Reset", (void **)&cached.Reset);
++
++    state = 1;
++    *api = cached;
++    return 0;
++fail:
++    ovd_sys_priv_leave();
++    state = -1;
++    return AVERROR(ENOSYS);
++}
++
++int ovd_sys_dmem_alloc(OVDMem *m, size_t size, int type)
++{
++    off_t off = 0;
++    void *va = NULL;
++    int rc;
++
++    memset(m, 0, sizeof(*m));
++    if (!size)
++        size = DMEM_ALIGN;
++    size = (size + DMEM_ALIGN - 1) & ~(size_t)(DMEM_ALIGN - 1);
++
++    rc = sceKernelAllocateDirectMemory(0, sceKernelGetDirectMemorySize(),
++                                       size, DMEM_ALIGN, type, &off);
++    if (rc < 0)
++        return AVERROR(ENOMEM);
++    rc = sceKernelMapDirectMemory(&va, size, DMEM_PROT, 0, off, DMEM_ALIGN);
++    if (rc < 0) {
++        sceKernelReleaseDirectMemory(off, size);
++        return AVERROR(ENOMEM);
++    }
++    m->va   = va;
++    m->size = size;
++    m->off  = off;
++    return 0;
++}
++
++void ovd_sys_dmem_free(OVDMem *m)
++{
++    if (!m->va)
++        return;
++    sceKernelMunmap(m->va, m->size);
++    sceKernelReleaseDirectMemory(m->off, m->size);
++    m->va = NULL;
++}
++
++void ovd_sys_usleep(unsigned usec)
++{
++    sceKernelUsleep(usec);
++}
++
++#else /* !__ORBIS__ */
++
++#include <errno.h>
++
++int ovd_sys_bind(OVDApi *api)
++{
++    return AVERROR(ENOSYS);
++}
++
++int ovd_sys_dmem_alloc(OVDMem *m, size_t size, int type)
++{
++    return AVERROR(ENOSYS);
++}
++
++void ovd_sys_dmem_free(OVDMem *m)
++{
++}
++
++void ovd_sys_priv_leave(void)
++{
++}
++
++void ovd_sys_usleep(unsigned usec)
++{
++}
++
++#endif
