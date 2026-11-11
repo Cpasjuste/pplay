@@ -325,7 +325,17 @@ struct RemoteServer::Shared {
                     continue;
                 }
                 c.in.append(buf, (size_t) n);
-                if (c.in.find("\r\n\r\n") != std::string::npos || c.in.find("\n\n") != std::string::npos) {
+                if (c.in.size() >= 3 && (unsigned char) c.in[0] == 0x16 && (unsigned char) c.in[1] == 0x03
+                    && (unsigned char) c.in[2] <= 0x04) {
+                    // TLS ClientHello: the browser is using https://. pplay only speaks plain http,
+                    // say it (browsers show the text or a quick protocol error, not a long time out)
+                    log("client %i (%s): https:// request (TLS handshake, %i bytes). Use http:// instead",
+                        c.fd, c.peer.c_str(), (int) c.in.size());
+                    c.in.clear();
+                    c.answered = true;
+                    c.out = RemoteProtocol::response(400, "text/plain",
+                                                     "pplay remote: use http://, not https://\n");
+                } else if (c.in.find("\r\n\r\n") != std::string::npos || c.in.find("\n\n") != std::string::npos) {
                     answer(c);
                 } else if (c.in.size() > MAX_REQUEST) {
                     drop(i, "request too big");

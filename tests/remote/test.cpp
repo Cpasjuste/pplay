@@ -224,6 +224,21 @@ static void server() {
         CHECK(none.empty());
     }
 
+    // a browser using https:// sends a TLS handshake: answered at once, not after a time out
+    {
+        RemoteServer s4;
+        CHECK(s4.start(0));
+        std::vector<RemoteCommand> c4;
+        std::string hello("\x16\x03\x01\x07\xc6\x01\x00\x07\xc2\x03\x03\x0a\x0a\x0a\x0a", 15);
+        hello += std::string(300, 'x');
+        long long t0 = RemoteServer::nowMs();
+        std::string r4 = request(s4, hello, c4);
+        CHECK(r4.find("400") != std::string::npos);
+        CHECK(r4.find("use http://") != std::string::npos);
+        CHECK(RemoteServer::nowMs() - t0 < 1000);
+        CHECK(c4.empty());
+    }
+
     // log file
     {
         std::string path = "remote_test.log";

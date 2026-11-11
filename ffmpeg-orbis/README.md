@@ -166,6 +166,9 @@ pplay serves a small web page on the console. Nothing to install on the phone.
   `/data/pplay/remote.log` records what the server does (start, errors, each request): read it
   by FTP if the phone cannot connect. The phone must be on the same WiFi, and some routers
   isolate WiFi clients from each other ("AP/client isolation"), which blocks it.
+* The address must be typed with `http://` (not `https://`: the server has no certificate). If the
+  browser forces https (Chrome "Always use secure connections", Firefox HTTPS-Only mode, a link
+  that was auto-completed), the log shows `https:// request (TLS handshake...)`.
 * Options → Phone remote: On/Off (`REMOTE="on"|"off"` in pplay.cfg, applied at once).
   The port is `REMOTE_PORT` (default 8080, 1024-65535, applied when pplay starts).
 * The buttons are pressed exactly like the controller ones (menus, file browser and player
